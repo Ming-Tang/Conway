@@ -920,6 +920,12 @@ export class Conway {
 		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.add, Conway.zero);
 	}
 
+	public multTerms(
+		f: (pow: Real | Conway, coeff: Real) => Real | Conway,
+	): Real | Conway {
+		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.mult, Conway.one);
+	}
+
 	// #endregion
 	// #region Conversion
 
