@@ -583,7 +583,11 @@ describe("Conway", () => {
 
 		d("decomposition", () => {
 			it("infinite + real + infinitesimal", () => {
-				fc.assert(fc.property(arb, (x) => x.infinitePart.add(x.realPart).add(x.infinitesimalPart).eq(x)));
+				fc.assert(
+					fc.property(arb, (x) =>
+						x.infinitePart.add(x.realPart).add(x.infinitesimalPart).eq(x),
+					),
+				);
 			});
 		});
 	};
@@ -1027,24 +1031,35 @@ describe("birthday", () => {
 	describe("birthdays of pure infinitesimals", () => {
 		it("b(w^-a + w^-b) = b(w^-b) for b > a and a, b being natural numbers", () => {
 			fc.assert(
-				fc.property(fc.integer({ min: 1, max: 100 }), fc.integer({ min: 1, max: 100 }), (a, b) => {
-					fc.pre(b > a);
-					const pa = Conway.mono(1, -a);
-					const pb = Conway.mono(1, -b);
-					return Conway.eq(pb.birthday(), pa.add(pb).birthday());
-				}),
+				fc.property(
+					fc.integer({ min: 1, max: 100 }),
+					fc.integer({ min: 1, max: 100 }),
+					(a, b) => {
+						fc.pre(b > a);
+						const pa = Conway.mono(1, -a);
+						const pb = Conway.mono(1, -b);
+						return Conway.eq(pb.birthday(), pa.add(pb).birthday());
+					},
+				),
 				{ numRuns: 300 },
 			);
 		});
 
 		it("smaller but lower birthday", () => {
 			fc.assert(
-				fc.property(fc.integer({ min: 1, max: 100 }), fc.integer({ min: 1, max: 100 }), (a, b) => {
-					const pa = Conway.mono(1, Conway.mono(1, a).neg());
-					const db = Conway.mono(1, -b);
-					const pb = Conway.mono(1, Conway.mono(1, a).neg().add(-b));
-					return Conway.eq(Conway.ordinalAdd(pa.birthday(), db.birthday()), pa.add(pb).birthday());
-				}),
+				fc.property(
+					fc.integer({ min: 1, max: 100 }),
+					fc.integer({ min: 1, max: 100 }),
+					(a, b) => {
+						const pa = Conway.mono(1, Conway.mono(1, a).neg());
+						const db = Conway.mono(1, -b);
+						const pb = Conway.mono(1, Conway.mono(1, a).neg().add(-b));
+						return Conway.eq(
+							Conway.ordinalAdd(pa.birthday(), db.birthday()),
+							pa.add(pb).birthday(),
+						);
+					},
+				),
 				{ numRuns: 300 },
 			);
 		});
@@ -1087,16 +1102,16 @@ describe("birthday", () => {
 
 		it("decompose and sum of birthdays", () => {
 			fc.assert(
-				fc.property(arbConway3(arbFiniteBigint), ({ infinitePart: xp, realPart: x0, infinitesimalPart: xm }) =>
-					Conway.eq(
-						Conway.birthday(Conway.add(Conway.add(xp, x0), xm)),
-						Conway.ordinalAdd(
+				fc.property(
+					arbConway3(arbFiniteBigint),
+					({ infinitePart: xp, realPart: x0, infinitesimalPart: xm }) =>
+						Conway.eq(
+							Conway.birthday(Conway.add(Conway.add(xp, x0), xm)),
 							Conway.ordinalAdd(
-								Conway.birthday(xp),
-								Conway.birthday(x0),
+								Conway.ordinalAdd(Conway.birthday(xp), Conway.birthday(x0)),
+								Conway.birthday(xm),
 							),
-							Conway.birthday(xm)
-						)),
+						),
 				),
 				{ numRuns: 300 },
 			);
@@ -1104,12 +1119,23 @@ describe("birthday", () => {
 
 		it("birthday is additive if the first number has no infinitesimal part", () => {
 			fc.assert(
-				fc.property(arbConway3(arbFiniteBigint), arbConway3(arbFiniteBigint), (a, b) => {
-					fc.pre(a.length > 0 && b.length > 0 && Conway.isZero(a.infinitesimalPart));
-					const lp = b.leadingPower;
-					fc.pre(lp === null || Conway.gt(a.getByIndex(a.length - 1)[0], lp));
-					return Conway.eq(a.add(b).birthday(), Conway.ordinalAdd(a.birthday(), b.birthday()))
-				}),
+				fc.property(
+					arbConway3(arbFiniteBigint),
+					arbConway3(arbFiniteBigint),
+					(a, b) => {
+						fc.pre(
+							a.length > 0 &&
+								b.length > 0 &&
+								Conway.isZero(a.infinitesimalPart),
+						);
+						const lp = b.leadingPower;
+						fc.pre(lp === null || Conway.gt(a.getByIndex(a.length - 1)[0], lp));
+						return Conway.eq(
+							a.add(b).birthday(),
+							Conway.ordinalAdd(a.birthday(), b.birthday()),
+						);
+					},
+				),
 				{ numRuns: 300 },
 			);
 		});

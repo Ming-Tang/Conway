@@ -32,9 +32,14 @@ const x2 = new Conway([
 ]);
 console.log(`b(${x2}) = ${Conway.birthday(x2)}`);
 
-
 const x3 = new Conway([
-	[new Conway([[1, -1], [0, -1]]), 1],
+	[
+		new Conway([
+			[1, -1],
+			[0, -1],
+		]),
+		1,
+	],
 	[Conway.one.neg(), 2],
 ]);
 console.log(`b(${x3}) = ${Conway.birthday(x3)}`);
