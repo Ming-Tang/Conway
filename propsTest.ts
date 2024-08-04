@@ -1,5 +1,6 @@
 import fc from "fast-check";
-import type { BinOp } from "./algebra";
+
+type BinOp<T> = (a: T, b: T) => T;
 
 export interface RunConfig {
 	numRuns?: number;
