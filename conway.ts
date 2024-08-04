@@ -541,8 +541,7 @@ export class Conway {
 	 * Find the solution `x` such that `this.ordinalAdd(x).eq(other)`.
 	 */
 	public ordinalRightSub(other: Real | Conway): Conway {
-		const other1 = Conway.ensure(other);
-		const c = this.compare(other1);
+		const c = Conway.compare(this, other);
 		if (c < 0) {
 			throw new RangeError(`No solution: ${this} > ${other}`);
 		}
@@ -550,6 +549,7 @@ export class Conway {
 			return Conway.zero;
 		}
 
+		const other1 = Conway.ensure(other);
 		if (this.isZero) {
 			return other1;
 		}

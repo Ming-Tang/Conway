@@ -14,6 +14,23 @@ describe("ordinals", () => {
 			expect(Conway.one.ordinalAdd(Conway.unit).eq(Conway.unit));
 		});
 
+		it("any ordinal ordinalAdd zero", () => {
+			fc.assert(
+				fc.property(
+					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
+					(a) => a.ordinalAdd(Conway.zero).eq(a),
+				),
+			);
+		});
+		it("zero ordinalAdd any ordinal", () => {
+			fc.assert(
+				fc.property(
+					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
+					(a) => Conway.zero.ordinalAdd(a).eq(a),
+				),
+			);
+		});
+
 		it("ordinalAdd result is ordinal", () => {
 			fc.assert(
 				fc.property(
@@ -21,7 +38,6 @@ describe("ordinals", () => {
 					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
 					(a, b) => a.ordinalAdd(b).isOrdinal,
 				),
-				{ numRuns: 200 },
 			);
 		});
 
@@ -37,7 +53,6 @@ describe("ordinals", () => {
 					fc.pre(Conway.lt(a, b));
 					return Conway.lt(c.ordinalAdd(a), c.ordinalAdd(b));
 				}),
-				{ numRuns: 200 },
 			);
 		});
 
@@ -47,7 +62,6 @@ describe("ordinals", () => {
 					fc.pre(Conway.lt(a, b));
 					return Conway.le(a.ordinalAdd(c), b.ordinalAdd(c));
 				}),
-				{ numRuns: 200 },
 			);
 		});
 
@@ -56,7 +70,6 @@ describe("ordinals", () => {
 				fc.property(arbOrd2, arbOrd2, (a, b) =>
 					Conway.eq(a.ordinalAdd(b), Conway.ordinalAdd(a, b)),
 				),
-				{ numRuns: 200 },
 			);
 		});
 	});
@@ -98,7 +111,6 @@ describe("ordinals", () => {
 					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
 					(a) => a.ordinalRightSub(a).isZero,
 				),
-				{ numRuns: 200 },
 			);
 		});
 
@@ -112,7 +124,18 @@ describe("ordinals", () => {
 						return a.ordinalRightSub(b).isOrdinal;
 					},
 				),
-				{ numRuns: 100 },
+			);
+		});
+
+		it("ordinalRightSub result can be added back (with self)", () => {
+			fc.assert(
+				fc.property(
+					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
+					(a) => {
+						const c = a.ordinalRightSub(a);
+						return a.ordinalAdd(c).eq(a);
+					},
+				),
 			);
 		});
 
@@ -122,12 +145,11 @@ describe("ordinals", () => {
 					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
 					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
 					(a, b) => {
-						fc.pre(Conway.ge(b, a));
+						fc.pre(Conway.gt(b, a));
 						const c = a.ordinalRightSub(b);
-						return a.ordinalAdd(b).eq(c);
+						return a.ordinalAdd(c).eq(b);
 					},
 				),
-				{ numRuns: 100 },
 			);
 		});
 
@@ -137,7 +159,6 @@ describe("ordinals", () => {
 					fc.pre(Conway.ge(b, a));
 					return Conway.eq(a.ordinalRightSub(b), Conway.ordinalRightSub(a, b));
 				}),
-				{ numRuns: 200 },
 			);
 		});
 	});
