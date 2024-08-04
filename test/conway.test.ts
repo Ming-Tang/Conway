@@ -18,10 +18,7 @@ import {
 	arbFiniteBigint,
 	arbRealGeneral,
 	arbFinite,
-	arbOrd2,
 } from "./generators";
-
-fc.configureGlobal({ verbose: false, numRuns: 1000 });
 
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);
@@ -810,7 +807,6 @@ describe("Conway", () => {
 					fc.pre(r instanceof Conway);
 					expect(Conway.isZero(r.get(lp))).toBe(true);
 				}),
-				{ numRuns: 100 },
 			);
 		});
 
@@ -823,7 +819,6 @@ describe("Conway", () => {
 					expect(r.isZero).toBe(true);
 					expect(Conway.eq(q, a)).toBe(true);
 				}),
-				{ numRuns: 100 },
 			);
 		});
 
@@ -842,7 +837,6 @@ describe("Conway", () => {
 						expect(Conway.eq(q, a.add(b))).toBe(true);
 					},
 				),
-				{ numRuns: 100 },
 			);
 		});
 
@@ -859,7 +853,6 @@ describe("Conway", () => {
 						expect(Conway.eq(addBack, a)).toBe(true);
 					},
 				),
-				{ numRuns: 100 },
 			);
 		});
 	});

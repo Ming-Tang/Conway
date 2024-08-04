@@ -49,6 +49,7 @@ export const arbConway2 = (
 				fc.oneof(arbReal, arbConway1(arbReal, reduceConstraints(constraints))),
 				arbReal,
 			),
+			constraints,
 		)
 		.map((a) => new Conway(a));
 
@@ -62,6 +63,7 @@ export const arbConway3 = (
 				fc.oneof(arbReal, arbConway2(arbReal, reduceConstraints(constraints))),
 				arbReal,
 			),
+			constraints,
 		)
 		.map((a) => new Conway(a));
 
@@ -75,6 +77,7 @@ export const arbConway4 = (
 				fc.oneof(arbReal, arbConway3(arbReal, reduceConstraints(constraints))),
 				arbReal,
 			),
+			constraints,
 		)
 		.map((a) => new Conway(a));
 
@@ -88,6 +91,7 @@ export const arbConway5 = (
 				fc.oneof(arbReal, arbConway4(arbReal, reduceConstraints(constraints))),
 				arbReal,
 			),
+			constraints,
 		)
 		.map((a) => new Conway(a));
 
