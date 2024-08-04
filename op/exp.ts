@@ -16,8 +16,10 @@ const expLow = (x: Real | Conway, terms = null as number | null) => {
 
 	let sum = zero;
 	let f = 1.0;
+	let xPow: Real | Conway = Conway.one;
 	for (let i = 0; i < terms; i++) {
-		sum = sum.add(mult(powInt(x, i), 1.0 / f));
+		sum = sum.add(mult(xPow, 1.0 / f));
+		xPow = mult(xPow, x);
 		f *= i + 1;
 	}
 	return sum;
@@ -26,7 +28,7 @@ const expLow = (x: Real | Conway, terms = null as number | null) => {
 /**
  * Evaluate the infinite series for `log(1 + x)` where `x` is infinitesimal.
  */
-const log1pLow = (x: Real | Conway, terms = null as number | null) => {
+export const log1pLow = (x: Real | Conway, terms = null as number | null) => {
 	if (Conway.isZero(x)) {
 		return one;
 	}
@@ -36,8 +38,10 @@ const log1pLow = (x: Real | Conway, terms = null as number | null) => {
 
 	let sum = zero;
 	let f = 1.0;
+	let xPow = x;
 	for (let i = 1; i <= terms; i++) {
-		sum = sum.add(mult(powInt(x, i), f / i));
+		sum = sum.add(mult(xPow, f / i));
+		xPow = mult(xPow, x);
 		f *= -1.0;
 	}
 	return sum;
@@ -51,10 +55,36 @@ const log1pLow = (x: Real | Conway, terms = null as number | null) => {
  */
 const logInf = (x: Real | Conway) => ensure(x).sumTerms((p, c) => mult(p, c));
 
+/**
+ * Given a surreal number, factor it into `(r w^inf) * (1 + low)`.
+ *
+ * @param x The number to be factored, must be positive
+ * @returns `{ inf, r, low }` where `inf` is the exponent of the leading term,
+ * `r` is the real coefficient of the leading term and `low` is a pure infinitesimal.
+ */
+export const factorLeadLow = (x: Conway) => {
+	const { leadingPower: pLead0, leadingCoeff: r } = x;
+	const pLead = pLead0 ?? Conway.zero;
+	const inf = pLead;
+	const terms: [Real | Conway, Real][] = [];
+	for (const [p, c] of x) {
+		if (eq(p, pLead)) {
+			continue;
+		}
+		terms.push([sub(p, pLead), Conway.multReal(c, 1.0 / Number(r))]);
+	}
+
+	return { inf, r, low: new Conway(terms) };
+};
+
 export const exp = (
 	x: Real | Conway,
 	terms: number | null = null,
 ): Conway | Real => {
+	if (isZero(x)) {
+		return one;
+	}
+
 	const {
 		realValue: rv,
 		infinitePart: xp,
@@ -70,7 +100,7 @@ export const exp = (
 		Conway.mono(Number(c), mult(p, c)),
 	);
 	const r = Math.exp(Number(xr));
-	const low = expLow(xm, terms);
+	const low = isZero(xm) ? one : expLow(xm, terms);
 	return Conway.ensure(inf).mult(r).mult(low);
 };
 
@@ -90,16 +120,9 @@ export const log = (
 	}
 
 	if (!x1.isPositive) {
-		throw new RangeError("log of negative");
+		throw new RangeError(x1.isZero ? "log of zero" : "log of negative");
 	}
-	const { leadingPower: pLead0, leadingCoeff: cLead } = ensure(x1);
-	const pLead = pLead0 ?? Conway.zero;
-	const r = Math.log(Number(cLead));
-	const inf = logInf(pLead);
-	const low = x1.sumTerms((p, c) =>
-		eq(p, pLead)
-			? zero
-			: mono(Conway.multReal(c, 1.0 / Number(cLead)), sub(p, pLead)),
-	);
-	return add(add(inf, r), log1pLow(low, terms));
+
+	const { inf, r, low } = factorLeadLow(x1);
+	return add(add(logInf(inf), Math.log(Number(r))), log1pLow(low, terms));
 };
