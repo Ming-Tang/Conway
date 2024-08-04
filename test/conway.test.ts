@@ -1,6 +1,6 @@
 import fc from "fast-check";
-import { Conway } from "./conway";
-import type { Real } from "./conway";
+import { Conway } from "../conway";
+import type { Real } from "../conway";
 import {
 	propCommAssoc,
 	propDist,
@@ -8,99 +8,21 @@ import {
 	propTotalOrder,
 	propZero,
 } from "./propsTest";
+import {
+	arbConway1,
+	arbConway2,
+	arbConway3,
+	arbConway4,
+	arbConway5,
+	arbConwayReal,
+	arbFiniteBigint,
+	arbRealGeneral,
+	arbFinite,
+	arbOrd3,
+	arbOrd2,
+} from "./generators";
 
 fc.configureGlobal({ verbose: false, numRuns: 1000 });
-
-const arbFinite = fc.float({
-	min: -1e3,
-	max: 1e3,
-	noNaN: true,
-	noDefaultInfinity: true,
-});
-const arbFiniteBigint = fc.bigInt({ min: -1000n, max: 1000n });
-
-const arbRealGeneral = fc.oneof(
-	arbFinite,
-	arbFiniteBigint,
-	fc.integer({ min: -1000, max: 1000 }),
-);
-
-const defaultArrayConstraints: fc.ArrayConstraints = {
-	minLength: 0,
-	maxLength: 3,
-};
-
-const reduceConstraints = ({
-	maxLength,
-	...props
-}: fc.ArrayConstraints): fc.ArrayConstraints => ({
-	...props,
-	maxLength:
-		typeof maxLength === "number" && maxLength >= 1
-			? Math.max(1, Math.ceil(maxLength / 2))
-			: undefined,
-});
-
-const arbConway1 = (
-	arbReal = arbRealGeneral,
-	constraints = defaultArrayConstraints,
-) =>
-	fc.array(fc.tuple(arbReal, arbReal), constraints).map((a) => new Conway(a));
-
-const arbConway2 = (
-	arbReal = arbRealGeneral,
-	constraints = defaultArrayConstraints,
-) =>
-	fc
-		.array(
-			fc.tuple(
-				fc.oneof(arbReal, arbConway1(arbReal, reduceConstraints(constraints))),
-				arbReal,
-			),
-		)
-		.map((a) => new Conway(a));
-
-const arbConway3 = (
-	arbReal = arbRealGeneral,
-	constraints = defaultArrayConstraints,
-) =>
-	fc
-		.array(
-			fc.tuple(
-				fc.oneof(arbReal, arbConway2(arbReal, reduceConstraints(constraints))),
-				arbReal,
-			),
-		)
-		.map((a) => new Conway(a));
-
-const arbConway4 = (
-	arbReal = arbRealGeneral,
-	constraints = defaultArrayConstraints,
-) =>
-	fc
-		.array(
-			fc.tuple(
-				fc.oneof(arbReal, arbConway3(arbReal, reduceConstraints(constraints))),
-				arbReal,
-			),
-		)
-		.map((a) => new Conway(a));
-
-const arbConway5 = (
-	arbReal = arbRealGeneral,
-	constraints = defaultArrayConstraints,
-) =>
-	fc
-		.array(
-			fc.tuple(
-				fc.oneof(arbReal, arbConway4(arbReal, reduceConstraints(constraints))),
-				arbReal,
-			),
-		)
-		.map((a) => new Conway(a));
-
-const arbConwayReal = (arbReal?: fc.Arbitrary<Real>): fc.Arbitrary<Conway> =>
-	(arbReal ?? arbRealGeneral).map((r) => Conway.real(r));
 
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);
@@ -140,9 +62,6 @@ const ensureSimplified = (x: Conway) => {
 
 	return f(x, true);
 };
-
-const arbOrd2 = arbConway2(arbFiniteBigint).filter((x) => x.isOrdinal);
-const arbOrd3 = arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal);
 
 describe("Conway", () => {
 	describe("constants", () => {
