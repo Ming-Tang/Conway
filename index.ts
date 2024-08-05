@@ -1,4 +1,25 @@
 import { Conway } from "./conway";
+import { concat, cycleArray, fromArray } from "./seq";
+
+const s1 = cycleArray([1, 2, 3]);
+const s2 = fromArray([4, 5, 6]);
+const s12 = concat(s1, s2);
+console.log(`|s1| = ${s1.length}, |s2| = ${s2.length}, |s12| = ${s12.length}`);
+
+console.log("---");
+
+for (let i = 0; i < 10; i++) {
+	console.log(s12.index(Conway.real(0)));
+	console.log(s12.index(Conway.real(1)));
+	console.log(s12.index(Conway.real(2)));
+}
+console.log("---");
+
+for (let i = 0; i < 3; i++) {
+	console.log(s12.index(Conway.real(i).add(Conway.unit)));
+}
+
+console.log("---");
 
 const a = new Conway([[0, 1]]);
 const b = new Conway([
