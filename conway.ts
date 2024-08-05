@@ -1023,8 +1023,10 @@ export class Conway {
 						? e.toJson(preserveBigint)
 						: preserveBigint
 							? c
-							: `${e}n`,
-				c: preserveBigint ? c : `${e}n`,
+							: typeof e === "bigint"
+								? `${e}n`
+								: e,
+				c: preserveBigint ? c : typeof c === "bigint" ? `${c}n` : c,
 			})),
 		};
 	}
