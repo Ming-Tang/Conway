@@ -540,6 +540,52 @@ export class Conway {
 	}
 
 	/**
+	 * Performs ordinal number multiplication. Has meaningful result
+	 * only when both `.isOrdinal` are true.
+	 */
+	public ordinalMult(other: Real | Conway): Conway {
+		if (!(other instanceof Conway)) {
+			return this.mult(other);
+		}
+
+		const { infinitePart: inf1, realPart: i1 } = this;
+		const { infinitePart: inf2, realPart: i2 } = other;
+		// i1 * i2 = i1 * i2
+		if (inf1.isZero && inf2.isZero) {
+			return Conway.ensure(Conway.multReal(i1, i2));
+		}
+		if (inf1.isZero) {
+			// i1 nonzero: i1 * (inf2 + i2) = inf2 + i1 * i2
+			return Conway.isZero(i1)
+				? Conway.zero
+				: inf2.add(Conway.multReal(i1, i2));
+		}
+		if (inf2.isZero) {
+			// i2 nonzero: (inf1 + i1) * i2 = inf2 * i2 + i1
+			return Conway.isZero(i2) ? Conway.zero : inf1.mult(i2).add(i1);
+		}
+
+		// (inf1 + i1) * (inf2 + i2)
+		// = (inf1 + i1) * inf2 + (inf1 + i1) * i2
+		// = (inf1 * inf2) + (inf1 * i2) + i1
+		const infProd: [Real | Conway, Real][] = [];
+		for (const [p2, c2] of inf2) {
+			for (const [p1, c1] of inf1) {
+				const p = Conway.ordinalAdd(p1, p2);
+				const found = infProd.find(([p0]) => Conway.eq(p0, p));
+				if (found) {
+					found[1] = Conway.addReal(found[1], Conway.multReal(c1, c2));
+				} else {
+					infProd.push([p, Conway.multReal(c1, c2)]);
+				}
+			}
+		}
+
+		const ip = new Conway(infProd);
+		return ip.ordinalAdd(Conway.mult(inf1, i2)).ordinalAdd(i1);
+	}
+
+	/**
 	 * Find the solution `x` such that `this.ordinalAdd(x).eq(other)`.
 	 */
 	public ordinalRightSub(other: Real | Conway): Conway {
@@ -608,6 +654,14 @@ export class Conway {
 	 * @returns The quotient and remainder as a tuple
 	 */
 	public divRem(value: Conway | Real): [Conway, Conway] {
+		if (Conway.isZero(value)) {
+			throw new RangeError("division by zero");
+		}
+
+		if (this.isZero) {
+			return [Conway.zero, Conway.zero];
+		}
+
 		if (!(value instanceof Conway)) {
 			return [
 				/* value === 1 || value === 1n ? this : */ this.mult(
@@ -718,6 +772,21 @@ export class Conway {
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
 		return l1.ordinalAdd(r1);
+	}
+
+	public static ordinalMult(
+		left: Real | Conway,
+		right: Real | Conway,
+	): Real | Conway {
+		if (typeof left === "bigint" && typeof right === "bigint") {
+			return left * right;
+		}
+		if (typeof left === "number" && typeof right === "number") {
+			return left * right;
+		}
+		const l1 = Conway.ensure(left);
+		const r1 = Conway.ensure(right);
+		return l1.ordinalMult(r1);
 	}
 
 	public static ordinalRightSub(

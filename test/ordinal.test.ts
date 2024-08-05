@@ -1,6 +1,11 @@
 import fc from "fast-check";
-import { Conway } from "../conway";
-import { arbConway3, arbFiniteBigint, arbOrd2 } from "./generators";
+import { Conway, type Real } from "../conway";
+import { arbConway3, arbFiniteBigint, arbOrd2, arbOrd3 } from "./generators";
+import { isOrdinal, ordinalAdd, ordinalMult } from "../op/ordinal";
+import { one, unit, zero } from "../op";
+import { eq, isPositive } from "../op/comparison";
+
+fc.configureGlobal({ numRuns: 1000, verbose: false });
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
@@ -15,29 +20,15 @@ describe("ordinals", () => {
 		});
 
 		it("any ordinal ordinalAdd zero", () => {
-			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
-					(a) => a.ordinalAdd(Conway.zero).eq(a),
-				),
-			);
+			fc.assert(fc.property(arbOrd3, (a) => a.ordinalAdd(Conway.zero).eq(a)));
 		});
 		it("zero ordinalAdd any ordinal", () => {
-			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
-					(a) => Conway.zero.ordinalAdd(a).eq(a),
-				),
-			);
+			fc.assert(fc.property(arbOrd3, (a) => Conway.zero.ordinalAdd(a).eq(a)));
 		});
 
 		it("ordinalAdd result is ordinal", () => {
 			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
-					(a, b) => a.ordinalAdd(b).isOrdinal,
-				),
+				fc.property(arbOrd3, arbOrd3, (a, b) => a.ordinalAdd(b).isOrdinal),
 			);
 		});
 
@@ -158,6 +149,110 @@ describe("ordinals", () => {
 				fc.property(arbOrd2, arbOrd2, (a, b) => {
 					fc.pre(Conway.ge(b, a));
 					return Conway.eq(a.ordinalRightSub(b), Conway.ordinalRightSub(a, b));
+				}),
+			);
+		});
+	});
+
+	const assertEq = (a: Real | Conway, b: Real | Conway) => {
+		if (!eq(a, b)) {
+			throw new Error(`not equal: a=[${a}], b=[${b}]`);
+		}
+		return true;
+	};
+
+	describe("ordinalMult", () => {
+		it("constants", () => {
+			expect(Conway.eq(ordinalMult(one, one), one)).toBe(true);
+			expect(Conway.eq(ordinalMult(one, unit), unit)).toBe(true);
+			expect(Conway.eq(ordinalMult(unit, unit), unit.mult(unit))).toBe(true);
+		});
+
+		it("constants (absorbing)", () => {
+			expect(ordinalMult(2, unit)).toEqual(unit);
+			expect(ordinalMult(2, unit.add(1))).toEqual(unit.mult(2).add(1));
+			expect(ordinalMult(unit.add(3), 5)).toEqual(unit.mult(5).add(3));
+		});
+
+		it("left zero", () => {
+			fc.assert(
+				fc.property(arbOrd3, (a) => assertEq(ordinalMult(zero, a), zero)),
+			);
+		});
+
+		it("right zero", () => {
+			fc.assert(
+				fc.property(arbOrd3, (a) => assertEq(ordinalMult(a, zero), zero)),
+			);
+		});
+
+		it("left identity", () => {
+			fc.assert(fc.property(arbOrd3, (a) => assertEq(ordinalMult(one, a), a)));
+		});
+
+		it("right identity", () => {
+			fc.assert(fc.property(arbOrd3, (a) => assertEq(ordinalMult(a, one), a)));
+		});
+
+		it("result must be ordinal", () => {
+			fc.assert(
+				fc.property(
+					arbOrd3.filter(isPositive),
+					arbOrd3.filter(isPositive),
+					(a, b) => isOrdinal(ordinalMult(a, b)),
+				),
+			);
+		});
+
+		it("finite * w = w", () => {
+			fc.assert(
+				fc.property(fc.integer({ min: 1 }), (x) =>
+					assertEq(ordinalMult(Conway.real(x), unit), unit),
+				),
+			);
+		});
+
+		it("increasing", () => {
+			fc.assert(
+				fc.property(
+					arbOrd3.filter(isPositive),
+					arbOrd3.filter(isPositive),
+					(a, b) => Conway.ge(ordinalMult(a, b), a),
+				),
+			);
+		});
+
+		it("left distributive: a*(b+c) = a*b + a*c", () => {
+			fc.assert(
+				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
+					return assertEq(
+						ordinalMult(a, ordinalAdd(b, c)),
+						ordinalAdd(ordinalMult(a, b), ordinalMult(a, c)),
+					);
+				}),
+			);
+		});
+
+		it("associative", () => {
+			fc.assert(
+				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
+					return assertEq(
+						ordinalMult(a, ordinalMult(b, c)),
+						ordinalMult(ordinalMult(a, b), c),
+					);
+				}),
+			);
+		});
+
+		it("is repeated addition for finite multipliers", () => {
+			fc.assert(
+				fc.property(arbOrd3, fc.integer({ min: 1, max: 32 }), (a, n) => {
+					let sum: Conway | Real = zero;
+					for (let i = 0; i < n; i++) {
+						sum = ordinalAdd(sum, a);
+					}
+
+					return assertEq(ordinalMult(a, Conway.real(n)), sum);
 				}),
 			);
 		});
