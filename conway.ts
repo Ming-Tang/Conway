@@ -1,5 +1,7 @@
 export type Real = number | bigint;
 
+const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
+
 const freeze = <T>(v: T) => Object.freeze(v);
 
 /**
@@ -996,6 +998,10 @@ export class Conway {
 		}
 
 		return parts.length === 0 ? "0" : parts.join(" ");
+	}
+
+	public [customInspectSymbol]() {
+		return `Conway(${this.toString()})`;
 	}
 
 	// #endregion
