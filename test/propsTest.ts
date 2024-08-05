@@ -1,6 +1,15 @@
 import fc from "fast-check";
+import type { Real, Conway } from "../conway";
+import { eq } from "../op/comparison";
 
 type BinOp<T> = (a: T, b: T) => T;
+
+export const assertEq = (a: Real | Conway, b: Real | Conway) => {
+	if (!eq(a, b)) {
+		throw new Error(`not equal: a=[${a}], b=[${b}]`);
+	}
+	return true;
+};
 
 export interface RunConfig {
 	numRuns?: number;

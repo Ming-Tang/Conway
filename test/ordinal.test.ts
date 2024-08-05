@@ -3,7 +3,8 @@ import { Conway, type Real } from "../conway";
 import { arbConway3, arbFiniteBigint, arbOrd2, arbOrd3 } from "./generators";
 import { isOrdinal, ordinalAdd, ordinalMult } from "../op/ordinal";
 import { one, unit, zero } from "../op";
-import { eq, isPositive } from "../op/comparison";
+import { isPositive } from "../op/comparison";
+import { assertEq } from "./propsTest";
 
 fc.configureGlobal({ numRuns: 1000, verbose: false });
 
@@ -153,13 +154,6 @@ describe("ordinals", () => {
 			);
 		});
 	});
-
-	const assertEq = (a: Real | Conway, b: Real | Conway) => {
-		if (!eq(a, b)) {
-			throw new Error(`not equal: a=[${a}], b=[${b}]`);
-		}
-		return true;
-	};
 
 	describe("ordinalMult", () => {
 		it("constants", () => {
