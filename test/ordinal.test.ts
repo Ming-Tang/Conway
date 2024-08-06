@@ -1,12 +1,12 @@
 import fc from "fast-check";
 import { Conway, type Real } from "../conway";
-import { arbConway3, arbFiniteBigint, arbOrd2, arbOrd3 } from "./generators";
+import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
 import { isOrdinal, ordinalAdd, ordinalMult } from "../op/ordinal";
 import { one, unit, zero } from "../op";
 import { isPositive } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
-fc.configureGlobal({ numRuns: 1000, verbose: false });
+fc.configureGlobal({ numRuns: 20000, verbose: false });
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
@@ -35,13 +35,13 @@ describe("ordinals", () => {
 
 		it("increasing", () => {
 			fc.assert(
-				fc.property(arbOrd2, arbOrd2, (a, b) => Conway.ge(a.ordinalAdd(b), a)),
+				fc.property(arbOrd3, arbOrd3, (a, b) => Conway.ge(a.ordinalAdd(b), a)),
 			);
 		});
 
 		it("strictly increasing (<) on right argument", () => {
 			fc.assert(
-				fc.property(arbOrd2, arbOrd2, arbOrd2, (a, b, c) => {
+				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
 					fc.pre(Conway.lt(a, b));
 					return Conway.lt(c.ordinalAdd(a), c.ordinalAdd(b));
 				}),
@@ -50,7 +50,7 @@ describe("ordinals", () => {
 
 		it("increasing (<=) on right argument", () => {
 			fc.assert(
-				fc.property(arbOrd2, arbOrd2, arbOrd2, (a, b, c) => {
+				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
 					fc.pre(Conway.lt(a, b));
 					return Conway.le(a.ordinalAdd(c), b.ordinalAdd(c));
 				}),
@@ -59,7 +59,7 @@ describe("ordinals", () => {
 
 		it("static method is equivalent to instance method", () => {
 			fc.assert(
-				fc.property(arbOrd2, arbOrd2, (a, b) =>
+				fc.property(arbOrd3, arbOrd3, (a, b) =>
 					Conway.eq(a.ordinalAdd(b), Conway.ordinalAdd(a, b)),
 				),
 			);
@@ -147,7 +147,7 @@ describe("ordinals", () => {
 
 		it("static method is equivalent to instance method", () => {
 			fc.assert(
-				fc.property(arbOrd2, arbOrd2, (a, b) => {
+				fc.property(arbOrd3, arbOrd3, (a, b) => {
 					fc.pre(Conway.ge(b, a));
 					return Conway.eq(a.ordinalRightSub(b), Conway.ordinalRightSub(a, b));
 				}),
@@ -157,15 +157,40 @@ describe("ordinals", () => {
 
 	describe("ordinalMult", () => {
 		it("constants", () => {
-			expect(Conway.eq(ordinalMult(one, one), one)).toBe(true);
-			expect(Conway.eq(ordinalMult(one, unit), unit)).toBe(true);
-			expect(Conway.eq(ordinalMult(unit, unit), unit.mult(unit))).toBe(true);
+			assertEq(ordinalMult(one, one), one);
+			assertEq(ordinalMult(one, unit), unit);
+			assertEq(ordinalMult(unit, unit), unit.mult(unit));
 		});
 
 		it("constants (absorbing)", () => {
-			expect(ordinalMult(2, unit)).toEqual(unit);
-			expect(ordinalMult(2, unit.add(1))).toEqual(unit.mult(2).add(1));
-			expect(ordinalMult(unit.add(3), 5)).toEqual(unit.mult(5).add(3));
+			assertEq(ordinalMult(2n, unit), unit);
+			assertEq(ordinalMult(3n, unit.add(1n)), unit.add(3n));
+			assertEq(ordinalMult(unit.add(3n), 5n), unit.mult(5n).add(3n));
+		});
+
+		it("constants (assoc)", () => {
+			assertEq(ordinalMult(unit, 2n), unit.mult(2n));
+			assertEq(ordinalMult(ordinalMult(unit, 2n), unit), unit.mult(unit));
+			assertEq(ordinalMult(unit, ordinalMult(2n, unit)), unit.mult(unit));
+			// w.(2.(w + 1)) = w.(w + 2) = w^2 + w.2
+			assertEq(
+				ordinalMult(unit, ordinalMult(2n, unit.add(1n))),
+				unit.mult(unit).add(unit.mult(2n)),
+			);
+			// (w.2).(w + 1) = (w.2).w + (w.2).1 = w^2 + w.2
+			assertEq(
+				unit.mult(2n).ordinalMult(unit.add(1n)),
+				unit.mult(unit).add(unit.mult(2n)),
+			);
+		});
+
+		it("constants (distr)", () => {
+			// (w + 1)(w + 1) = (w+1).w + (w+1).1
+			// = w^2 + w + 1
+			assertEq(
+				unit.add(1n).ordinalMult(unit.add(1n)),
+				unit.mult(unit).add(unit).add(1n),
+			);
 		});
 
 		it("left zero", () => {
@@ -216,26 +241,86 @@ describe("ordinals", () => {
 			);
 		});
 
-		it("left distributive: a*(b+c) = a*b + a*c", () => {
-			fc.assert(
-				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
-					return assertEq(
-						ordinalMult(a, ordinalAdd(b, c)),
-						ordinalAdd(ordinalMult(a, b), ordinalMult(a, c)),
-					);
-				}),
-			);
+		const arbFinite = fc.integer({ min: 1, max: 32 });
+		describe("finite absorption", () => {
+			it("(pure infinite + finite) * pure infinite = pure infinite * pure infinite", () => {
+				fc.assert(
+					fc.property(
+						arbOrd3,
+						arbOrd3.map((x) => x.infinitePart),
+						(a, b) => {
+							return assertEq(
+								ordinalMult(a.infinitePart, b),
+								ordinalMult(a.infinitePart, b),
+							);
+						},
+					),
+				);
+			});
+
+			it("left absorption of finite * pure infinite", () => {
+				fc.assert(
+					fc.property(
+						arbFinite,
+						arbOrd3.map((x) => x.infinitePart),
+						(n, a) => {
+							return assertEq(ordinalMult(Conway.real(n), a), a);
+						},
+					),
+				);
+			});
 		});
 
-		it("associative", () => {
-			fc.assert(
-				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
-					return assertEq(
-						ordinalMult(a, ordinalMult(b, c)),
-						ordinalMult(ordinalMult(a, b), c),
+		const arbs: [fc.Arbitrary<Real | Conway>, string][] = [
+			[arbFinite, "finite"],
+			[arbOrd3, "infinite"],
+		];
+		const arb3s: [
+			fc.Arbitrary<Real | Conway>,
+			fc.Arbitrary<Real | Conway>,
+			fc.Arbitrary<Real | Conway>,
+			string,
+		][] = [];
+		for (const [arb0, name0] of arbs) {
+			for (const [arb1, name1] of arbs) {
+				for (const [arb2, name2] of arbs) {
+					const title =
+						name0 === "infinite" && name1 === "infinite" && name2 === "infinite"
+							? "(general)"
+							: `(${name0}, ${name1}, ${name2})`;
+					arb3s.push([arb0, arb1, arb2, title]);
+				}
+			}
+		}
+
+		describe("left distributive: a*(b+c) = a*b + a*c", () => {
+			for (const [arb0, arb1, arb2, title] of arb3s) {
+				it(title, () => {
+					fc.assert(
+						fc.property(arb0, arb1, arb2, (a, b, c) =>
+							assertEq(
+								ordinalMult(a, ordinalAdd(b, c)),
+								ordinalAdd(ordinalMult(a, b), ordinalMult(a, c)),
+							),
+						),
 					);
-				}),
-			);
+				});
+			}
+		});
+
+		describe("associative: (a*b)*c = a*(b*c)", () => {
+			for (const [arb0, arb1, arb2, title] of arb3s) {
+				it(title, () => {
+					fc.assert(
+						fc.property(arb0, arb1, arb2, (a, b, c) =>
+							assertEq(
+								ordinalMult(ordinalMult(a, b), c),
+								ordinalMult(a, ordinalMult(b, c)),
+							),
+						),
+					);
+				});
+			}
 		});
 
 		it("is repeated addition for finite multipliers", () => {

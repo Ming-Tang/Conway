@@ -539,6 +539,22 @@ export class Conway {
 		return this.filterTerms((p1) => Conway.ge(p1, cutoff)).add(other);
 	}
 
+	private static ordinalMultInfiniteFinite(inf: Conway, i: Real): Conway {
+		if (Conway.isZero(i)) {
+			return Conway.zero;
+		}
+		if (Conway.isOne(i)) {
+			return inf;
+		}
+
+		if (typeof i === "bigint") {
+			const x = Conway.ordinalMultInfiniteFinite(inf, i >> 1n);
+			const dbl = x.ordinalAdd(x);
+			return i % 2n === 0n ? dbl : dbl.ordinalAdd(inf);
+		}
+		return Conway.ordinalMultInfiniteFinite(inf, BigInt(i));
+	}
+
 	/**
 	 * Performs ordinal number multiplication. Has meaningful result
 	 * only when both `.isOrdinal` are true.
@@ -548,41 +564,43 @@ export class Conway {
 			return this.mult(other);
 		}
 
-		const { infinitePart: inf1, realPart: i1 } = this;
-		const { infinitePart: inf2, realPart: i2 } = other;
+		if (this.isZero || other.isZero) {
+			return Conway.zero;
+		}
+		if (this.isOne) {
+			return other;
+		}
+		if (other.isOne) {
+			return this;
+		}
+
+		const { realPart: i1 } = this;
+		const { realPart: i2 } = other;
 		// i1 * i2 = i1 * i2
-		if (inf1.isZero && inf2.isZero) {
+		if (!this.isAboveReals && !other.isAboveReals) {
 			return Conway.ensure(Conway.multReal(i1, i2));
 		}
-		if (inf1.isZero) {
+		// (...) * i2
+		if (!other.isAboveReals) {
+			return Conway.ordinalMultInfiniteFinite(this, i2);
+		}
+		if (!this.isAboveReals) {
+			const { infinitePart: inf2 } = other;
 			// i1 nonzero: i1 * (inf2 + i2) = inf2 + i1 * i2
 			return Conway.isZero(i1)
 				? Conway.zero
 				: inf2.add(Conway.multReal(i1, i2));
 		}
-		if (inf2.isZero) {
-			// i2 nonzero: (inf1 + i1) * i2 = inf2 * i2 + i1
-			return Conway.isZero(i2) ? Conway.zero : inf1.mult(i2).add(i1);
-		}
-
-		// (inf1 + i1) * (inf2 + i2)
-		// = (inf1 + i1) * inf2 + (inf1 + i1) * i2
-		// = (inf1 * inf2) + (inf1 * i2) + i1
-		const infProd: [Real | Conway, Real][] = [];
-		for (const [p2, c2] of inf2) {
-			for (const [p1, c1] of inf1) {
-				const p = Conway.ordinalAdd(p1, p2);
-				const found = infProd.find(([p0]) => Conway.eq(p0, p));
-				if (found) {
-					found[1] = Conway.addReal(found[1], Conway.multReal(c1, c2));
-				} else {
-					infProd.push([p, Conway.multReal(c1, c2)]);
-				}
+		const p0 = this.leadingPower ?? Conway.zero;
+		let tot = Conway.zero;
+		for (const [p, c] of other) {
+			if (Conway.isZero(p)) {
+				tot = tot.ordinalAdd(Conway.ordinalMultInfiniteFinite(this, c));
+				continue;
 			}
+			tot = tot.ordinalAdd(Conway.mono(c, Conway.ordinalAdd(p0, p)));
 		}
-
-		const ip = new Conway(infProd);
-		return ip.ordinalAdd(Conway.mult(inf1, i2)).ordinalAdd(i1);
+		return tot;
 	}
 
 	/**
@@ -706,6 +724,50 @@ export class Conway {
 			r = r1;
 		}
 		return [q, r];
+	}
+
+	public static finiteOrdinalDiv(value: Real, other: Real) {
+		if (typeof value === "bigint" && typeof other === "bigint") {
+			return value / other;
+		}
+		return Math.floor(Number(value) / Number(other));
+	}
+	/**
+	 * Given this number is an ordinal and another ordinal number,
+	 * find `[q, r]` such that `r < value` and `q*value + r = this`
+	 * number to be eliminated.
+	 * @param value The divisor
+	 * @returns The quotient and remainder as a tuple
+	 */
+	public ordinalDivRem(value: Conway | Real): [Conway | Real, Conway | Real] {
+		if (Conway.isZero(value)) {
+			throw new RangeError("division by zero");
+		}
+
+		const rv = value instanceof Conway ? value.realValue : value;
+		if (rv !== null) {
+			const q = Math.floor(Number(this.leadingCoeff) / Number(rv));
+			const r = Conway.ordinalRightSub(Conway.ordinalMult(value, q), this);
+			return [q, r];
+		}
+
+		const v = Conway.ensure(value);
+		let quotient: Conway | Real = Conway.zero;
+		let remainder: Conway | Real = this;
+		for (const [p1, c1] of this) {
+			const [p0, c0] = v.#terms[0];
+			const de = Conway.ordinalRightSub(p0, p1);
+			const cr = Conway.finiteOrdinalDiv(c0, c1);
+			if (!cr) {
+				continue;
+			}
+
+			const q = Conway.mono(cr, de);
+			quotient = quotient.add(q);
+			remainder = remainder.sub(q.ordinalMult(value));
+		}
+
+		return [quotient, remainder];
 	}
 
 	// #endregion
