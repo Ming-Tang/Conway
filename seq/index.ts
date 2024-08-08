@@ -147,7 +147,7 @@ export class Cycle<T> implements Seq<T> {
 		if (isZero(n)) {
 			this.length = zero;
 		} else if (n.isAboveReals) {
-			this.length = seq.length.mult(this.multiplier);
+			this.length = seq.length.ordinalMult(this.multiplier);
 		} else {
 			this.length = this.multiplier;
 		}
