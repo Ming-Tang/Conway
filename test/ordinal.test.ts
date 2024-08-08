@@ -8,10 +8,10 @@ import {
 	ordinalDivRem,
 } from "../op/ordinal";
 import { isMono, mono1, one, unit, zero } from "../op";
-import { eq, ge, gt, isPositive, isZero, le } from "../op/comparison";
+import { isPositive, isZero, le } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
-fc.configureGlobal({ numRuns: 20000, verbose: false });
+fc.configureGlobal({ numRuns: 200000, verbose: false });
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
@@ -384,8 +384,13 @@ describe("ordinals", () => {
 		const propDivRem = (n: Real | Conway, d: Real | Conway) => {
 			fc.pre(!isZero(d));
 			const [q, r] = ordinalDivRem(n, d);
+			//console.log(`(${n}) / (${d}) = ${q} rem ${r}`);
 			checkDivRem(n, d, q, r);
 		};
+
+		it("constant: w.2 / (w + 1)", () => {
+			propDivRem(unit.mult(2n), unit.add(1n));
+		});
 
 		it("divide by 1", () => {
 			fc.assert(

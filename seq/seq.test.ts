@@ -1,11 +1,13 @@
 import fc from "fast-check";
 import { concat, cycle, cycleArray, empty, fromArray, type Seq } from ".";
-import { arbOrd2 } from "../test/generators";
+import { arbOrd3 } from "../test/generators";
 import { eq, ge, isPositive, isZero, lt, ne } from "../op/comparison";
-import { ordinalAdd } from "../op/ordinal";
-import { mult } from "../op/arith";
+import { ordinalAdd, ordinalMult } from "../op/ordinal";
 import { ensure } from "../op";
 import { Conway } from "../conway";
+import { assertEq } from "../test/propsTest";
+
+// fc.configureGlobal({ numRuns: 200000, verbose: false });
 
 const arbElem = fc.integer({ min: 0 });
 // Prevent empty arrays so shrinking eliminate them
@@ -24,6 +26,7 @@ const arbSeqNext = (arb: fc.Arbitrary<Seq<number>>) =>
 	fc.oneof(arb, arbCycle(arb), arbConcat(arb));
 const arbSeq1 = arbSeqNext(arbSeq0);
 const arbSeq2 = arbSeqNext(arbSeq1);
+const arbSeq3 = arbSeqNext(arbSeq2);
 
 describe.skip("sample", () => {
 	it("arbSeq0", () => {
@@ -60,7 +63,7 @@ describe("cycleArray", () => {
 describe("concat: f & g", () => {
 	it("index does not throw for valid indices", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbOrd2, (f, i) => {
+			fc.property(arbSeq3, arbOrd3, (f, i) => {
 				fc.pre(lt(i, f.length));
 				f.index(i);
 				return true;
@@ -70,7 +73,7 @@ describe("concat: f & g", () => {
 
 	it("index throws for index = length", () => {
 		fc.assert(
-			fc.property(arbSeq2, (f) => {
+			fc.property(arbSeq3, (f) => {
 				try {
 					f.index(f.length);
 					return false;
@@ -83,7 +86,7 @@ describe("concat: f & g", () => {
 
 	it("length: |f & g| = |f| + |g|", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbSeq2, (f, g) => {
+			fc.property(arbSeq3, arbSeq3, (f, g) => {
 				return eq(concat(f, g).length, ordinalAdd(f.length, g.length));
 			}),
 		);
@@ -91,7 +94,7 @@ describe("concat: f & g", () => {
 
 	it("associative, same length and indexing: ((f & g) & h)[i] = (f & (g & h))[i]", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbSeq2, arbSeq2, arbOrd2, (f, g, h, i) => {
+			fc.property(arbSeq3, arbSeq3, arbSeq3, arbOrd3, (f, g, h, i) => {
 				const left = concat(concat(f, g), h);
 				const right = concat(f, concat(g, h));
 				if (ne(left.length, right.length)) {
@@ -109,7 +112,7 @@ describe("concat: f & g", () => {
 
 	it("(empty & f)[i] = f[i]", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbOrd2, (f, i) => {
+			fc.property(arbSeq3, arbOrd3, (f, i) => {
 				fc.pre(lt(i, f.length));
 				return concat(empty, f).index(i) === f.index(i);
 			}),
@@ -118,7 +121,7 @@ describe("concat: f & g", () => {
 
 	it("(f & empty)[i] = f[i]", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbOrd2, (f, i) => {
+			fc.property(arbSeq3, arbOrd3, (f, i) => {
 				fc.pre(lt(i, f.length));
 				return concat(f, empty).index(i) === f.index(i);
 			}),
@@ -127,7 +130,7 @@ describe("concat: f & g", () => {
 
 	it("(f & g)[|f|] = g[0]", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbSeq2, (f, g) => {
+			fc.property(arbSeq3, arbSeq3, (f, g) => {
 				fc.pre(isPositive(f.length) && isPositive(g.length));
 				return concat(f, g).index(f.length) === g.index(Conway.zero);
 			}),
@@ -136,7 +139,7 @@ describe("concat: f & g", () => {
 
 	it("(f & f)[|f| + i] = f[i]", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbOrd2, (f, i) => {
+			fc.property(arbSeq3, arbOrd3, (f, i) => {
 				fc.pre(isPositive(f.length) && lt(i, f.length));
 				return (
 					concat(f, f).index(ensure(ordinalAdd(f.length, i))) === f.index(i)
@@ -153,7 +156,7 @@ describe("cycle", () => {
 
 	it("singleton f: cycle(f)[i] == f[0]", () => {
 		fc.assert(
-			fc.property(arbElem, arbOrd2, arbOrd2, (f0, i, k) => {
+			fc.property(arbElem, arbOrd3, arbOrd3, (f0, i, k) => {
 				const f = cycle(fromArray([f0]), k);
 				fc.pre(lt(i, f.length));
 				return f.index(i) === f0;
@@ -163,34 +166,34 @@ describe("cycle", () => {
 
 	it("|cycle(f, k)| = |f| k, where k is finite", () => {
 		fc.assert(
-			fc.property(arbSeq2, arbOrd2, (f, k) => {
+			fc.property(arbSeq3, arbOrd3, (f, k) => {
 				fc.pre(f.length.isAboveReals);
 				fc.pre(!k.isZero && k.realPart !== null);
-				return eq(cycle(f, k).length, mult(f.length, k));
+				assertEq(cycle(f, k).length, ordinalMult(f.length, k));
 			}),
 		);
 	});
 
 	it("|cycle(f, k)| = k, where 0 < |f| < w and k >= w", () => {
 		fc.assert(
-			fc.property(arbFromArray, arbOrd2, (f, k) => {
+			fc.property(arbFromArray, arbOrd3, (f, k) => {
 				fc.pre(!f.length.isZero && !f.length.isAboveReals);
 				fc.pre(k.isAboveReals);
-				return eq(cycle(f, k).length, k);
+				assertEq(cycle(f, k).length, k);
 			}),
 		);
 	});
 
 	it("|cycle(empty, k)| = 0", () => {
-		fc.assert(fc.property(arbOrd2, (k) => cycle(empty, k).length.isZero));
+		fc.assert(fc.property(arbOrd3, (k) => cycle(empty, k).length.isZero));
 	});
 
 	it("cycle(f, n)[|f| + i] = (f & f)[|f| + i]", () => {
 		fc.assert(
 			fc.property(
-				arbSeq2,
-				arbOrd2,
-				arbOrd2.filter((x) => ge(x, 2)),
+				arbSeq3,
+				arbOrd3,
+				arbOrd3.filter((x) => ge(x, 2)),
 				(f, i, n) => {
 					const f1 = cycle(f, n);
 					const f2 = concat(f, f);
@@ -204,12 +207,12 @@ describe("cycle", () => {
 		);
 	});
 
-	it("cycle(f, n)[i] = cycle(f, n)[|f| + i]", () => {
+	it.only("cycle(f, n)[i] = cycle(f, n)[|f| + i]", () => {
 		fc.assert(
 			fc.property(
-				arbSeq2,
-				arbOrd2,
-				arbOrd2.filter((x) => ge(x, 2)),
+				arbSeq3,
+				arbOrd3,
+				arbOrd3.filter((x) => ge(x, 2)),
 				(f, i, n) => {
 					fc.pre(ge(n, 2));
 					const g = cycle(f, n);

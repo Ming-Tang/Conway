@@ -20,6 +20,8 @@ import {
 	arbFinite,
 } from "./generators";
 
+// fc.configureGlobal({ numRuns: 200000, verbose: false });
+
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);
 	fc.pre(es.length >= 2);
