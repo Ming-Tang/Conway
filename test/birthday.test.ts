@@ -1,51 +1,44 @@
 import fc from "fast-check";
-import { Conway } from "../conway";
 import { arbFinite, arbOrd3, arbConway3, arbFiniteBigint } from "./generators";
+import { birthday, ensure, mono, mono1, zero } from "../op";
+import { eq, ge, gt, isZero } from "../op/comparison";
+import { isOrdinal, ordinalAdd } from "../op/ordinal";
+import { add } from "../op/arith";
 
 describe("birthday", () => {
 	describe("birthday of real numbers", () => {
 		it("bigint", () => {
-			expect(Conway.birthday(0)).toBe(0);
-			expect(Conway.birthday(0)).toBe(0);
-			expect(Conway.birthday(1)).toBe(1);
-			expect(Conway.birthday(-1)).toBe(1);
-			expect(Conway.birthday(2)).toBe(2);
-			expect(Conway.birthday(-2)).toBe(2);
-			expect(Conway.birthday(123)).toBe(123);
+			expect(birthday(0)).toBe(0);
+			expect(birthday(0)).toBe(0);
+			expect(birthday(1)).toBe(1);
+			expect(birthday(-1)).toBe(1);
+			expect(birthday(2)).toBe(2);
+			expect(birthday(-2)).toBe(2);
+			expect(birthday(123)).toBe(123);
 		});
 
 		it("bigint", () => {
-			expect(Conway.birthday(0n)).toBe(0n);
-			expect(Conway.birthday(1n)).toBe(1n);
-			expect(Conway.birthday(-1n)).toBe(1n);
-			expect(Conway.birthday(2n)).toBe(2n);
-			expect(Conway.birthday(-2n)).toBe(2n);
-			expect(Conway.birthday(123n)).toBe(123n);
+			expect(birthday(0n)).toBe(0n);
+			expect(birthday(1n)).toBe(1n);
+			expect(birthday(-1n)).toBe(1n);
+			expect(birthday(2n)).toBe(2n);
+			expect(birthday(-2n)).toBe(2n);
+			expect(birthday(123n)).toBe(123n);
 		});
 
 		it("fractions", () => {
-			expect(Conway.birthday(0.5)).toBe(1);
-			expect(Conway.birthday(-0.5)).toBe(1);
-			expect(Conway.birthday(0.25)).toBe(2);
-			expect(Conway.birthday(0.75)).toBe(2);
+			expect(birthday(0.5)).toBe(1);
+			expect(birthday(-0.5)).toBe(1);
+			expect(birthday(0.25)).toBe(2);
+			expect(birthday(0.75)).toBe(2);
 		});
 
 		it("non-negative", () => {
-			fc.assert(
-				fc.property(
-					arbFinite,
-					(x) => !Conway.ensure(Conway.birthday(x)).isNegative,
-				),
-			);
+			fc.assert(fc.property(arbFinite, (x) => !ensure(birthday(x)).isNegative));
 		});
 
 		it("negation symmetry", () => {
-			fc.assert(
-				fc.property(
-					arbFinite,
-					(x) => Conway.birthday(x) === Conway.birthday(-x),
-				),
-			);
+			fc.assert(fc.property(arbFinite, (x) => birthday(x) === birthday(-x)));
 		});
 
 		it("halfing fraction", () => {
@@ -58,7 +51,7 @@ describe("birthday", () => {
 						noNaN: true,
 						noDefaultInfinity: true,
 					}),
-					(x) => Conway.birthday(x / 2) === Conway.add(1, Conway.birthday(x)),
+					(x) => birthday(x / 2) === add(1, birthday(x)),
 				),
 			);
 		});
@@ -76,8 +69,7 @@ describe("birthday", () => {
 						noDefaultInfinity: true,
 					}),
 					(s, i, f) =>
-						Conway.birthday(s * (i + f)) ===
-						Conway.add(Conway.birthday(s * i), Conway.birthday(s * f)),
+						birthday(s * (i + f)) === add(birthday(s * i), birthday(s * f)),
 				),
 			);
 		});
@@ -91,9 +83,9 @@ describe("birthday", () => {
 					fc.integer({ min: 1, max: 100 }),
 					(a, b) => {
 						fc.pre(b > a);
-						const pa = Conway.mono(1, -a);
-						const pb = Conway.mono(1, -b);
-						return Conway.eq(pb.birthday(), pa.add(pb).birthday());
+						const pa = mono1(-a);
+						const pb = mono1(-b);
+						return eq(pb.birthday(), pa.add(pb).birthday());
 					},
 				),
 				{ numRuns: 300 },
@@ -106,11 +98,11 @@ describe("birthday", () => {
 					fc.integer({ min: 1, max: 100 }),
 					fc.integer({ min: 1, max: 100 }),
 					(a, b) => {
-						const pa = Conway.mono(1, Conway.mono(1, a).neg());
-						const db = Conway.mono(1, -b);
-						const pb = Conway.mono(1, Conway.mono(1, a).neg().add(-b));
-						return Conway.eq(
-							Conway.ordinalAdd(pa.birthday(), db.birthday()),
+						const pa = mono1(mono1(a).neg());
+						const db = mono1(-b);
+						const pb = mono1(mono1(a).neg().add(-b));
+						return eq(
+							ordinalAdd(pa.birthday(), db.birthday()),
 							pa.add(pb).birthday(),
 						);
 					},
@@ -123,25 +115,21 @@ describe("birthday", () => {
 	describe("birthday of surreal numbers in general", () => {
 		it("ordinal numbers have themselves as birthdays", () => {
 			fc.assert(
-				fc.property(arbOrd3, (x) => Conway.eq(x.birthday(), x)),
+				fc.property(arbOrd3, (x) => eq(x.birthday(), x)),
 				{ numRuns: 300 },
 			);
 		});
 
 		it("birthdays are ordinal numbers", () => {
 			fc.assert(
-				fc.property(arbConway3(arbFiniteBigint), (x) =>
-					Conway.isOrdinal(Conway.birthday(x)),
-				),
+				fc.property(arbConway3(arbFiniteBigint), (x) => isOrdinal(birthday(x))),
 				{ numRuns: 300 },
 			);
 		});
 
 		it("birthday is not less than the number itself: b(x) >= x", () => {
 			fc.assert(
-				fc.property(arbConway3(arbFiniteBigint), (x) =>
-					Conway.ge(Conway.birthday(x), x),
-				),
+				fc.property(arbConway3(arbFiniteBigint), (x) => ge(birthday(x), x)),
 				{ numRuns: 300 },
 			);
 		});
@@ -149,7 +137,7 @@ describe("birthday", () => {
 		it("static method is equivalent to instance method", () => {
 			fc.assert(
 				fc.property(arbConway3(arbFiniteBigint), (x) =>
-					Conway.eq(Conway.birthday(x), x.birthday()),
+					eq(birthday(x), x.birthday()),
 				),
 				{ numRuns: 300 },
 			);
@@ -160,12 +148,9 @@ describe("birthday", () => {
 				fc.property(
 					arbConway3(arbFiniteBigint),
 					({ infinitePart: xp, realPart: x0, infinitesimalPart: xm }) =>
-						Conway.eq(
-							Conway.birthday(Conway.add(Conway.add(xp, x0), xm)),
-							Conway.ordinalAdd(
-								Conway.ordinalAdd(Conway.birthday(xp), Conway.birthday(x0)),
-								Conway.birthday(xm),
-							),
+						eq(
+							birthday(add(add(xp, x0), xm)),
+							ordinalAdd(ordinalAdd(birthday(xp), birthday(x0)), birthday(xm)),
 						),
 				),
 				{ numRuns: 300 },
@@ -178,16 +163,12 @@ describe("birthday", () => {
 					arbConway3(arbFiniteBigint),
 					arbConway3(arbFiniteBigint),
 					(a, b) => {
-						fc.pre(
-							a.length > 0 &&
-								b.length > 0 &&
-								Conway.isZero(a.infinitesimalPart),
-						);
+						fc.pre(a.length > 0 && b.length > 0 && isZero(a.infinitesimalPart));
 						const lp = b.leadingPower;
-						fc.pre(lp === null || Conway.gt(a.getByIndex(a.length - 1)[0], lp));
-						return Conway.eq(
+						fc.pre(lp === null || gt(a.getByIndex(a.length - 1)[0], lp));
+						return eq(
 							a.add(b).birthday(),
-							Conway.ordinalAdd(a.birthday(), b.birthday()),
+							ordinalAdd(a.birthday(), b.birthday()),
 						);
 					},
 				),
@@ -198,10 +179,10 @@ describe("birthday", () => {
 		it("birthday is increasing with respect to number of terms", () => {
 			fc.assert(
 				fc.property(arbConway3(arbFiniteBigint), (x) => {
-					let partialSum = Conway.zero;
+					let partialSum = zero;
 					const partialBirthdays = [];
 					for (const [p, c] of x) {
-						partialSum = partialSum.add(Conway.mono(c, p));
+						partialSum = partialSum.add(mono(c, p));
 						partialBirthdays.push(partialSum.birthday());
 					}
 
@@ -209,7 +190,7 @@ describe("birthday", () => {
 						return true;
 					}
 					for (let i = 0; i < partialBirthdays.length - 1; i++) {
-						if (Conway.gt(partialBirthdays[i], partialBirthdays[i + 1])) {
+						if (gt(partialBirthdays[i], partialBirthdays[i + 1])) {
 							return false;
 						}
 					}

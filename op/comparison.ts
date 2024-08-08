@@ -7,4 +7,11 @@ export const le = Conway.le;
 export const gt = Conway.gt;
 export const ge = Conway.ge;
 
-export const { isZero, isOne, isPositive, isNegative } = Conway;
+export const {
+	isZero,
+	isOne,
+	isPositive,
+	isNegative,
+	isAboveReals,
+	isBelowNegativeReals,
+} = Conway;
