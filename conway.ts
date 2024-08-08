@@ -620,15 +620,28 @@ export class Conway {
 			return other1;
 		}
 
-		const [p1, c1] = this.#terms[0];
-		const [p2, c2] = other1.#terms[0];
-		if (Conway.eq(p1, p2)) {
+		let left: Conway = this;
+		let right = other1;
+		while (left.length > 0 && right.length > 0) {
+			const [p2, c2] = right.#terms[0];
+			const [p1, c1] = left.#terms[0];
+			if (Conway.ne(p1, p2)) {
+				break;
+			}
+
+			const diffCoeff = Conway.addReal(c2, -c1);
+			if (Conway.isZero(diffCoeff)) {
+				left = new Conway(left.#terms.slice(1));
+				right = new Conway(right.#terms.slice(1));
+				continue;
+			}
+
 			return new Conway([
 				[p1, Conway.addReal(c2, -c1)],
-				...other1.#terms.slice(1),
+				...right.#terms.slice(1),
 			]);
 		}
-		return other1;
+		return right;
 	}
 
 	public mult(other: Real | Conway): Conway {
@@ -733,40 +746,83 @@ export class Conway {
 		return Math.floor(Number(value) / Number(other));
 	}
 	/**
-	 * Given this number is an ordinal and another ordinal number,
-	 * find `[q, r]` such that `r < value` and `q*value + r = this`
-	 * number to be eliminated.
+	 * Given this number (must be ordinal) `N` and another ordinal number `D`,
+	 * find `q, r` such that `r < d` and `D * q + r = N`.
 	 * @param value The divisor
 	 * @returns The quotient and remainder as a tuple
 	 */
-	public ordinalDivRem(value: Conway | Real): [Conway | Real, Conway | Real] {
-		if (Conway.isZero(value)) {
+	public ordinalDivRem(div: Conway | Real): [Conway | Real, Conway | Real] {
+		if (Conway.isZero(div)) {
 			throw new RangeError("division by zero");
 		}
 
-		const rv = value instanceof Conway ? value.realValue : value;
+		if (this.isZero) {
+			return [this, Conway.zero];
+		}
+
+		if (Conway.isOne(div)) {
+			return [this, Conway.zero];
+		}
+
+		if (Conway.eq(this, div)) {
+			return [Conway.one, Conway.zero];
+		}
+
+		// if (Conway.gt(div, this)) {
+		// 	console.log('here');
+		// 	return [Conway.zero, this];
+		// }
+
+		const rv = div instanceof Conway ? div.realValue : div;
 		if (rv !== null) {
-			const q = Math.floor(Number(this.leadingCoeff) / Number(rv));
-			const r = Conway.ordinalRightSub(Conway.ordinalMult(value, q), this);
+			const q = Conway.finiteOrdinalDiv(this.leadingCoeff, rv);
+			const r = Conway.ordinalRightSub(Conway.ordinalMult(div, q), this);
+			// console.log('rv', {N: this, backMult: Conway.ordinalMult(div, q), d: rv, q, r});
 			return [q, r];
 		}
 
-		const v = Conway.ensure(value);
+		// div is infinite below
+
+		const v = Conway.ensure(div);
 		let quotient: Conway | Real = Conway.zero;
 		let remainder: Conway | Real = this;
-		for (const [p1, c1] of this) {
-			const [p0, c0] = v.#terms[0];
-			const de = Conway.ordinalRightSub(p0, p1);
-			const cr = Conway.finiteOrdinalDiv(c0, c1);
+		// D * ((w^p0).q0 + qRest) + r = (w^P0).C0 + N_Rest
+		// ((w^dp0) D0 + ...) * ((w^p0).q0 + ...) + r = (w^P0) C0 + ...
+		//  --> (w^dp0 D0) * (w^p0 q0) = (w^P0 C0)
+		//      Case 1 (dp0 = P0): w^P0 (D0 q0) = w^P0 C0 --> use division
+		//      Case 2           : w^P0 w^p0 q0 = w^P0 C0 --> q0 = c0, p0 = subtraction
+		// (p0, q0) = divMono(dp0, D0, p0, q0)
+		// D * qRest + (r + ...) = N_Rest
+		// console.log('----');
+		for (const [pUpper, cUpper] of this) {
+			// console.log(`(${this}) / (${v}) = (${quotient}) R (${remainder})`);
+			const [pd0, cd0] = v.#terms[0];
+			// console.log(' --> N0=', Conway.mono(cUpper, pUpper), 'D0=', Conway.mono(cd0, pd0));
+			if (Conway.lt(pUpper, pd0)) {
+				break;
+			}
+
+			const de = Conway.ordinalRightSub(pd0, pUpper);
+			const cr = Conway.isZero(de)
+				? Conway.finiteOrdinalDiv(cUpper, cd0)
+				: cUpper;
 			if (!cr) {
+				// console.log(' --> cr == 0');
 				continue;
 			}
 
-			const q = Conway.mono(cr, de);
-			quotient = quotient.add(q);
-			remainder = remainder.sub(q.ordinalMult(value));
+			const dq = Conway.mono(cr, de);
+			quotient = Conway.ordinalAdd(quotient, dq);
+			const toSub = Conway.ordinalMult(div, dq);
+			// console.log(' --> dq=', dq, 'div=', div, 'toSub=', toSub);
+			if (Conway.lt(remainder, toSub)) {
+				break;
+			}
+			remainder = Conway.ordinalRightSub(toSub, remainder);
+			// console.log( ' --> rem1=', remainder);
 		}
 
+		// console.log(`END (${this}) / (${v}) = (${quotient}) R (${remainder})`);
 		return [quotient, remainder];
 	}
 
@@ -857,7 +913,7 @@ export class Conway {
 	): Real | Conway {
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
 			if (right < left) {
-				throw new RangeError(`No solution: ${left} >= ${right}`);
+				throw new RangeError(`No solution: ${left} + ? = ${right}`);
 			}
 			if (typeof left === "bigint" && typeof right === "bigint") {
 				return right - left;
@@ -867,6 +923,13 @@ export class Conway {
 
 		const l1 = Conway.ensure(left);
 		return l1.ordinalRightSub(right);
+	}
+
+	public static ordinalDivRem(
+		left: Real | Conway,
+		right: Real | Conway,
+	): [Real | Conway, Real | Conway] {
+		return Conway.ensure(left).ordinalDivRem(right);
 	}
 
 	public static mult(left: Real | Conway, right: Real | Conway): Real | Conway {
@@ -950,7 +1013,6 @@ export class Conway {
 				const dp = Conway.gt(lastP, p1)
 					? Conway.zero
 					: Conway.ordinalRightSub(lastP, p1);
-				// console.log(lastP.toString(), '-->', p1.toString(), '=', dp.toString(), 'bc=', bc.toString(), 'd=', Conway.unit.mult(dp).add(bc).toString());
 				lastP = p1;
 				return Conway.unit.mult(dp).add(Conway.sub(bc, 1n));
 			}

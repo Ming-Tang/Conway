@@ -1,9 +1,14 @@
 import fc from "fast-check";
 import { Conway, type Real } from "../conway";
-import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
-import { isOrdinal, ordinalAdd, ordinalMult } from "../op/ordinal";
-import { one, unit, zero } from "../op";
-import { isPositive } from "../op/comparison";
+import { arbConway3, arbFiniteBigintOrd, arbOrd3 } from "./generators";
+import {
+	isOrdinal,
+	ordinalAdd,
+	ordinalMult,
+	ordinalDivRem,
+} from "../op/ordinal";
+import { isMono, mono1, one, unit, zero } from "../op";
+import { eq, ge, gt, isPositive, isZero, le } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
 fc.configureGlobal({ numRuns: 20000, verbose: false });
@@ -97,10 +102,17 @@ describe("ordinals", () => {
 			).toBe(true);
 		});
 
+		it("constant (w + finite)", () => {
+			const lhs = Conway.unit.add(3n);
+			const large = Conway.unit.add(5n);
+			const d = lhs.ordinalRightSub(large);
+			assertEq(d, 2n);
+		});
+
 		it("ordinalRightSub equal value", () => {
 			fc.assert(
 				fc.property(
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
+					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					(a) => a.ordinalRightSub(a).isZero,
 				),
 			);
@@ -109,8 +121,8 @@ describe("ordinals", () => {
 		it("ordinalRightSub result is ordinal", () => {
 			fc.assert(
 				fc.property(
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
+					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
+					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					(a, b) => {
 						fc.pre(Conway.ge(b, a));
 						return a.ordinalRightSub(b).isOrdinal;
@@ -122,7 +134,7 @@ describe("ordinals", () => {
 		it("ordinalRightSub result can be added back (with self)", () => {
 			fc.assert(
 				fc.property(
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
+					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					(a) => {
 						const c = a.ordinalRightSub(a);
 						return a.ordinalAdd(c).eq(a);
@@ -131,11 +143,27 @@ describe("ordinals", () => {
 			);
 		});
 
+		it("ordinalRightSub result can be added back (ordinal plus finite)", () => {
+			const arbOrdPlusFinite = fc
+				.tuple(
+					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
+					arbFiniteBigintOrd,
+				)
+				.map(([x, v]) => x.add(v));
+			fc.assert(
+				fc.property(arbOrdPlusFinite, arbOrdPlusFinite, (a, b) => {
+					fc.pre(Conway.gt(b, a));
+					const c = a.ordinalRightSub(b);
+					return a.ordinalAdd(c).eq(b);
+				}),
+			);
+		});
+
 		it("ordinalRightSub result can be added back", () => {
 			fc.assert(
 				fc.property(
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
-					arbConway3(arbFiniteBigint).filter((x) => x.isOrdinal),
+					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
+					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					(a, b) => {
 						fc.pre(Conway.gt(b, a));
 						const c = a.ordinalRightSub(b);
@@ -334,6 +362,132 @@ describe("ordinals", () => {
 					return assertEq(ordinalMult(a, Conway.real(n)), sum);
 				}),
 			);
+		});
+	});
+
+	describe("ordinalDivRem", () => {
+		const checkDivRem = (
+			n: Real | Conway,
+			d: Real | Conway,
+			q: Real | Conway,
+			r: Real | Conway,
+		) => {
+			if (!(Conway.isAboveReals(n) && !Conway.isAboveReals(d)) && le(d, r)) {
+				throw new Error(
+					`remainder is too large. n=${n}, q=${q}, d=${d}, r=${r}`,
+				);
+			}
+			const backAdd = ordinalAdd(ordinalMult(d, q), r);
+			assertEq(n, backAdd);
+		};
+
+		const propDivRem = (n: Real | Conway, d: Real | Conway) => {
+			fc.pre(!isZero(d));
+			const [q, r] = ordinalDivRem(n, d);
+			checkDivRem(n, d, q, r);
+		};
+
+		it("divide by 1", () => {
+			fc.assert(
+				fc.property(arbOrd3, (a) => {
+					const [q, r] = ordinalDivRem(a, Conway.one);
+					assertEq(r, Conway.zero);
+					return assertEq(q, a);
+				}),
+			);
+		});
+
+		it("multiple of w", () => {
+			fc.assert(
+				fc.property(
+					arbFiniteBigintOrd,
+					arbFiniteBigintOrd.filter(isPositive),
+					(n, d) => {
+						const [q1, r1] = ordinalDivRem(n, d);
+						const [q2, r2] = ordinalDivRem(unit.mult(n), unit.mult(d));
+						assertEq(q1, q2);
+						assertEq(unit.mult(r1), r2);
+					},
+				),
+			);
+		});
+
+		describe("divide by itself", () => {
+			it("finite", () => {
+				fc.property(
+					arbOrd3.filter((x) => !x.isAboveReals),
+					(a) => {
+						const [q, r] = ordinalDivRem(a, a);
+						assertEq(r, Conway.zero);
+						return assertEq(q, Conway.one);
+					},
+				);
+			});
+
+			it("monomial", () => {
+				fc.property(arbOrd3.filter(isMono), (a) => {
+					const [q, r] = ordinalDivRem(a, a);
+					assertEq(r, Conway.zero);
+					return assertEq(q, Conway.one);
+				});
+			});
+
+			it("general", () => {
+				fc.property(arbOrd3.filter(isPositive), (a) => {
+					const [q, r] = ordinalDivRem(a, a);
+					assertEq(r, Conway.zero);
+					return assertEq(q, Conway.one);
+				});
+			});
+		});
+
+		it("(w^k + 1) / w^k", () => {
+			fc.assert(
+				fc.property(arbFiniteBigintOrd.filter(isPositive), (k) =>
+					propDivRem(mono1(k).add(1n), mono1(k)),
+				),
+			);
+		});
+
+		it("divide finite by finite", () => {
+			fc.assert(
+				fc.property(
+					arbFiniteBigintOrd,
+					arbFiniteBigintOrd.filter(isPositive),
+					(n, d) => {
+						fc.pre(!isZero(d) && le(d, n));
+						const [q, r] = ordinalDivRem(n, d);
+						const q0 = n / d;
+						const r0 = n - q0 * d;
+						assertEq(q0, q);
+						assertEq(r0, r);
+					},
+				),
+			);
+		});
+
+		it("divide infinite by finite", () => {
+			fc.assert(fc.property(arbOrd3, arbFiniteBigintOrd, propDivRem));
+		});
+
+		describe("divide and add back: n/d = q rem r --> n = d*q + r", () => {
+			it("monomial by monomial", () => {
+				fc.assert(
+					fc.property(
+						arbOrd3.filter(isMono),
+						arbOrd3.filter(isMono),
+						propDivRem,
+					),
+				);
+			});
+
+			it("infinite by monomial", () => {
+				fc.assert(fc.property(arbOrd3, arbOrd3.filter(isMono), propDivRem));
+			});
+
+			it("general", () => {
+				fc.assert(fc.property(arbOrd3, arbOrd3, propDivRem));
+			});
 		});
 	});
 });

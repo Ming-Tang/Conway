@@ -115,6 +115,12 @@ describe("Conway", () => {
 		});
 
 		it("gt", () => {
+			expect(Conway.gt(2, 0)).toBe(true);
+			expect(Conway.gt(2n, 0)).toBe(true);
+			expect(Conway.gt(2, 0n)).toBe(true);
+			expect(Conway.gt(0, 2)).toBe(false);
+			expect(Conway.gt(2, 1)).toBe(true);
+			expect(Conway.gt(1, 2)).toBe(false);
 			expect(Conway.gt(Conway.zero, Conway.zero)).toBe(false);
 			expect(Conway.gt(Conway.one, Conway.zero)).toBe(true);
 			expect(Conway.gt(Conway.zero, Conway.one)).toBe(false);
