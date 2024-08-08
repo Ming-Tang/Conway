@@ -1,5 +1,7 @@
-import { Conway } from "../conway";
-import { ensure } from "../op";
+import type { Conway } from "../conway";
+import { ensure, one, unit, zero } from "../op";
+import { ge, isAboveReals, isZero } from "../op/comparison";
+import { ordinalDivRem } from "../op/ordinal";
 
 export type Ord = Conway;
 
@@ -35,20 +37,23 @@ const ensureFinite = (x: Ord): number => {
 
 export const assertLength = (index: Ord, length: Ord) => {
 	if (!index.isOrdinal) {
-		throw new RangeError("index is not an ordinal number");
+		throw new RangeError(`index is not an ordinal number: ${index}`);
 	}
-	if (Conway.ge(index, length)) {
-		throw new RangeError("index out of bounds");
+	if (ge(index, length)) {
+		throw new RangeError(
+			`index out of bounds, index=${index}, length=${length}`,
+		);
 	}
 };
 
 const minus = (higher: Ord, lower: Ord) => lower.ordinalRightSub(higher);
 
 export class Empty<T = unknown> implements Seq<T> {
+	readonly _type = "Empty";
 	static instance: Empty<unknown> = new Empty();
 	readonly length: Ord;
 	constructor() {
-		this.length = Conway.zero;
+		this.length = zero;
 	}
 
 	index(_: Ord): T {
@@ -57,6 +62,7 @@ export class Empty<T = unknown> implements Seq<T> {
 }
 
 export class Constant<T = unknown> implements Seq<T> {
+	readonly _type = "Constant";
 	constructor(
 		readonly constant: T,
 		readonly length: Ord,
@@ -69,6 +75,7 @@ export class Constant<T = unknown> implements Seq<T> {
 }
 
 export class Identity implements Seq<Ord> {
+	readonly _type = "Identity";
 	constructor(readonly length: Ord) {}
 
 	index(i: Ord): Ord {
@@ -78,6 +85,7 @@ export class Identity implements Seq<Ord> {
 }
 
 export class FromArray<T> implements Seq<T> {
+	readonly _type = "FromArray";
 	readonly length: Ord;
 	constructor(private readonly array: T[]) {
 		this.length = ordFromNumber(array.length);
@@ -89,8 +97,15 @@ export class FromArray<T> implements Seq<T> {
 }
 
 export class CycleArray<T> implements Seq<T> {
-	readonly length: Ord = Conway.unit;
-	constructor(private readonly array: T[]) {}
+	readonly _type = "CycleArray";
+	readonly length: Ord;
+	constructor(private readonly array: T[]) {
+		if (array.length === 0) {
+			this.length = zero;
+		} else {
+			this.length = unit;
+		}
+	}
 
 	index(i: Ord) {
 		assertLength(i, this.length);
@@ -99,24 +114,8 @@ export class CycleArray<T> implements Seq<T> {
 	}
 }
 
-export class Cycle<T> implements Seq<T> {
-	readonly length: Ord;
-	constructor(private readonly seq: Seq<T>) {
-		this.length = seq.length.mult(Conway.unit);
-	}
-
-	index(i: Ord) {
-		assertLength(i, this.length);
-		const n = this.seq.length;
-		let d = i;
-		while (Conway.ge(d, n)) {
-			d = minus(d, n);
-		}
-		return this.seq.index(d);
-	}
-}
-
 export class Concat<T> implements Seq<T> {
+	readonly _type = "Concat";
 	readonly length: Ord;
 	constructor(
 		private readonly left: Seq<T>,
@@ -128,11 +127,49 @@ export class Concat<T> implements Seq<T> {
 	index(i: Ord) {
 		assertLength(i, this.length);
 		const fl = this.left.length;
-		if (Conway.ge(i, fl)) {
+		if (ge(i, fl)) {
 			const d = minus(i, fl);
+			// console.log(`(${fl}) + (${d}) = ${i}`);
 			return this.right.index(d);
 		}
 		return this.left.index(i);
+	}
+}
+
+export class Cycle<T> implements Seq<T> {
+	readonly _type = "Cycle";
+	readonly length: Ord;
+	constructor(
+		private readonly seq: Seq<T>,
+		private readonly multiplier = unit,
+	) {
+		const n = seq.length;
+		if (isZero(n)) {
+			this.length = zero;
+		} else if (n.isAboveReals) {
+			this.length = seq.length.mult(this.multiplier);
+		} else {
+			this.length = this.multiplier;
+		}
+	}
+
+	index(i: Ord) {
+		assertLength(i, this.length);
+		const [, r0] = ordinalDivRem(i, this.seq.length);
+		const r = ensure(r0);
+		if (ge(r, this.seq.length)) {
+			if (isAboveReals(this.length) && !isAboveReals(this.seq.length)) {
+				// Handling finite * infinite: divide out the infinite part and use finite remainder
+				const r1 = ordinalDivRem(i, unit)[1];
+				const r2 = ordinalDivRem(r1, this.seq.length)[1];
+				return this.seq.index(ensure(r2));
+			}
+			throw new RangeError(
+				`Remainder is too large. |seq| = ${this.seq.length}, mult=${this.multiplier}, len=${this.length}, index=${i}, remainder = ${r}`,
+			);
+		}
+
+		return this.seq.index(ensure(r));
 	}
 }
 
@@ -142,6 +179,6 @@ export const concat = <T>(f: Seq<T>, g: Seq<T>): Seq<T> => new Concat(f, g);
 
 export const cycleArray = <T>(xs: T[]): Seq<T> => new CycleArray(xs);
 
-export const cycle = <T>(f: Seq<T>): Seq<T> => new Cycle(f);
+export const cycle = <T>(f: Seq<T>, n = one): Seq<T> => new Cycle(f, n);
 
 export const empty = Empty.instance;
