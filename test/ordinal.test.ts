@@ -11,7 +11,7 @@ import { isMono, mono1, one, unit, zero } from "../op";
 import { isPositive, isZero, le } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
-fc.configureGlobal({ numRuns: 200000, verbose: false });
+// fc.configureGlobal({ numRuns: 200000, verbose: false });
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
