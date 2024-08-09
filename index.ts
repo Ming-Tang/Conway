@@ -1,4 +1,6 @@
 import { Conway } from "./conway";
+import { birthday, ensure, mono, mono1 } from "./op";
+import { canon } from "./op/ordinal";
 import { concat, cycleArray, fromArray } from "./seq";
 
 const s1 = cycleArray([1, 2, 3]);
@@ -64,3 +66,20 @@ const x3 = new Conway([
 	[Conway.one.neg(), 2],
 ]);
 console.log(`b(${x3}) = ${Conway.birthday(x3)}`);
+
+const ords = [
+	Conway.unit,
+	Conway.unit.mult(2n),
+	Conway.unit.mult(2n).add(mono(4n, Conway.unit)),
+	mono(4n, Conway.unit),
+	mono1(Conway.unit),
+	mono(2n, Conway.unit.add(2n)).add(mono(4n, Conway.unit.add(10n))),
+];
+
+for (const ord of ords) {
+	console.log(`canon(${ord}) = [`);
+	Array(5)
+		.fill(null)
+		.forEach((_, i) => console.log("  ", canon(ord, i)));
+	console.log("]");
+}

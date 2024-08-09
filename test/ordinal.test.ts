@@ -6,9 +6,12 @@ import {
 	ordinalAdd,
 	ordinalMult,
 	ordinalDivRem,
+	isLimit,
+	canon,
+	ordinalRightSub,
 } from "../op/ordinal";
-import { isMono, mono1, one, unit, zero } from "../op";
-import { isPositive, isZero, le } from "../op/comparison";
+import { isMono, mono, mono1, one, unit, zero } from "../op";
+import { eq, isPositive, isZero, le, lt } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
 // fc.configureGlobal({ numRuns: 200000, verbose: false });
@@ -492,6 +495,109 @@ describe("ordinals", () => {
 
 			it("general", () => {
 				fc.assert(fc.property(arbOrd3, arbOrd3, propDivRem));
+			});
+		});
+	});
+
+	describe("canon", () => {
+		describe("constants", () => {
+			assertEq(canon(mono1(3n), 7n), mono(7n, 2n));
+			assertEq(
+				canon(mono(7n, unit.add(2n)), 5),
+				mono(6n, unit.add(2n)).add(mono(5n, unit.add(1n))),
+			);
+		});
+
+		const arbLim3 = arbOrd3.filter(isLimit);
+		const arbN = fc.bigInt({ min: 1n });
+		it("sequence is lower than input", () => {
+			fc.assert(fc.property(arbLim3, arbN, (x, n) => lt(canon(x, n), x)));
+		});
+
+		it("sequence is increasing", () => {
+			fc.assert(
+				fc.property(arbLim3, arbN, (x, n) => lt(canon(x, n), canon(x, n + 1n))),
+			);
+		});
+
+		it("sequence does not reduce number of terms", () => {
+			fc.assert(
+				fc.property(
+					arbLim3,
+					arbN,
+					(x, n) => Conway.ensure(canon(x, n)).length >= x.length,
+				),
+			);
+		});
+
+		it("sequence has same finite difference for w^(p + 1)", () => {
+			fc.assert(
+				fc.property(
+					arbOrd3.map((x) => mono1(x.add(1n))),
+					arbN,
+					arbN,
+					(x, n, m) =>
+						assertEq(
+							ordinalRightSub(canon(x, n), canon(x, n + 1n)),
+							ordinalRightSub(canon(x, m), canon(x, m + 1n)),
+						),
+				),
+			);
+		});
+
+		it("sequence preserves prefix terms for non-monomials", () => {
+			fc.assert(
+				fc.property(
+					arbLim3.filter((x) => x.length > 1),
+					arbN,
+					(x, n) => {
+						// @ts-ignore readonly casting
+						const noTail = new Conway([...x].slice(0, x.length - 1));
+						// @ts-ignore readonly casting
+						const noTail1 = new Conway([...canon(x, n)].slice(0, x.length - 1));
+						assertEq(noTail1, noTail);
+					},
+				),
+			);
+		});
+
+		describe("monomials", () => {
+			it("canon(w^(x + 1), n) = w^x n", () => {
+				fc.assert(
+					fc.property(arbOrd3, arbN, (x, n) =>
+						assertEq(canon(mono1(x.add(1n)), n), mono1(x).mult(n)),
+					),
+				);
+			});
+
+			it("canon(w^xLim, n) = w^canon(xLim, n)", () => {
+				fc.assert(
+					fc.property(arbLim3, arbN, (x, n) =>
+						assertEq(canon(mono1(x), n), mono1(canon(x, n))),
+					),
+				);
+			});
+
+			it("canon(w^(x + 1) (k + 1), n) = w^(x + 1) k + w^x n", () => {
+				fc.assert(
+					fc.property(arbOrd3, arbFiniteBigintOrd, arbN, (x, k, n) =>
+						assertEq(
+							canon(mono(k + 1n, x.add(1n)), n),
+							mono(k, x.add(1n)).ordinalAdd(mono(n, x)),
+						),
+					),
+				);
+			});
+
+			it("canon(w^xLim (k + 1), n) = w^xLim k + w^canon(xLim, n)", () => {
+				fc.assert(
+					fc.property(arbLim3, arbFiniteBigintOrd, arbN, (x, k, n) =>
+						assertEq(
+							canon(mono(k + 1n, x), n),
+							mono(k, x).add(mono1(canon(x, n))),
+						),
+					),
+				);
 			});
 		});
 	});
