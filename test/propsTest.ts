@@ -7,7 +7,7 @@ type BinOp<T> = (a: T, b: T) => T;
 export const assertEq = (a: Real | Conway, b: Real | Conway) => {
 	if (!eq(a, b)) {
 		throw new Error(
-			`not equal: a=[${a}], b=[${b}]\nJSON:\n  a=${JSON.stringify(Conway.ensure(a).toJson(false))},\n  b=${JSON.stringify(Conway.ensure(b).toJson(false))}`,
+			`not equal: a=[${a}], b=[${b}]\nRepr:\n  a=${JSON.stringify(Conway.ensure(a).toJson(false))},\n  b=${JSON.stringify(Conway.ensure(b).toJson(false))}`,
 		);
 	}
 	return true;

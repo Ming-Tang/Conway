@@ -1,7 +1,7 @@
 import type { Conway } from "../conway";
 import { ensure, one, unit, zero } from "../op";
 import { ge, isAboveReals, isZero } from "../op/comparison";
-import { ordinalDivRem } from "../op/ordinal";
+import { ordinalDivRem, ordinalMult } from "../op/ordinal";
 
 export type Ord = Conway;
 
@@ -136,6 +136,29 @@ export class Concat<T> implements Seq<T> {
 	}
 }
 
+const modifiedDivRem = (
+	i: Ord,
+	leftLen: Ord,
+	rightLen: Ord,
+	prodLen: Ord,
+): [Ord, Ord] => {
+	const [q, r0] = ordinalDivRem(i, leftLen);
+	const r = ensure(r0);
+	if (ge(r, leftLen)) {
+		if (isAboveReals(prodLen) && !isAboveReals(leftLen)) {
+			// Handling finite * infinite: divide out the infinite part and use finite remainder
+			const r1 = ordinalDivRem(i, unit)[1];
+			const [q1, r2] = ordinalDivRem(r1, leftLen);
+			return [ensure(q1), ensure(r2)];
+		}
+		throw new RangeError(
+			`Remainder is too large. |left| = ${leftLen}, |right|=${rightLen}, |prod|=${this.length}, index=${i}, remainder = ${r}`,
+		);
+	}
+
+	return [ensure(q), r];
+};
+
 export class Cycle<T> implements Seq<T> {
 	readonly _type = "Cycle";
 	readonly length: Ord;
@@ -144,32 +167,80 @@ export class Cycle<T> implements Seq<T> {
 		private readonly multiplier = unit,
 	) {
 		const n = seq.length;
-		if (isZero(n)) {
+		if (isZero(n) || isZero(this.multiplier)) {
 			this.length = zero;
-		} else if (n.isAboveReals) {
-			this.length = seq.length.ordinalMult(this.multiplier);
 		} else {
-			this.length = this.multiplier;
+			this.length = n.ordinalMult(this.multiplier);
 		}
 	}
 
 	index(i: Ord) {
 		assertLength(i, this.length);
-		const [, r0] = ordinalDivRem(i, this.seq.length);
-		const r = ensure(r0);
-		if (ge(r, this.seq.length)) {
-			if (isAboveReals(this.length) && !isAboveReals(this.seq.length)) {
-				// Handling finite * infinite: divide out the infinite part and use finite remainder
-				const r1 = ordinalDivRem(i, unit)[1];
-				const r2 = ordinalDivRem(r1, this.seq.length)[1];
-				return this.seq.index(ensure(r2));
-			}
-			throw new RangeError(
-				`Remainder is too large. |seq| = ${this.seq.length}, mult=${this.multiplier}, len=${this.length}, index=${i}, remainder = ${r}`,
-			);
-		}
+		const r = modifiedDivRem(
+			i,
+			this.seq.length,
+			this.multiplier,
+			this.length,
+		)[1];
+		return this.seq.index(r);
+		// const [, r0] = ordinalDivRem(i, this.seq.length);
+		// const r = ensure(r0);
+		// if (ge(r, this.seq.length)) {
+		// 	if (isAboveReals(this.length) && !isAboveReals(this.seq.length)) {
+		// 		// Handling finite * infinite: divide out the infinite part and use finite remainder
+		// 		const r1 = ordinalDivRem(i, unit)[1];
+		// 		const r2 = ordinalDivRem(r1, this.seq.length)[1];
+		// 		return this.seq.index(ensure(r2));
+		// 	}
+		// 	throw new RangeError(
+		// 		`Remainder is too large. |seq| = ${this.seq.length}, mult=${this.multiplier}, len=${this.length}, index=${i}, remainder = ${r}`,
+		// 	);
+		// }
+		// return this.seq.index(ensure(r));
+	}
+}
 
-		return this.seq.index(ensure(r));
+export class Product<A, B> implements Seq<[A, B]> {
+	readonly _type = "Product";
+	readonly length: Ord;
+	constructor(
+		private readonly left: Seq<A>,
+		private readonly right: Seq<B>,
+	) {
+		const ll = left.length;
+		const lr = right.length;
+		if (isZero(ll) || isZero(lr)) {
+			this.length = zero;
+		} else {
+			this.length = ll.ordinalMult(lr);
+		}
+	}
+
+	index(i: Ord) {
+		assertLength(i, this.length);
+		const [q, r] = modifiedDivRem(
+			i,
+			this.left.length,
+			this.right.length,
+			this.length,
+		);
+		return [this.left.index(r), this.right.index(q)] as [A, B];
+	}
+}
+
+export class SeqMap<A, B> implements Seq<B> {
+	readonly _type = "SeqMap";
+	constructor(
+		private readonly seq: Seq<A>,
+		private readonly func: (value: A) => B,
+	) {}
+
+	get length() {
+		return this.seq.length;
+	}
+
+	index(i: Ord) {
+		return this.func(this.seq.index(i));
 	}
 }
 
@@ -180,5 +251,13 @@ export const concat = <T>(f: Seq<T>, g: Seq<T>): Seq<T> => new Concat(f, g);
 export const cycleArray = <T>(xs: T[]): Seq<T> => new CycleArray(xs);
 
 export const cycle = <T>(f: Seq<T>, n = one): Seq<T> => new Cycle(f, n);
+
+export const prod = <A, B>(f: Seq<A>, g: Seq<B>): Seq<[A, B]> =>
+	new Product(f, g);
+
+export const map = <A, B>(f: Seq<A>, func: (value: A) => B): Seq<B> =>
+	new SeqMap(f, func);
+
+export const identity = (length: Ord) => new Identity(length);
 
 export const empty = Empty.instance;

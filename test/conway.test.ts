@@ -815,6 +815,7 @@ describe("Conway", () => {
 					fc.pre(r instanceof Conway);
 					expect(Conway.isZero(r.get(lp))).toBe(true);
 				}),
+				{ numRuns: 100 }
 			);
 		});
 
@@ -861,6 +862,7 @@ describe("Conway", () => {
 						expect(Conway.eq(addBack, a)).toBe(true);
 					},
 				),
+				{ numRuns: 200 }
 			);
 		});
 	});
