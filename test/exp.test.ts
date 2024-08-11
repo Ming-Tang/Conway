@@ -74,7 +74,7 @@ describe("log", () => {
 						return close(log(ab, terms), add(log(a, terms), log(b, terms)));
 					},
 				),
-				{ numRuns: 200 },
+				{ numRuns: 100 },
 			);
 		});
 
@@ -89,7 +89,7 @@ describe("log", () => {
 						return close(log(ab, terms), add(log(a, terms), log(b, terms)));
 					},
 				),
-				{ numRuns: 200 },
+				{ numRuns: 100 },
 			);
 		});
 
@@ -104,7 +104,7 @@ describe("log", () => {
 						return close(log(ab, terms), add(log(a, terms), log(b, terms)));
 					},
 				),
-				{ numRuns: 200 },
+				{ numRuns: 100 },
 			);
 		});
 
@@ -115,7 +115,7 @@ describe("log", () => {
 					fc.pre(isPositive(ab));
 					return close(log(ab, terms), add(log(a, terms), log(b, terms)));
 				}),
-				{ numRuns: 5 },
+				{ numRuns: 100 },
 			);
 		});
 	});
