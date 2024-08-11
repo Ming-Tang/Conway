@@ -1,7 +1,7 @@
 import type { Conway } from "../conway";
 import { ensure, mono1, one, unit, zero } from "../op";
 import { ge, gt, isAboveReals, isZero } from "../op/comparison";
-import { ordinalDivRem } from "../op/ordinal";
+import { ordinalDivRem, ordinalRightSub } from "../op/ordinal";
 
 export type Ord = Conway;
 
@@ -153,6 +153,22 @@ export class Concat<T> implements Seq<T> {
 	}
 }
 
+export class LeftTruncate<T> implements Seq<T> {
+	readonly _type = "Concat";
+	readonly length: Ord;
+	constructor(
+		private readonly trunc: Ord,
+		private readonly seq: Seq<T>,
+	) {
+		this.length = this.trunc.ordinalRightSub(seq.length);
+	}
+
+	index(i: Ord) {
+		assertLength(i, this.length);
+		return this.seq.index(this.trunc.ordinalAdd(i));
+	}
+}
+
 const modifiedDivRem = (
 	i: Ord,
 	leftLen: Ord,
@@ -269,6 +285,9 @@ export class IndexByPower<T> implements Seq<T> {
 export const fromArray = <T>(xs: T[]): Seq<T> => new FromArray(xs);
 
 export const concat = <T>(f: Seq<T>, g: Seq<T>): Seq<T> => new Concat(f, g);
+
+export const leftTrunc = <T>(trunc: Ord, f: Seq<T>): Seq<T> =>
+	new LeftTruncate(trunc, f);
 
 export const cycleArray = <T>(xs: T[]): Seq<T> => new CycleArray(xs);
 

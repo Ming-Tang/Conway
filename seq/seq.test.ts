@@ -7,12 +7,13 @@ import {
 	fromArray,
 	identity,
 	indexByPower,
+	leftTrunc,
 	map,
 	prod,
 	type Seq,
 } from ".";
 import { arbFiniteBigintOrd, arbOrd3 } from "../test/generators";
-import { eq, ge, isPositive, isZero, lt, ne } from "../op/comparison";
+import { eq, ge, isPositive, isZero, le, lt, ne } from "../op/comparison";
 import { isLimit, ordinalAdd, ordinalMult, succ } from "../op/ordinal";
 import { ensure, mono1, one, unit, zero } from "../op";
 import { Conway } from "../conway";
@@ -155,6 +156,44 @@ describe("concat: f & g", () => {
 				return (
 					concat(f, f).index(ensure(ordinalAdd(f.length, i))) === f.index(i)
 				);
+			}),
+		);
+	});
+});
+
+describe("leftTrunc", () => {
+	it("|leftTrunc(0, f)| = |f|", () => {
+		fc.assert(
+			fc.property(arbSeq3, (f) =>
+				assertEq(leftTrunc(zero, f).length, f.length),
+			),
+		);
+	});
+
+	it("leftTrunc(0, f)[i] = f[i]", () => {
+		fc.assert(
+			fc.property(arbSeq3, arbOrd3, (f, i) => {
+				const c = leftTrunc(zero, f);
+				fc.pre(lt(i, c.length));
+				return c.index(i) === f.index(i);
+			}),
+		);
+	});
+
+	it("|leftTrunc(|f|, |f & g|)| = |g|", () => {
+		fc.assert(
+			fc.property(arbSeq3, arbSeq3, (f, g) =>
+				assertEq(leftTrunc(f.length, concat(f, g)).length, g.length),
+			),
+		);
+	});
+
+	it("leftTrunc(|f|, |f & g|)[i] = g[i]", () => {
+		fc.assert(
+			fc.property(arbSeq3, arbSeq3, arbOrd3, (f, g, i) => {
+				const c = leftTrunc(f.length, concat(f, g));
+				fc.pre(lt(i, c.length));
+				return c.index(i) === g.index(i);
 			}),
 		);
 	});
