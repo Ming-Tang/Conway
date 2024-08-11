@@ -1,5 +1,5 @@
 import type { Conway } from "../conway";
-import { ensure, one, unit, zero } from "../op";
+import { ensure, mono1, one, unit, zero } from "../op";
 import { ge, gt, isAboveReals, isZero } from "../op/comparison";
 import { ordinalDivRem } from "../op/ordinal";
 
@@ -247,6 +247,25 @@ export class SeqMap<A, B> implements Seq<B> {
 	}
 }
 
+export class IndexByPower<T> implements Seq<T> {
+	readonly _type = "IndexByPower";
+	readonly length;
+
+	constructor(private seq: Seq<T>) {
+		this.length = mono1(seq.length);
+	}
+
+	index(i: Ord): T {
+		assertLength(i, this.length);
+		if (!isAboveReals(i)) {
+			return this.seq.index(zero);
+		}
+
+		const { leadingPower: p } = i;
+		return this.seq.index(ensure(p ?? 0n));
+	}
+}
+
 export const fromArray = <T>(xs: T[]): Seq<T> => new FromArray(xs);
 
 export const concat = <T>(f: Seq<T>, g: Seq<T>): Seq<T> => new Concat(f, g);
@@ -265,6 +284,8 @@ export const mapNatural = (
 	func: (value: bigint) => bigint,
 	length = unit as Ord,
 ) => new MapNatural(func, length);
+
+export const indexByPower = <T>(f: Seq<T>): Seq<T> => new IndexByPower(f);
 
 export const identity = (length: Ord) => new Identity(length);
 

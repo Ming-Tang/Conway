@@ -6,14 +6,15 @@ import {
 	empty,
 	fromArray,
 	identity,
+	indexByPower,
 	map,
 	prod,
 	type Seq,
 } from ".";
 import { arbFiniteBigintOrd, arbOrd3 } from "../test/generators";
 import { eq, ge, isPositive, isZero, lt, ne } from "../op/comparison";
-import { isLimit, ordinalAdd, ordinalMult } from "../op/ordinal";
-import { ensure, one, unit, zero } from "../op";
+import { isLimit, ordinalAdd, ordinalMult, succ } from "../op/ordinal";
+import { ensure, mono1, one, unit, zero } from "../op";
 import { Conway } from "../conway";
 import { assertEq } from "../test/propsTest";
 
@@ -438,5 +439,41 @@ describe("prod", () => {
 				),
 			);
 		});
+	});
+});
+
+describe("indexByPower", () => {
+	it("|indexByPower(f)| = w^|f|", () => {
+		fc.assert(
+			fc.property(arbSeq3, (f) =>
+				assertEq(indexByPower(f).length, mono1(f.length)),
+			),
+		);
+	});
+
+	it("indexByPower(f)[w^i] = f[i]", () => {
+		fc.assert(
+			fc.property(arbSeq3, arbOrd3, (f, i) => {
+				fc.pre(lt(i, f.length));
+				return indexByPower(f).index(mono1(i)) === f.index(i);
+			}),
+		);
+	});
+
+	it("indexByPower(f)[x] = f[i] where w^i <= x < w^(i+1)", () => {
+		fc.assert(
+			fc.property(
+				arbSeq3,
+				arbOrd3.map((k): [Conway, Conway] => [
+					k,
+					ensure(k.leadingPower ?? Conway.zero),
+				]),
+				(f, [k, i]) => {
+					fc.pre(lt(i, f.length));
+					fc.pre(lt(mono1(i), k) && lt(k, mono1(succ(i))));
+					return indexByPower(f).index(k) === f.index(i);
+				},
+			),
+		);
 	});
 });
