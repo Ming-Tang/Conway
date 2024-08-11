@@ -1,7 +1,7 @@
 import type { Conway } from "../conway";
 import { ensure, one, unit, zero } from "../op";
-import { ge, isAboveReals, isZero } from "../op/comparison";
-import { ordinalDivRem, ordinalMult } from "../op/ordinal";
+import { ge, gt, isAboveReals, isZero } from "../op/comparison";
+import { ordinalDivRem } from "../op/ordinal";
 
 export type Ord = Conway;
 
@@ -84,6 +84,23 @@ export class Identity implements Seq<Ord> {
 	}
 }
 
+export class MapNatural implements Seq<bigint> {
+	readonly _type = "MapNatural";
+	constructor(
+		readonly func: (value: bigint) => bigint,
+		readonly length = unit as Ord,
+	) {
+		if (gt(length, unit)) {
+			throw new RangeError("Length must be either finite or w");
+		}
+	}
+
+	index(i: Ord): bigint {
+		assertLength(i, this.length);
+		return this.func(BigInt(i.realPart));
+	}
+}
+
 export class FromArray<T> implements Seq<T> {
 	readonly _type = "FromArray";
 	readonly length: Ord;
@@ -152,7 +169,7 @@ const modifiedDivRem = (
 			return [ensure(q1), ensure(r2)];
 		}
 		throw new RangeError(
-			`Remainder is too large. |left| = ${leftLen}, |right|=${rightLen}, |prod|=${this.length}, index=${i}, remainder = ${r}`,
+			`Remainder is too large. |left| = ${leftLen}, |right|=${rightLen}, |prod|=${prodLen}, index=${i}, remainder = ${r}`,
 		);
 	}
 
@@ -183,20 +200,6 @@ export class Cycle<T> implements Seq<T> {
 			this.length,
 		)[1];
 		return this.seq.index(r);
-		// const [, r0] = ordinalDivRem(i, this.seq.length);
-		// const r = ensure(r0);
-		// if (ge(r, this.seq.length)) {
-		// 	if (isAboveReals(this.length) && !isAboveReals(this.seq.length)) {
-		// 		// Handling finite * infinite: divide out the infinite part and use finite remainder
-		// 		const r1 = ordinalDivRem(i, unit)[1];
-		// 		const r2 = ordinalDivRem(r1, this.seq.length)[1];
-		// 		return this.seq.index(ensure(r2));
-		// 	}
-		// 	throw new RangeError(
-		// 		`Remainder is too large. |seq| = ${this.seq.length}, mult=${this.multiplier}, len=${this.length}, index=${i}, remainder = ${r}`,
-		// 	);
-		// }
-		// return this.seq.index(ensure(r));
 	}
 }
 
@@ -257,6 +260,11 @@ export const prod = <A, B>(f: Seq<A>, g: Seq<B>): Seq<[A, B]> =>
 
 export const map = <A, B>(f: Seq<A>, func: (value: A) => B): Seq<B> =>
 	new SeqMap(f, func);
+
+export const mapNatural = (
+	func: (value: bigint) => bigint,
+	length = unit as Ord,
+) => new MapNatural(func, length);
 
 export const identity = (length: Ord) => new Identity(length);
 
