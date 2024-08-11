@@ -11,6 +11,9 @@ export const isLimit = (x: Real | Conway): x is Conway =>
 export const isSucc = (x: Real | Conway) =>
 	x instanceof Conway ? x.realPart > 0 : x > 0;
 
+export const noSucc = (x: Real | Conway) =>
+	x instanceof Conway ? Conway.sub(x, x.realPart) : 0n;
+
 export const succ = (x: Real | Conway) => Conway.add(x, 1n);
 export const pred = (x: Real | Conway) => Conway.sub(x, 1n);
 
