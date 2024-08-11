@@ -9,9 +9,12 @@ import {
 	isLimit,
 	canon,
 	ordinalRightSub,
+	isSucc,
+	succ,
+	pred,
 } from "../op/ordinal";
 import { isMono, mono, mono1, one, unit, zero } from "../op";
-import { eq, isPositive, isZero, le, lt } from "../op/comparison";
+import { isPositive, isZero, le, lt } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
 // fc.configureGlobal({ numRuns: 200000, verbose: false });
@@ -599,6 +602,67 @@ describe("ordinals", () => {
 					),
 				);
 			});
+		});
+	});
+
+	describe("subtypes: isZero/isSucc/isLimit", () => {
+		it("isZero is mutually exclusive with isSucc/isLimit", () => {
+			fc.assert(
+				fc.property(arbOrd3, (n) => isZero(n) === !(isSucc(n) || isLimit(n))),
+			);
+		});
+
+		it("isSucc is mutually exclusive with isZero/isLimit", () => {
+			fc.assert(
+				fc.property(arbOrd3, (n) => isSucc(n) === !(isZero(n) || isLimit(n))),
+			);
+		});
+
+		it("isLimit is mutually exclusive with isZero/isLimit", () => {
+			fc.assert(
+				fc.property(arbOrd3, (n) => isLimit(n) === !(isZero(n) || isSucc(n))),
+			);
+		});
+
+		it("has zero real part if and only if is not succ", () => {
+			fc.assert(fc.property(arbOrd3, (n) => isZero(n.realPart) === !isSucc(n)));
+		});
+	});
+
+	describe("succ/pred", () => {
+		it("isSucc(succ(n))", () => {
+			fc.assert(fc.property(arbOrd3, (n) => isSucc(succ(n))));
+		});
+
+		it("isOrdinal(succ(n))", () => {
+			fc.assert(fc.property(arbOrd3, (n) => isOrdinal(succ(n))));
+		});
+
+		it("succ(n) = n + 1", () => {
+			fc.assert(
+				fc.property(arbOrd3, (n) => {
+					fc.pre(isSucc(n));
+					assertEq(n.ordinalAdd(1n), succ(n));
+				}),
+			);
+		});
+
+		it("isSucc(n) --> n = succ(pred(n))", () => {
+			fc.assert(
+				fc.property(arbOrd3, (n) => {
+					fc.pre(isSucc(n));
+					assertEq(n, succ(pred(n)));
+				}),
+			);
+		});
+
+		it("isSucc(n) --> isOrdinal(pred(n))", () => {
+			fc.assert(
+				fc.property(arbOrd3, (n) => {
+					fc.pre(isSucc(n));
+					return isOrdinal(pred(n));
+				}),
+			);
 		});
 	});
 });
