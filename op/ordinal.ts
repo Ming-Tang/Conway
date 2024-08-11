@@ -1,4 +1,5 @@
 import { Conway, type Real } from "../conway";
+import { isZero } from "./comparison";
 
 export const isOrdinal = Conway.isOrdinal;
 export const ordinalAdd = Conway.ordinalAdd;
@@ -29,7 +30,7 @@ export const pred = (x: Real | Conway) => Conway.sub(x, 1n);
  * @param n The index (natural number) of the sequence
  */
 export const canon = (x: Conway, n: Real, limitCoeff = 1n): Real | Conway => {
-	if (!x.isOrdinal || isSucc(x)) {
+	if (isZero(x) || !x.isOrdinal || isSucc(x)) {
 		throw new RangeError("Must be a limit ordinal");
 	}
 
