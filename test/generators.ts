@@ -107,3 +107,6 @@ export const arbOrd2 = arbConway2(arbFiniteBigintOrd).filter(
 export const arbOrd3 = arbConway3(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,
 );
+
+export const arbDyadic = (n: number) =>
+	fc.integer({ min: -(1 << n), max: 1 << n }).map((x) => x / (1.0 * (1 << n)));
