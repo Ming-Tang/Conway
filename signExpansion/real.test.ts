@@ -2,16 +2,12 @@ import fc from "fast-check";
 import { birthday, ensure } from "../op";
 import { isAboveReals } from "../op/comparison";
 import { concat, fromArray, type Seq } from "../seq";
-import {
-	minusNumber,
-	plusNumber,
-	signExpansionNumber,
-	type Sign,
-} from "./real";
+import { minusNumber, plusNumber, signExpansionNumber } from "./real";
 import { assertEq } from "../test/propsTest";
 import { Conway } from "../conway";
 import { sub } from "../op/arith";
 import { succ } from "../op/ordinal";
+import { arbDyadic } from "../test/generators";
 
 const toArray = <T>(x: Seq<T>): T[] => {
 	const n = x.length;
@@ -25,7 +21,7 @@ const toArray = <T>(x: Seq<T>): T[] => {
 };
 
 const arbNum = fc.float({ noNaN: true, noDefaultInfinity: true });
-const arbNum16 = fc.integer({ min: 0, max: 1 >> 16 }).map((x) => x / (1 << 16));
+const arbNum16 = arbDyadic(16);
 
 describe("signExpansionNumber", () => {
 	it("constants", () => {
@@ -77,6 +73,20 @@ describe("signExpansionNumber", () => {
 });
 
 describe("plus/minus", () => {
+	it("constants (plus)", () => {
+		expect(plusNumber(1)).toBe(2);
+		expect(plusNumber(-1)).toBe(-0.5);
+		expect(plusNumber(-0.5)).toBe(-0.25);
+		expect(plusNumber(0.75)).toBe((1 + 0.75) / 2);
+	});
+
+	it("constants (minus)", () => {
+		expect(minusNumber(-1)).toBe(-2);
+		expect(minusNumber(1)).toBe(0.5);
+		expect(minusNumber(0.5)).toBe(0.25);
+		expect(minusNumber(0.75)).toBe((0.5 + 0.75) / 2);
+	});
+
 	it("|signExpansion(plus(n))| = |signExpansion(n)| + 1", () => {
 		fc.assert(
 			fc.property(arbNum16, (n) =>
@@ -143,6 +153,18 @@ describe("plus/minus", () => {
 				fc.float({ noInteger: false, noNaN: true, noDefaultInfinity: true }),
 				(n) => expect(plusNumber(n)).toBe(-minusNumber(-n)),
 			),
+		);
+	});
+
+	it("plus(n) > n", () => {
+		fc.assert(
+			fc.property(arbNum16, (n) => expect(plusNumber(n)).toBeGreaterThan(n)),
+		);
+	});
+
+	it("minus(n) < n", () => {
+		fc.assert(
+			fc.property(arbNum16, (n) => expect(minusNumber(n)).toBeLessThan(n)),
 		);
 	});
 });

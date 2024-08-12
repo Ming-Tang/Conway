@@ -1,16 +1,23 @@
 import type { Conway, Real } from "../conway";
 import { ensure } from "../op";
 import { isOne, isZero } from "../op/comparison";
-import { concat, cycleArray, empty, fromArray, type Seq } from "../seq";
+import {
+	concat,
+	cycleArray,
+	empty,
+	fromArray,
+	maybeSimplifyConst,
+	type Seq,
+} from "../seq";
 
 const cycleArray0 = <T>(xs: T[], mult: Conway) => {
 	if (isZero(mult) || xs.length === 0) {
 		return empty as Seq<T>;
 	}
 	if (isOne(mult)) {
-		return fromArray(xs);
+		return maybeSimplifyConst(fromArray(xs));
 	}
-	return cycleArray(xs, mult);
+	return maybeSimplifyConst(cycleArray(xs, mult));
 };
 
 export type Sign = boolean;
@@ -39,21 +46,21 @@ export const fracSignExpansion = (
 };
 
 export const plusNumber = (r: number): number => {
-	if (r >= 0) {
+	if (r >= 0 && Number.isInteger(r)) {
 		return r + 1;
 	}
-	const pos = -r;
-	const half = fracSignExpansion(pos - Math.floor(pos))[1];
+
+	const isPositive = r > 0;
+	const pos = isPositive ? r : -r;
+	const half =
+		Number.isInteger(r) && r < 0
+			? 0.5
+			: fracSignExpansion(pos - Math.floor(pos))[1];
+	// console.log({ r, init: pos - Math.floor(pos), pos, half });
 	return r + half;
 };
 
-export const minusNumber = (r: number): number => {
-	if (r <= 0) {
-		return r - 1;
-	}
-	const half = fracSignExpansion(r - Math.floor(r))[1];
-	return r - half;
-};
+export const minusNumber = (r: number): number => -plusNumber(-r);
 
 export const plus = (r: Real): Real => {
 	if (typeof r === "bigint" && r >= 0n) {
@@ -75,7 +82,7 @@ export const signExpansionNumber = (r: number): Seq<Sign> => {
 	}
 
 	if (!Number.isFinite(r)) {
-		throw new RangeError("Not a finite number.");
+		throw new RangeError(`Not a finite number: ${r}`);
 	}
 
 	const isPositive = r > 0;
