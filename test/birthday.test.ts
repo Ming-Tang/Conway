@@ -27,10 +27,10 @@ describe("birthday", () => {
 		});
 
 		it("fractions", () => {
-			expect(birthday(0.5)).toBe(1);
-			expect(birthday(-0.5)).toBe(1);
-			expect(birthday(0.25)).toBe(2);
-			expect(birthday(0.75)).toBe(2);
+			expect(birthday(0.5)).toBe(2);
+			expect(birthday(-0.5)).toBe(2);
+			expect(birthday(0.25)).toBe(3);
+			expect(birthday(0.75)).toBe(3);
 		});
 
 		it("non-negative", () => {

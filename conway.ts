@@ -1025,9 +1025,12 @@ export class Conway {
 					? Conway.zero
 					: Conway.ordinalRightSub(lastP, p1);
 				lastP = p1;
-				return Conway.unit.mult(dp).add(Conway.sub(bc, 1n));
+				return Conway.unit.ordinalMult(dp).ordinalAdd(Conway.sub(bc, 1n));
 			}
-			return Conway.mono(1, Conway.ensure(p).birthday(realBirthday)).mult(bc);
+
+			const bp = Conway.ensure(p).birthday(realBirthday);
+			// console.log(`c=${c}, b(c) = ${bc}, p=${p}, bp=${bp}`);
+			return Conway.mono(1n, bp).ordinalMult(bc);
 		});
 	}
 
@@ -1055,24 +1058,28 @@ export class Conway {
 			return real < 0n ? -real : real;
 		}
 
-		const absValue = real < 0 ? -real : real;
-		const iPart = Math.floor(absValue);
-		const fPart = absValue - iPart;
-		if (fPart <= 0 || fPart >= 1) {
+		const x = real < 0 ? -real : real;
+		const iPart = Math.floor(x);
+		const fracPart = x - iPart;
+		if (fracPart === 0) {
 			return iPart;
 		}
 
-		let w = 0.5;
 		let i = 1;
-		let d = 0.5;
-		while (w !== fPart && d > 0) {
-			d /= 2;
-			if (fPart > w) {
-				w += d;
-			} else {
-				w -= d;
+		let mid = 1;
+		let half = 0.5;
+		while (half) {
+			if (fracPart === mid) {
+				break;
 			}
-			i++;
+
+			if (fracPart > mid) {
+				mid += half;
+			} else {
+				mid -= half;
+			}
+			i += 1;
+			half /= 2;
 		}
 
 		return iPart + i;
