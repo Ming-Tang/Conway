@@ -1,6 +1,7 @@
-import { Conway } from "./conway";
-import { birthday, ensure, mono, mono1 } from "./op";
-import { canon } from "./op/ordinal";
+import { Conway, type Real } from "./conway";
+import { mono, mono1 } from "./op";
+import { isZero } from "./op/comparison";
+import { canon, isLimit, isSucc, noSucc } from "./op/ordinal";
 import { concat, cycleArray, fromArray } from "./seq";
 
 const s1 = cycleArray([1, 2, 3]);
@@ -73,8 +74,30 @@ const ords = [
 	Conway.unit.mult(2n).add(mono(4n, Conway.unit)),
 	mono(4n, Conway.unit),
 	mono1(Conway.unit),
-	mono(2n, Conway.unit.add(2n)).add(mono(4n, Conway.unit.add(10n))),
+	mono(2n, Conway.unit.add(2n))
+		.add(mono(4n, Conway.unit.add(10n)))
+		.add(mono(2n, 1)),
 ];
+
+const countback = (ord: Real | Conway, n: number) => {
+	let x: Real | Conway = ord;
+	while (true) {
+		if (isSucc(x)) {
+			x = noSucc(x);
+		}
+		if (isZero(x) || !(x instanceof Conway)) {
+			break;
+		}
+		console.log("...");
+		for (let i = n; i > 0; i--) {
+			console.log(`${canon(x, i)}`);
+		}
+		if (!isLimit(x)) {
+			break;
+		}
+		x = canon(x, 1);
+	}
+};
 
 for (const ord of ords) {
 	console.log(`canon(${ord}) = [`);
@@ -82,4 +105,6 @@ for (const ord of ords) {
 		.fill(null)
 		.forEach((_, i) => console.log("  ", canon(ord, i)));
 	console.log("]");
+
+	countback(ord, 5);
 }
