@@ -115,12 +115,12 @@ export class FromArray<T> implements Seq<T> {
 
 export class CycleArray<T> implements Seq<T> {
 	readonly _type = "CycleArray";
-	readonly length: Ord;
-	constructor(private readonly array: T[]) {
+	constructor(
+		private readonly array: T[],
+		public readonly length = unit,
+	) {
 		if (array.length === 0) {
 			this.length = zero;
-		} else {
-			this.length = unit;
 		}
 	}
 
@@ -289,7 +289,8 @@ export const concat = <T>(f: Seq<T>, g: Seq<T>): Seq<T> => new Concat(f, g);
 export const leftTrunc = <T>(trunc: Ord, f: Seq<T>): Seq<T> =>
 	new LeftTruncate(trunc, f);
 
-export const cycleArray = <T>(xs: T[]): Seq<T> => new CycleArray(xs);
+export const cycleArray = <T>(xs: T[], n = unit): Seq<T> =>
+	new CycleArray(xs, n);
 
 export const cycle = <T>(f: Seq<T>, n = one): Seq<T> => new Cycle(f, n);
 
