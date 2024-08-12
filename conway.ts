@@ -1029,7 +1029,6 @@ export class Conway {
 			}
 
 			const bp = Conway.ensure(p).birthday(realBirthday);
-			// console.log(`c=${c}, b(c) = ${bc}, p=${p}, bp=${bp}`);
 			return Conway.mono(1n, bp).ordinalMult(bc);
 		});
 	}

@@ -76,7 +76,10 @@ export const minus = (r: Real): Real => {
 	return minusNumber(Number(r));
 };
 
-export const signExpansionNumber = (r: number): Seq<Sign> => {
+export const signExpansionNumber = (
+	r: number,
+	omitInitial = false,
+): Seq<Sign> => {
 	if (r === 0) {
 		return empty as Seq<Sign>;
 	}
@@ -88,7 +91,10 @@ export const signExpansionNumber = (r: number): Seq<Sign> => {
 	const isPositive = r > 0;
 	const integerPart = r < 0 ? Math.floor(-r) : Math.floor(r);
 	const fracPart = r < 0 ? -r - integerPart : r - integerPart;
-	const integerSigns = cycleArray0([isPositive], ensure(integerPart));
+	const integerSigns = cycleArray0(
+		[isPositive],
+		ensure(omitInitial ? integerPart - 1 : integerPart),
+	);
 	if (fracPart === 0) {
 		return integerSigns;
 	}
@@ -96,20 +102,28 @@ export const signExpansionNumber = (r: number): Seq<Sign> => {
 	const fracSigns: Sign[] = [];
 	fracSignExpansion(fracPart, (s) => fracSigns.push(s === isPositive));
 	return concat(
-		cycleArray0([isPositive], ensure(integerPart + 1)),
+		cycleArray0(
+			[isPositive],
+			ensure(omitInitial ? integerPart : integerPart + 1),
+		),
 		fromArray(fracSigns),
 	);
 };
 
-export const signExpansionBigint = (r: bigint): Seq<Sign> => {
+export const signExpansionBigint = (
+	r: bigint,
+	omitInitial = false,
+): Seq<Sign> => {
 	if (r === 0n) {
 		return empty as Seq<Sign>;
 	}
 	if (r > 0) {
-		return cycleArray0([true], ensure(r));
+		return cycleArray0([true], ensure(omitInitial ? r - 1n : r));
 	}
-	return cycleArray0([false], ensure(-r));
+	return cycleArray0([false], ensure(omitInitial ? r + 1n : -r));
 };
 
-export const signExpansionReal = (r: Real): Seq<Sign> =>
-	typeof r === "bigint" ? signExpansionBigint(r) : signExpansionNumber(r);
+export const signExpansionReal = (r: Real, omitInitial = false): Seq<Sign> =>
+	typeof r === "bigint"
+		? signExpansionBigint(r, omitInitial)
+		: signExpansionNumber(r, omitInitial);

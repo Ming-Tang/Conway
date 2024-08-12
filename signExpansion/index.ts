@@ -1,10 +1,15 @@
 import { Conway, type Real } from "../conway";
+import { ensure, unit, zero } from "../op";
 import { neg } from "../op/arith";
-import { isNegative, isZero } from "../op/comparison";
+import { gt, isNegative, isZero } from "../op/comparison";
+import { ordinalRightSub } from "../op/ordinal";
 import {
 	concat,
+	cycleArray,
 	empty,
+	fromArray,
 	indexByPower,
+	leftTrunc,
 	map,
 	maybeSimplifyConst,
 	prod,
@@ -28,18 +33,37 @@ export const signExpansion = (
 	}
 
 	let se = empty as Seq<Sign>;
+	let lastP: Real | Conway = Conway.zero;
 	for (const [p, c] of value) {
 		if (isZero(p)) {
 			// real
 			se = concat1(se, real(c));
 			continue;
 		}
+		let seMono: Seq<Sign> = empty as Seq<Sign>;
+		const sePower = maybeSimplifyConst(indexByPower(signExpansion(p)));
 		if (isNegative(p)) {
-			throw new Error("TODO support this");
+			// infinitesimal
+			const p1 = sePower.length;
+			const dp = gt(lastP, p1) ? zero : ordinalRightSub(lastP, p1);
+			const [pos, neg] = c > 0 ? [true, false] : [false, true];
+			// [+] & (-)^SE(p) & SE(c, true)
+			seMono = concat1(
+				concat1(
+					fromArray([pos]),
+					// TODO invalid
+					cycleArray([neg], p1),
+					// maybeSimplifyConst(map(
+					// 	prod(cycleArray([neg], unit), isZero(dp) ? sePower : leftTrunc(ensure(dp), sePower)),
+					// 	([_, b]) => neg === b,
+					// ))
+				),
+				signExpansionReal(c, true),
+			);
+			lastP = p1;
+			se = concat1(se, seMono);
 			continue;
 		}
-		const sePower = maybeSimplifyConst(indexByPower(signExpansion(p)));
-		let seMono: Seq<Sign> = empty as Seq<Sign>;
 		if (Conway.isOne(c)) {
 			seMono = sePower;
 		} else if (Conway.isOne(neg(c))) {

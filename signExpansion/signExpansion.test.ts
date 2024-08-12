@@ -23,11 +23,15 @@ describe("signExpansion", () => {
 			unit.add(unit.mult(2.5)),
 			mono(4, 0.5),
 			mono(4, mono1(unit)).add(mono(2, 1)).add(-3),
+			mono(1, -1),
+			mono(4, -1),
+			mono(4, -1).add(mono(3, -5)),
 		];
 
 		for (const v of values) {
 			console.log(`birthday(${v}) =`, birthday(v));
 			console.log(`signExpansion(${v}) =`, signExpansion(v));
+			console.log("");
 		}
 	});
 
