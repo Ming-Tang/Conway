@@ -1,7 +1,7 @@
 import type { Conway } from "../conway";
 import { ensure, mono1, one, unit, zero } from "../op";
-import { ge, gt, isAboveReals, isZero } from "../op/comparison";
-import { ordinalDivRem, ordinalRightSub } from "../op/ordinal";
+import { ge, gt, isAboveReals, isZero, le } from "../op/comparison";
+import { ordinalDivRem } from "../op/ordinal";
 
 export type Ord = Conway;
 
@@ -12,6 +12,12 @@ export type Ord = Conway;
 export interface Seq<T> {
 	length: Ord;
 	index: (index: Ord) => T;
+
+	/**
+	 * True if all elements of this sequence are the same (or empty/singleton).
+	 * False otherwise or cannot be properly determined.
+	 */
+	readonly isConstant: boolean;
 }
 
 // @ts-expect-error
@@ -52,6 +58,7 @@ export class Empty<T = unknown> implements Seq<T> {
 	readonly _type = "Empty";
 	static instance: Empty<unknown> = new Empty();
 	readonly length: Ord;
+	readonly isConstant = true;
 	constructor() {
 		this.length = zero;
 	}
@@ -63,6 +70,7 @@ export class Empty<T = unknown> implements Seq<T> {
 
 export class Constant<T = unknown> implements Seq<T> {
 	readonly _type = "Constant";
+	readonly isConstant = true;
 	constructor(
 		readonly constant: T,
 		readonly length: Ord,
@@ -74,9 +82,27 @@ export class Constant<T = unknown> implements Seq<T> {
 	}
 }
 
+const isConstantLength = (x: Ord) => le(x, one);
+const isConstantArray = <T>(xs: T[]) => {
+	if (xs.length <= 1) {
+		return true;
+	}
+	const v = xs[0];
+	for (let i = 1; i < xs.length; i++) {
+		if (xs[i] !== v) {
+			return false;
+		}
+	}
+	return true;
+};
+
 export class Identity implements Seq<Ord> {
 	readonly _type = "Identity";
-	constructor(readonly length: Ord) {}
+	readonly isConstant: boolean;
+
+	constructor(readonly length: Ord) {
+		this.isConstant = isConstantLength(length);
+	}
 
 	index(i: Ord): Ord {
 		assertLength(i, this.length);
@@ -86,6 +112,8 @@ export class Identity implements Seq<Ord> {
 
 export class MapNatural implements Seq<bigint> {
 	readonly _type = "MapNatural";
+	readonly isConstant: boolean;
+
 	constructor(
 		readonly func: (value: bigint) => bigint,
 		readonly length = unit as Ord,
@@ -93,6 +121,7 @@ export class MapNatural implements Seq<bigint> {
 		if (gt(length, unit)) {
 			throw new RangeError("Length must be either finite or w");
 		}
+		this.isConstant = isConstantLength(length);
 	}
 
 	index(i: Ord): bigint {
@@ -104,8 +133,11 @@ export class MapNatural implements Seq<bigint> {
 export class FromArray<T> implements Seq<T> {
 	readonly _type = "FromArray";
 	readonly length: Ord;
+	readonly isConstant: boolean;
+
 	constructor(private readonly array: T[]) {
 		this.length = ordFromNumber(array.length);
+		this.isConstant = isConstantLength(this.length) || isConstantArray(array);
 	}
 	index(i: Ord) {
 		assertLength(i, this.length);
@@ -115,6 +147,8 @@ export class FromArray<T> implements Seq<T> {
 
 export class CycleArray<T> implements Seq<T> {
 	readonly _type = "CycleArray";
+	readonly isConstant: boolean;
+
 	constructor(
 		private readonly array: T[],
 		public readonly length = unit,
@@ -122,6 +156,7 @@ export class CycleArray<T> implements Seq<T> {
 		if (array.length === 0) {
 			this.length = zero;
 		}
+		this.isConstant = isConstantLength(length) || isConstantArray(this.array);
 	}
 
 	index(i: Ord) {
@@ -134,11 +169,23 @@ export class CycleArray<T> implements Seq<T> {
 export class Concat<T> implements Seq<T> {
 	readonly _type = "Concat";
 	readonly length: Ord;
+	readonly isConstant: boolean;
+
 	constructor(
 		private readonly left: Seq<T>,
 		private readonly right: Seq<T>,
 	) {
 		this.length = left.length.ordinalAdd(right.length);
+		if (isZero(left.length)) {
+			this.isConstant = right.isConstant;
+		} else if (isZero(right.length)) {
+			this.isConstant = left.isConstant;
+		} else {
+			this.isConstant =
+				left.isConstant &&
+				right.isConstant &&
+				left.index(zero) === right.index(zero);
+		}
 	}
 
 	index(i: Ord) {
@@ -156,11 +203,15 @@ export class Concat<T> implements Seq<T> {
 export class LeftTruncate<T> implements Seq<T> {
 	readonly _type = "Concat";
 	readonly length: Ord;
+	readonly isConstant: boolean;
+
 	constructor(
 		private readonly trunc: Ord,
 		private readonly seq: Seq<T>,
 	) {
 		this.length = this.trunc.ordinalRightSub(seq.length);
+		// Will not check the truncated sequence
+		this.isConstant = isConstantLength(this.length) || this.seq.isConstant;
 	}
 
 	index(i: Ord) {
@@ -195,6 +246,8 @@ const modifiedDivRem = (
 export class Cycle<T> implements Seq<T> {
 	readonly _type = "Cycle";
 	readonly length: Ord;
+	readonly isConstant: boolean;
+
 	constructor(
 		private readonly seq: Seq<T>,
 		private readonly multiplier = unit,
@@ -205,6 +258,7 @@ export class Cycle<T> implements Seq<T> {
 		} else {
 			this.length = n.ordinalMult(this.multiplier);
 		}
+		this.isConstant = seq.isConstant;
 	}
 
 	index(i: Ord) {
@@ -222,6 +276,8 @@ export class Cycle<T> implements Seq<T> {
 export class Product<A, B> implements Seq<[A, B]> {
 	readonly _type = "Product";
 	readonly length: Ord;
+	readonly isConstant: boolean;
+
 	constructor(
 		private readonly left: Seq<A>,
 		private readonly right: Seq<B>,
@@ -233,6 +289,7 @@ export class Product<A, B> implements Seq<[A, B]> {
 		} else {
 			this.length = ll.ordinalMult(lr);
 		}
+		this.isConstant = left.isConstant && right.isConstant;
 	}
 
 	index(i: Ord) {
@@ -249,13 +306,14 @@ export class Product<A, B> implements Seq<[A, B]> {
 
 export class SeqMap<A, B> implements Seq<B> {
 	readonly _type = "SeqMap";
+	readonly length: Ord;
+	readonly isConstant: boolean;
 	constructor(
 		private readonly seq: Seq<A>,
 		private readonly func: (value: A) => B,
-	) {}
-
-	get length() {
-		return this.seq.length;
+	) {
+		this.length = this.seq.length;
+		this.isConstant = seq.isConstant;
 	}
 
 	index(i: Ord) {
@@ -265,10 +323,12 @@ export class SeqMap<A, B> implements Seq<B> {
 
 export class IndexByPower<T> implements Seq<T> {
 	readonly _type = "IndexByPower";
-	readonly length;
+	readonly length: Ord;
+	readonly isConstant: boolean;
 
 	constructor(private seq: Seq<T>) {
 		this.length = mono1(seq.length);
+		this.isConstant = seq.isConstant;
 	}
 
 	index(i: Ord): T {
@@ -306,6 +366,21 @@ export const mapNatural = (
 ) => new MapNatural(func, length);
 
 export const indexByPower = <T>(f: Seq<T>): Seq<T> => new IndexByPower(f);
+
+/**
+ * If the sequence is constant (`isConstant`), return `empty`
+ * or a `cycleArray(...)` instead.
+ * Otherwise return the sequence itself.
+ */
+export const maybeSimplifyConst = <T>(f: Seq<T>): Seq<T> => {
+	if (isZero(f.length)) {
+		return empty as Seq<T>;
+	}
+	if (f.isConstant) {
+		return cycleArray([f.index(zero)], f.length);
+	}
+	return f;
+};
 
 export const identity = (length: Ord) => new Identity(length);
 

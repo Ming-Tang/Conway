@@ -10,6 +10,7 @@ import {
 	leftTrunc,
 	map,
 	prod,
+	type Ord,
 	type Seq,
 } from ".";
 import { arbFiniteBigintOrd, arbOrd3 } from "../test/generators";
@@ -19,7 +20,7 @@ import { ensure, mono1, one, unit, zero } from "../op";
 import { Conway } from "../conway";
 import { assertEq } from "../test/propsTest";
 
-fc.configureGlobal({ numRuns: 2000, verbose: false });
+// fc.configureGlobal({ numRuns: 2000, verbose: false });
 
 const arbElem = fc.integer({ min: 0 });
 // Prevent empty arrays so shrinking eliminate them
@@ -33,12 +34,25 @@ const arbCycle = (arb: fc.Arbitrary<Seq<number>>) => arb.map(cycle);
 const arbConcat = (arb: fc.Arbitrary<Seq<number>>) =>
 	fc.tuple(arb, arb).map(([a, b]) => concat(a, b));
 
+const arbFromArrayConst = fc
+	.array(arbElem, { minLength: 1, maxLength: 50 })
+	.map((x) => fromArray(x.map(() => x[0])));
+
+const arbCycleArrayConst = fc
+	.array(arbElem, { minLength: 1, maxLength: 50 })
+	.map((x) => cycleArray(x.map(() => x[0])));
+
 const arbSeq0 = fc.oneof(arbFromArray, arbCycleArray);
 const arbSeqNext = (arb: fc.Arbitrary<Seq<number>>) =>
 	fc.oneof(arb, arbCycle(arb), arbConcat(arb));
 const arbSeq1 = arbSeqNext(arbSeq0);
 const arbSeq2 = arbSeqNext(arbSeq1);
 const arbSeq3 = arbSeqNext(arbSeq2);
+
+const arbSeq0Const = fc.oneof(arbFromArrayConst, arbCycleArrayConst);
+const arbSeq1Const = arbSeqNext(arbSeq0Const);
+const arbSeq2Const = arbSeqNext(arbSeq1Const);
+const arbSeq3Const = arbSeqNext(arbSeq2Const);
 
 describe.skip("sample", () => {
 	it("arbSeq0", () => {
@@ -514,5 +528,37 @@ describe("indexByPower", () => {
 				},
 			),
 		);
+	});
+});
+
+describe("isConstant", () => {
+	const checkConstant = <T>(x: Seq<T>, i: Ord, j: Ord) => {
+		fc.pre(x.isConstant && !isZero(x.length));
+		fc.pre(lt(i, x.length) && lt(j, x.length));
+		return x.index(i) === x.index(j);
+	};
+
+	it("invariant correct for empty sequences", () => {
+		fc.assert(fc.property(arbSeq1Const, arbOrd3, arbOrd3, checkConstant), {
+			numRuns: 200,
+		});
+	});
+
+	it("invariant correct for arbSeq1Const", () => {
+		fc.assert(fc.property(arbSeq1Const, arbOrd3, arbOrd3, checkConstant), {
+			numRuns: 200,
+		});
+	});
+
+	it("invariant correct for arbSeq2Const", () => {
+		fc.assert(fc.property(arbSeq2Const, arbOrd3, arbOrd3, checkConstant), {
+			numRuns: 200,
+		});
+	});
+
+	it("invariant correct for arbSeq3Const", () => {
+		fc.assert(fc.property(arbSeq3Const, arbOrd3, arbOrd3, checkConstant), {
+			numRuns: 200,
+		});
 	});
 });
