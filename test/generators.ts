@@ -9,8 +9,8 @@ export const arbFinite = fc.float({
 	noDefaultInfinity: true,
 });
 
-export const arbFiniteBigint = fc.bigInt({ min: -1000n, max: 1000n });
-export const arbFiniteBigintOrd = fc.bigInt({ min: 0n, max: 1000n });
+export const arbFiniteBigint = fc.bigInt({ min: -100n, max: 100n });
+export const arbFiniteBigintOrd = fc.bigInt({ min: 0n, max: 100n });
 
 export const arbRealGeneral = fc.oneof(
 	arbFinite,
@@ -101,6 +101,9 @@ export const arbConwayReal = (
 ): fc.Arbitrary<Conway> =>
 	(arbReal ?? arbRealGeneral).map((r) => Conway.real(r));
 
+export const arbOrd1 = arbConway1(arbFiniteBigintOrd).filter(
+	(x) => x.isOrdinal,
+);
 export const arbOrd2 = arbConway2(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,
 );

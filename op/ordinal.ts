@@ -4,6 +4,7 @@ import { isZero } from "./comparison";
 export const isOrdinal = Conway.isOrdinal;
 export const ordinalAdd = Conway.ordinalAdd;
 export const ordinalMult = Conway.ordinalMult;
+export const ordinalPow = Conway.ordinalPow;
 export const ordinalRightSub = Conway.ordinalRightSub;
 export const ordinalDivRem = Conway.ordinalDivRem;
 

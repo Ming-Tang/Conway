@@ -1,6 +1,12 @@
 import fc from "fast-check";
 import { Conway, type Real } from "../conway";
-import { arbConway3, arbFiniteBigintOrd, arbOrd3 } from "./generators";
+import {
+	arbConway3,
+	arbFiniteBigint,
+	arbFiniteBigintOrd,
+	arbOrd1,
+	arbOrd3,
+} from "./generators";
 import {
 	isOrdinal,
 	ordinalAdd,
@@ -12,9 +18,10 @@ import {
 	isSucc,
 	succ,
 	pred,
+	ordinalPow,
 } from "../op/ordinal";
-import { isMono, mono, mono1, one, unit, zero } from "../op";
-import { isPositive, isZero, le, lt } from "../op/comparison";
+import { ensure, isMono, mono, mono1, one, unit, zero } from "../op";
+import { isAboveReals, isPositive, isZero, le, lt } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
 // fc.configureGlobal({ numRuns: 200000, verbose: false });
@@ -368,6 +375,199 @@ describe("ordinals", () => {
 					return assertEq(ordinalMult(a, Conway.real(n)), sum);
 				}),
 			);
+		});
+	});
+
+	describe("ordinalPow", () => {
+		describe("constants", () => {
+			it("finite^finite", () => {
+				assertEq(ordinalPow(1n, 1n), 1n);
+				assertEq(ordinalPow(2n, 0n), 1n);
+				assertEq(ordinalPow(2n, 4n), 1n << 4n);
+				assertEq(ordinalPow(3n, 5n), 3n ** 5n);
+			});
+
+			it("finite^infinite", () => {
+				assertEq(ordinalPow(1n, unit), 1n);
+				assertEq(ordinalPow(2n, unit), unit);
+				// 2^(w^2)
+				// = limit {2^w, 2^(w.2), 2^(w.3), ...}
+				// = limit {2^w, (2^w)^2, (2^w)^3, ...}
+				// = limit {w, w^2, w^3, ...}
+				// = w^w
+				assertEq(ordinalPow(2n, mono1(2n)), mono1(unit));
+				// 2^((w^5).6 + 3)
+				// = [2^(w.w^4)]^6 . 2^3
+				// = [w^(w^4)]^6 . 8
+				// = w^[(w^4).6] . 8
+				assertEq(ordinalPow(2n, mono(6n, 5n).add(3n)), mono(8n, mono(6n, 4n)));
+			});
+
+			it("infinite^infinite", () => {
+				assertEq(ordinalPow(unit, unit.add(1n)), mono1(unit.add(1n)));
+			});
+		});
+
+		it("0^a = 0, a > 0", () => {
+			fc.assert(
+				fc.property(arbOrd3.filter(isPositive), (a) =>
+					assertEq(zero, ordinalPow(zero, a)),
+				),
+			);
+		});
+
+		it("1^a = 1", () => {
+			fc.assert(fc.property(arbOrd3, (a) => assertEq(ordinalPow(one, a), one)));
+		});
+
+		it("x^y for finite x, y", () => {
+			fc.assert(
+				fc.property(arbFiniteBigintOrd, arbFiniteBigintOrd, (a, b) => {
+					fc.pre(!(a === 0n && b === 0n));
+					return assertEq(a ** b, ordinalPow(a, b));
+				}),
+			);
+		});
+
+		const arbOrd3Pos = arbOrd3.filter(isPositive);
+
+		it("non-zero", () => {
+			fc.assert(
+				fc.property(arbOrd3Pos, arbOrd3Pos, (x, y) =>
+					isPositive(ordinalPow(x, y)),
+				),
+				{ numRuns: 200 },
+			);
+		});
+
+		it("finite exponent is repeated multiplication", () => {
+			fc.assert(
+				fc.property(
+					arbOrd3Pos,
+					arbFiniteBigintOrd.filter((x) => x < 10n),
+					(a, p) => {
+						fc.pre(p > 0n);
+						let fromMult: Real | Conway = one;
+						for (let i = 0n; i < p; i += 1n) {
+							fromMult = ordinalMult(fromMult, a);
+						}
+						return assertEq(ordinalPow(a, p), fromMult);
+					},
+				),
+				{ numRuns: 200 },
+			);
+		});
+
+		const arbs: [string, fc.Arbitrary<Conway>][] = [
+			["finite", arbFiniteBigint.filter(isPositive).map(ensure)],
+			// [
+			// 	"infinite monomial",
+			// 	arbOrd3Pos.filter(
+			// 		(x) => isPositive(x) && isAboveReals(x) && x.length === 1,
+			// 	),
+			// ],
+			// ["limit", arbOrd3Pos.filter(isLimit)],
+			// ["infinite successor", arbOrd3Pos.filter((x) => isAboveReals(x) && isSucc(x))],
+			["infinite", arbOrd3Pos.filter(isAboveReals)],
+		];
+		const combs: [
+			string,
+			fc.Arbitrary<Conway>,
+			fc.Arbitrary<Conway>,
+			fc.Arbitrary<Conway>,
+		][] = [];
+		for (const [name1, arb1] of arbs) {
+			for (const [name2, arb2] of arbs) {
+				for (const [name3, arb3] of arbs) {
+					combs.push([`a=${name1}, b=${name2}, c=${name3}`, arb1, arb2, arb3]);
+				}
+			}
+		}
+
+		describe("monomials: (w^x).c", () => {
+			it("w^finite", () => {
+				fc.assert(
+					fc.property(arbFiniteBigintOrd, (x) =>
+						assertEq(ordinalPow(unit, x), mono1(x)),
+					),
+				);
+			});
+
+			it("w^x", () => {
+				fc.assert(
+					fc.property(arbOrd3Pos, (x) =>
+						assertEq(ordinalPow(unit, x), mono1(x)),
+					),
+				);
+			});
+
+			it("((w^x).c)^y = w^(x.y) for limit y", () => {
+				fc.assert(
+					fc.property(
+						arbOrd3Pos,
+						arbFiniteBigintOrd.filter(isPositive),
+						arbOrd3Pos.filter(isLimit),
+						(x, c, y) =>
+							assertEq(ordinalPow(mono(c, x), y), mono1(ordinalMult(x, y))),
+					),
+				);
+			});
+
+			it("((w^x).c)^y = w^(x.y).c for successor y", () => {
+				fc.assert(
+					fc.property(
+						arbOrd3Pos,
+						arbFiniteBigintOrd.filter(isPositive),
+						arbOrd3Pos.filter(isSucc),
+						(x, c, y) =>
+							assertEq(ordinalPow(mono(c, x), y), mono(c, ordinalMult(x, y))),
+					),
+				);
+			});
+		});
+
+		describe("combinations", () => {
+			const numRuns = 50;
+			for (const [name1, arb1, arb2, arb3] of combs) {
+				describe(`(${name1})`, () => {
+					it("preserves order for same base different exponents: b <= c implies a^b <= a^c", () => {
+						fc.assert(
+							fc.property(arb1, arb2, arb3, (a, b, c) => {
+								if (le(b, c)) {
+									return le(ordinalPow(a, b), ordinalPow(a, c));
+								}
+								return le(ordinalPow(a, c), ordinalPow(a, b));
+							}),
+							{ numRuns },
+						);
+					});
+
+					it("law of exponents (addition of exponents): a^b . a^c = a^(b+c)", () => {
+						fc.assert(
+							fc.property(arb1, arb2, arb3, (a, b, c) =>
+								assertEq(
+									ordinalMult(ordinalPow(a, b), ordinalPow(a, c)),
+									ordinalPow(a, ordinalAdd(b, c)),
+								),
+							),
+							{ numRuns },
+						);
+					});
+
+					// TODO too slow
+					it.skip("law of exponents (multiplication of exponents): (a^b)^c = a^(b.c)", () => {
+						fc.assert(
+							fc.property(arb1, arb2, arb3, (a, b, c) =>
+								assertEq(
+									ordinalPow(ordinalPow(a, b), c),
+									ordinalPow(a, ordinalMult(b, c)),
+								),
+							),
+							{ numRuns },
+						);
+					});
+				});
+			}
 		});
 	});
 
