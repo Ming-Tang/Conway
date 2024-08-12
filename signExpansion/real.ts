@@ -1,6 +1,17 @@
-import type { Real } from "../conway";
+import type { Conway, Real } from "../conway";
 import { ensure } from "../op";
-import { concat, cycle, empty, fromArray, type Seq } from "../seq";
+import { isOne, isZero } from "../op/comparison";
+import { concat, cycleArray, empty, fromArray, type Seq } from "../seq";
+
+const cycleArray0 = <T>(xs: T[], mult: Conway) => {
+	if (isZero(mult) || xs.length === 0) {
+		return empty as Seq<T>;
+	}
+	if (isOne(mult)) {
+		return fromArray(xs);
+	}
+	return cycleArray(xs, mult);
+};
 
 export type Sign = boolean;
 
@@ -70,7 +81,7 @@ export const signExpansionNumber = (r: number): Seq<Sign> => {
 	const isPositive = r > 0;
 	const integerPart = r < 0 ? Math.floor(-r) : Math.floor(r);
 	const fracPart = r < 0 ? -r - integerPart : r - integerPart;
-	const integerSigns = cycle(fromArray([isPositive]), ensure(integerPart));
+	const integerSigns = cycleArray0([isPositive], ensure(integerPart));
 	if (fracPart === 0) {
 		return integerSigns;
 	}
@@ -78,7 +89,7 @@ export const signExpansionNumber = (r: number): Seq<Sign> => {
 	const fracSigns: Sign[] = [];
 	fracSignExpansion(fracPart, (s) => fracSigns.push(s === isPositive));
 	return concat(
-		cycle(fromArray([isPositive]), ensure(integerPart + 1)),
+		cycleArray0([isPositive], ensure(integerPart + 1)),
 		fromArray(fracSigns),
 	);
 };
@@ -88,7 +99,10 @@ export const signExpansionBigint = (r: bigint): Seq<Sign> => {
 		return empty as Seq<Sign>;
 	}
 	if (r > 0) {
-		return cycle(fromArray([true]), ensure(r));
+		return cycleArray0([true], ensure(r));
 	}
-	return cycle(fromArray([false]), ensure(-r));
+	return cycleArray0([false], ensure(-r));
 };
+
+export const signExpansionReal = (r: Real): Seq<Sign> =>
+	typeof r === "bigint" ? signExpansionBigint(r) : signExpansionNumber(r);
