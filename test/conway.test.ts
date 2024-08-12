@@ -828,6 +828,7 @@ describe("Conway", () => {
 					expect(r.isZero).toBe(true);
 					expect(Conway.eq(q, a)).toBe(true);
 				}),
+				{ numRuns: 100 },
 			);
 		});
 
