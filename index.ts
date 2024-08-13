@@ -108,3 +108,22 @@ for (const ord of ords) {
 
 	countback(ord, 5);
 }
+
+console.log(Conway.unit.add(1).ordinalPow(4n));
+console.log(Conway.mono(4n, 6n).add(1n).ordinalPow(10n));
+console.log(
+	Conway.mono(4n, 6n).add(Conway.mono(3n, 3n)).add(1n).ordinalPow(10n),
+);
+console.log(
+	Conway.mono(2n, Conway.unit)
+		.add(Conway.mono(4n, 6n))
+		.add(Conway.mono(3n, 3n))
+		.add(1n)
+		.ordinalPow(10n),
+);
+console.log(
+	Conway.mono(2n, Conway.unit)
+		.add(Conway.mono(4n, 6n))
+		.add(Conway.mono(3n, 3n))
+		.ordinalPow(10n),
+);

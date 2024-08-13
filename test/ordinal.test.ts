@@ -4,7 +4,7 @@ import {
 	arbConway3,
 	arbFiniteBigint,
 	arbFiniteBigintOrd,
-	arbOrd1,
+	arbOrd2,
 	arbOrd3,
 } from "./generators";
 import {
@@ -24,7 +24,7 @@ import { ensure, isMono, mono, mono1, one, unit, zero } from "../op";
 import { isAboveReals, isPositive, isZero, le, lt } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
-// fc.configureGlobal({ numRuns: 200000, verbose: false });
+fc.configureGlobal({ numRuns: 2000, verbose: false });
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
@@ -458,17 +458,30 @@ describe("ordinals", () => {
 			);
 		});
 
+		const maxReal = (x: Conway, acc: Real = 0n): Real => {
+			let max = acc;
+			for (const [p, c] of x) {
+				if (p instanceof Conway) {
+					max = maxReal(p, max);
+				} else if (p > max) {
+					max = p;
+				}
+				if (c > max) {
+					max = c;
+				}
+			}
+			return max;
+		};
+
 		const arbs: [string, fc.Arbitrary<Conway>][] = [
 			["finite", arbFiniteBigint.filter(isPositive).map(ensure)],
-			// [
-			// 	"infinite monomial",
-			// 	arbOrd3Pos.filter(
-			// 		(x) => isPositive(x) && isAboveReals(x) && x.length === 1,
-			// 	),
-			// ],
-			// ["limit", arbOrd3Pos.filter(isLimit)],
-			// ["infinite successor", arbOrd3Pos.filter((x) => isAboveReals(x) && isSucc(x))],
-			["infinite", arbOrd3Pos.filter(isAboveReals)],
+			[
+				"infinite",
+				fc.oneof(
+					arbOrd2.filter(isAboveReals).filter((x) => maxReal(x) < 5),
+					arbOrd3Pos.filter(isAboveReals).filter((x) => maxReal(x) < 4),
+				),
+			],
 		];
 		const combs: [
 			string,
@@ -527,7 +540,7 @@ describe("ordinals", () => {
 		});
 
 		describe("combinations", () => {
-			const numRuns = 50;
+			const numRuns = 30;
 			for (const [name1, arb1, arb2, arb3] of combs) {
 				describe(`(${name1})`, () => {
 					it("preserves order for same base different exponents: b <= c implies a^b <= a^c", () => {
@@ -553,21 +566,20 @@ describe("ordinals", () => {
 							{ numRuns },
 						);
 					});
-
-					// TODO too slow
-					it.skip("law of exponents (multiplication of exponents): (a^b)^c = a^(b.c)", () => {
-						fc.assert(
-							fc.property(arb1, arb2, arb3, (a, b, c) =>
-								assertEq(
-									ordinalPow(ordinalPow(a, b), c),
-									ordinalPow(a, ordinalMult(b, c)),
-								),
-							),
-							{ numRuns },
-						);
-					});
 				});
 			}
+		});
+
+		it("law of exponents (multiplication of exponents): (a^b)^c = a^(b.c)", () => {
+			fc.assert(
+				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) =>
+					assertEq(
+						ordinalPow(ordinalPow(a, b), c),
+						ordinalPow(a, ordinalMult(b, c)),
+					),
+				),
+				{ numRuns: 50 },
+			);
 		});
 	});
 

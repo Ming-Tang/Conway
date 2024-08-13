@@ -20,7 +20,7 @@ export const arbRealGeneral = fc.oneof(
 
 export const defaultArrayConstraints: fc.ArrayConstraints = {
 	minLength: 0,
-	maxLength: 3,
+	maxLength: 4,
 };
 
 export const reduceConstraints = ({

@@ -551,35 +551,15 @@ export class Conway {
 		}
 
 		if (typeof i === "bigint") {
-			if (i > 16n) {
-				const x = Conway.ordinalMultInfiniteFinite(inf, i >> 4n);
-				const m2 = x.ordinalAdd(x);
-				const m4 = m2.ordinalAdd(m2);
-				const m8 = m4.ordinalAdd(m4);
-				const m16 = m8.ordinalAdd(m8);
-				let sum = m16;
-				const mod = i % 16n;
-				for (let i = 0n; i < mod; i += 1n) {
-					sum = sum.ordinalAdd(inf);
-				}
-				return sum;
+			if (i === 2n) {
+				return inf.ordinalAdd(inf);
 			}
-
-			if (i > 4n) {
-				const x = Conway.ordinalMultInfiniteFinite(inf, i >> 2n);
-				const m2 = x.ordinalAdd(x);
-				const m4 = m2.ordinalAdd(m2);
-				let sum = m4;
-				const mod = i % 4n;
-				for (let i = 0n; i < mod; i += 1n) {
-					sum = sum.ordinalAdd(inf);
-				}
-				return sum;
-			}
-
-			const x = Conway.ordinalMultInfiniteFinite(inf, i >> 1n);
-			const dbl = x.ordinalAdd(x);
-			return i % 2n === 0n ? dbl : dbl.ordinalAdd(inf);
+			const pred = i - 1n;
+			const { leadingPower: p0, leadingCoeff: c0 } = inf;
+			return Conway.mono(
+				Conway.multReal(c0, pred),
+				p0 ?? Conway.zero,
+			).ordinalAdd(inf);
 		}
 		return Conway.ordinalMultInfiniteFinite(inf, BigInt(i));
 	}
@@ -638,7 +618,7 @@ export class Conway {
 	 */
 	public ordinalPow(other: Real | Conway): Conway {
 		if (!(other instanceof Conway)) {
-			return this.ordinalPowInteger(BigInt(other));
+			return this.ordinalPowFinite(BigInt(other));
 		}
 
 		if (other.isZero) {
@@ -659,7 +639,7 @@ export class Conway {
 
 		const otherFinite = other.realValue;
 		if (otherFinite !== null) {
-			return this.ordinalPowInteger(BigInt(otherFinite));
+			return this.ordinalPowFinite(BigInt(otherFinite));
 		}
 
 		const thisFinite = this.realValue;
@@ -713,11 +693,10 @@ export class Conway {
 		}
 
 		const leadPow = Conway.ensure(this.leadingPower ?? Conway.zero);
-		const leadCoeff: Real = this.leadingCoeff ?? 1n;
 		for (const [p, c] of other) {
 			if (Conway.isZero(p)) {
 				// x^finite
-				prod = prod.ordinalMult(this.ordinalPowInteger(BigInt(c)));
+				prod = prod.ordinalMult(this.ordinalPowFinite(BigInt(c)));
 				continue;
 			}
 			// x^(w^p . c)
@@ -733,7 +712,7 @@ export class Conway {
 		return prod;
 	}
 
-	public ordinalPowInteger(other: bigint): Conway {
+	public ordinalPowFinite(other: bigint): Conway {
 		if (other === 0n) {
 			return Conway.one;
 		}
@@ -748,13 +727,24 @@ export class Conway {
 			);
 		}
 
+		// infinite^finite
 		if (other === 2n) {
 			return this.ordinalMult(this);
 		}
 
-		const m = this.ordinalPowInteger(other >> 1n);
+		if (other === 3n) {
+			return this.ordinalMult(this).ordinalMult(this);
+		}
+
+		const m = this.ordinalPowFinite(other >> 2n);
 		const m2 = m.ordinalMult(m);
-		return other % 2n === 1n ? m2.ordinalMult(this) : m2;
+		const m4 = m2.ordinalMult(m2);
+		let prod = m4;
+		const mod = other % 4n;
+		for (let i = 0n; i < mod; i += 1n) {
+			prod = prod.ordinalMult(this);
+		}
+		return prod;
 	}
 
 	/**
