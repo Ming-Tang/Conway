@@ -1,10 +1,9 @@
 import fc from "fast-check";
-import { birthday, ensure } from "../op";
+import { birthday, ensure, realBirthday } from "../op";
 import { isAboveReals } from "../op/comparison";
 import { concat, fromArray, type Seq } from "../seq";
 import { minusNumber, plusNumber, signExpansionNumber } from "./real";
 import { assertEq } from "../test/propsTest";
-import { Conway } from "../conway";
 import { sub } from "../op/arith";
 import { succ } from "../op/ordinal";
 import { arbDyadic } from "../test/generators";
@@ -54,7 +53,7 @@ describe("signExpansionNumber", () => {
 		fc.assert(
 			fc.property(arbNum, (x) => {
 				const diff = ensure(
-					sub(signExpansionNumber(x).length, Conway.realBirthday(x)),
+					sub(signExpansionNumber(x).length, realBirthday(x)),
 				);
 				return Math.abs(Number(diff.realPart)) < 2;
 			}),

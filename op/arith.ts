@@ -1,17 +1,15 @@
+import { one, ensure } from ".";
 import { Conway } from "../conway";
 import type { Real } from "../conway";
 
-export const neg = Conway.neg;
-export const add = Conway.add;
-export const sub = Conway.sub;
-export const mult = Conway.mult;
+export const { neg, add, addReal, sub, mult, multReal } = Conway;
 export const divRem = (a: Conway, b: Conway | Real) => a.divRem(b);
 export const divRemIters = (a: Conway, b: Conway | Real, n: number) =>
 	a.divRemIters(b, n);
 
 const powBigint = (value: Conway, pow: bigint): Conway => {
 	if (pow === 0n) {
-		return Conway.one;
+		return one;
 	}
 	if (pow === 1n) {
 		return value;
@@ -29,7 +27,7 @@ const powBigint = (value: Conway, pow: bigint): Conway => {
 
 const powNumberInt = (value: Conway, pow: number): Conway => {
 	if (pow === 0) {
-		return Conway.one;
+		return one;
 	}
 	if (pow === 1) {
 		return value;
@@ -50,17 +48,17 @@ export const powInt = (value: Conway | Real, pow: number | bigint): Conway => {
 		throw new RangeError("negative power");
 	}
 	if (pow === 0) {
-		return Conway.one;
+		return one;
 	}
 	if (pow === 1n || pow === 1) {
-		return Conway.ensure(value);
+		return ensure(value);
 	}
 	if (typeof pow === "number" && !Number.isInteger(pow)) {
 		throw new RangeError("non-integer power");
 	}
 
 	if (typeof pow === "bigint") {
-		return powBigint(Conway.ensure(value), pow);
+		return powBigint(ensure(value), pow);
 	}
-	return powNumberInt(Conway.ensure(value), pow);
+	return powNumberInt(ensure(value), pow);
 };

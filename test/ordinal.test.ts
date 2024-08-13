@@ -20,8 +20,17 @@ import {
 	pred,
 	ordinalPow,
 } from "../op/ordinal";
-import { ensure, isMono, mono, mono1, one, unit, zero } from "../op";
-import { isAboveReals, isPositive, isZero, le, lt } from "../op/comparison";
+import { ensure, fromReal, isMono, mono, mono1, one, unit, zero } from "../op";
+import {
+	eq,
+	ge,
+	gt,
+	isAboveReals,
+	isPositive,
+	isZero,
+	le,
+	lt,
+} from "../op/comparison";
 import { assertEq } from "./propsTest";
 
 fc.configureGlobal({ numRuns: 2000, verbose: false });
@@ -29,20 +38,16 @@ fc.configureGlobal({ numRuns: 2000, verbose: false });
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
 		it("constants", () => {
-			expect(Conway.zero.ordinalAdd(Conway.unit).eq(Conway.unit));
-			expect(
-				Conway.unit
-					.ordinalAdd(Conway.one)
-					.eq(Conway.unit.ordinalAdd(Conway.one)),
-			);
-			expect(Conway.one.ordinalAdd(Conway.unit).eq(Conway.unit));
+			expect(zero.ordinalAdd(unit).eq(unit));
+			expect(unit.ordinalAdd(one).eq(unit.ordinalAdd(one)));
+			expect(one.ordinalAdd(unit).eq(unit));
 		});
 
 		it("any ordinal ordinalAdd zero", () => {
-			fc.assert(fc.property(arbOrd3, (a) => a.ordinalAdd(Conway.zero).eq(a)));
+			fc.assert(fc.property(arbOrd3, (a) => a.ordinalAdd(zero).eq(a)));
 		});
 		it("zero ordinalAdd any ordinal", () => {
-			fc.assert(fc.property(arbOrd3, (a) => Conway.zero.ordinalAdd(a).eq(a)));
+			fc.assert(fc.property(arbOrd3, (a) => zero.ordinalAdd(a).eq(a)));
 		});
 
 		it("ordinalAdd result is ordinal", () => {
@@ -53,15 +58,15 @@ describe("ordinals", () => {
 
 		it("increasing", () => {
 			fc.assert(
-				fc.property(arbOrd3, arbOrd3, (a, b) => Conway.ge(a.ordinalAdd(b), a)),
+				fc.property(arbOrd3, arbOrd3, (a, b) => ge(a.ordinalAdd(b), a)),
 			);
 		});
 
 		it("strictly increasing (<) on right argument", () => {
 			fc.assert(
 				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
-					fc.pre(Conway.lt(a, b));
-					return Conway.lt(c.ordinalAdd(a), c.ordinalAdd(b));
+					fc.pre(lt(a, b));
+					return lt(c.ordinalAdd(a), c.ordinalAdd(b));
 				}),
 			);
 		});
@@ -69,8 +74,8 @@ describe("ordinals", () => {
 		it("increasing (<=) on right argument", () => {
 			fc.assert(
 				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
-					fc.pre(Conway.lt(a, b));
-					return Conway.le(a.ordinalAdd(c), b.ordinalAdd(c));
+					fc.pre(lt(a, b));
+					return le(a.ordinalAdd(c), b.ordinalAdd(c));
 				}),
 			);
 		});
@@ -78,7 +83,7 @@ describe("ordinals", () => {
 		it("static method is equivalent to instance method", () => {
 			fc.assert(
 				fc.property(arbOrd3, arbOrd3, (a, b) =>
-					Conway.eq(a.ordinalAdd(b), Conway.ordinalAdd(a, b)),
+					eq(a.ordinalAdd(b), ordinalAdd(a, b)),
 				),
 			);
 		});
@@ -86,38 +91,17 @@ describe("ordinals", () => {
 
 	describe("ordinalRightSub", () => {
 		it("constants", () => {
-			expect(
-				Conway.eq(
-					Conway.ordinalRightSub(Conway.zero, Conway.zero),
-					Conway.zero,
-				),
-			).toBe(true);
-			expect(
-				Conway.eq(Conway.ordinalRightSub(Conway.zero, Conway.one), Conway.one),
-			).toBe(true);
-			expect(
-				Conway.eq(Conway.ordinalRightSub(Conway.one, Conway.one), Conway.zero),
-			).toBe(true);
-			expect(
-				Conway.eq(Conway.ordinalRightSub(Conway.one, Conway.unit), Conway.unit),
-			).toBe(true);
-			expect(
-				Conway.eq(
-					Conway.ordinalRightSub(Conway.one, Conway.unit.add(Conway.one)),
-					Conway.unit.add(Conway.one),
-				),
-			).toBe(true);
-			expect(
-				Conway.eq(
-					Conway.ordinalRightSub(Conway.unit, Conway.unit),
-					Conway.zero,
-				),
-			).toBe(true);
+			expect(eq(ordinalRightSub(zero, zero), zero)).toBe(true);
+			expect(eq(ordinalRightSub(zero, one), one)).toBe(true);
+			expect(eq(ordinalRightSub(one, one), zero)).toBe(true);
+			expect(eq(ordinalRightSub(one, unit), unit)).toBe(true);
+			expect(eq(ordinalRightSub(one, unit.add(one)), unit.add(one))).toBe(true);
+			expect(eq(ordinalRightSub(unit, unit), zero)).toBe(true);
 		});
 
 		it("constant (w + finite)", () => {
-			const lhs = Conway.unit.add(3n);
-			const large = Conway.unit.add(5n);
+			const lhs = unit.add(3n);
+			const large = unit.add(5n);
 			const d = lhs.ordinalRightSub(large);
 			assertEq(d, 2n);
 		});
@@ -137,7 +121,7 @@ describe("ordinals", () => {
 					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					(a, b) => {
-						fc.pre(Conway.ge(b, a));
+						fc.pre(ge(b, a));
 						return a.ordinalRightSub(b).isOrdinal;
 					},
 				),
@@ -165,7 +149,7 @@ describe("ordinals", () => {
 				.map(([x, v]) => x.add(v));
 			fc.assert(
 				fc.property(arbOrdPlusFinite, arbOrdPlusFinite, (a, b) => {
-					fc.pre(Conway.gt(b, a));
+					fc.pre(gt(b, a));
 					const c = a.ordinalRightSub(b);
 					return a.ordinalAdd(c).eq(b);
 				}),
@@ -178,7 +162,7 @@ describe("ordinals", () => {
 					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
 					(a, b) => {
-						fc.pre(Conway.gt(b, a));
+						fc.pre(gt(b, a));
 						const c = a.ordinalRightSub(b);
 						return a.ordinalAdd(c).eq(b);
 					},
@@ -189,8 +173,8 @@ describe("ordinals", () => {
 		it("static method is equivalent to instance method", () => {
 			fc.assert(
 				fc.property(arbOrd3, arbOrd3, (a, b) => {
-					fc.pre(Conway.ge(b, a));
-					return Conway.eq(a.ordinalRightSub(b), Conway.ordinalRightSub(a, b));
+					fc.pre(ge(b, a));
+					return eq(a.ordinalRightSub(b), ordinalRightSub(a, b));
 				}),
 			);
 		});
@@ -267,7 +251,7 @@ describe("ordinals", () => {
 		it("finite * w = w", () => {
 			fc.assert(
 				fc.property(fc.integer({ min: 1 }), (x) =>
-					assertEq(ordinalMult(Conway.real(x), unit), unit),
+					assertEq(ordinalMult(fromReal(x), unit), unit),
 				),
 			);
 		});
@@ -277,7 +261,7 @@ describe("ordinals", () => {
 				fc.property(
 					arbOrd3.filter(isPositive),
 					arbOrd3.filter(isPositive),
-					(a, b) => Conway.ge(ordinalMult(a, b), a),
+					(a, b) => ge(ordinalMult(a, b), a),
 				),
 			);
 		});
@@ -305,7 +289,7 @@ describe("ordinals", () => {
 						arbFinite,
 						arbOrd3.map((x) => x.infinitePart),
 						(n, a) => {
-							return assertEq(ordinalMult(Conway.real(n), a), a);
+							return assertEq(ordinalMult(fromReal(n), a), a);
 						},
 					),
 				);
@@ -372,7 +356,7 @@ describe("ordinals", () => {
 						sum = ordinalAdd(sum, a);
 					}
 
-					return assertEq(ordinalMult(a, Conway.real(n)), sum);
+					return assertEq(ordinalMult(a, fromReal(n)), sum);
 				}),
 			);
 		});
@@ -590,7 +574,7 @@ describe("ordinals", () => {
 			q: Real | Conway,
 			r: Real | Conway,
 		) => {
-			if (!(Conway.isAboveReals(n) && !Conway.isAboveReals(d)) && le(d, r)) {
+			if (!(isAboveReals(n) && !isAboveReals(d)) && le(d, r)) {
 				throw new Error(
 					`remainder is too large. n=${n}, q=${q}, d=${d}, r=${r}`,
 				);
@@ -613,8 +597,8 @@ describe("ordinals", () => {
 		it("divide by 1", () => {
 			fc.assert(
 				fc.property(arbOrd3, (a) => {
-					const [q, r] = ordinalDivRem(a, Conway.one);
-					assertEq(r, Conway.zero);
+					const [q, r] = ordinalDivRem(a, one);
+					assertEq(r, zero);
 					return assertEq(q, a);
 				}),
 			);
@@ -641,8 +625,8 @@ describe("ordinals", () => {
 					arbOrd3.filter((x) => !x.isAboveReals),
 					(a) => {
 						const [q, r] = ordinalDivRem(a, a);
-						assertEq(r, Conway.zero);
-						return assertEq(q, Conway.one);
+						assertEq(r, zero);
+						return assertEq(q, one);
 					},
 				);
 			});
@@ -650,16 +634,16 @@ describe("ordinals", () => {
 			it("monomial", () => {
 				fc.property(arbOrd3.filter(isMono), (a) => {
 					const [q, r] = ordinalDivRem(a, a);
-					assertEq(r, Conway.zero);
-					return assertEq(q, Conway.one);
+					assertEq(r, zero);
+					return assertEq(q, one);
 				});
 			});
 
 			it("general", () => {
 				fc.property(arbOrd3.filter(isPositive), (a) => {
 					const [q, r] = ordinalDivRem(a, a);
-					assertEq(r, Conway.zero);
-					return assertEq(q, Conway.one);
+					assertEq(r, zero);
+					return assertEq(q, one);
 				});
 			});
 		});
@@ -740,7 +724,7 @@ describe("ordinals", () => {
 				fc.property(
 					arbLim3,
 					arbN,
-					(x, n) => Conway.ensure(canon(x, n)).length >= x.length,
+					(x, n) => ensure(canon(x, n)).length >= x.length,
 				),
 			);
 		});

@@ -1,5 +1,5 @@
 import { Conway, type Real } from "./conway";
-import { mono, mono1 } from "./op";
+import { birthday, mono, mono1, one, unit, fromReal as real } from "./op";
 import { isZero } from "./op/comparison";
 import { canon, isLimit, isSucc, noSucc } from "./op/ordinal";
 import { concat, cycleArray, fromArray } from "./seq";
@@ -12,14 +12,14 @@ console.log(`|s1| = ${s1.length}, |s2| = ${s2.length}, |s12| = ${s12.length}`);
 console.log("---");
 
 for (let i = 0; i < 10; i++) {
-	console.log(s12.index(Conway.real(0)));
-	console.log(s12.index(Conway.real(1)));
-	console.log(s12.index(Conway.real(2)));
+	console.log(s12.index(real(0)));
+	console.log(s12.index(real(1)));
+	console.log(s12.index(real(2)));
 }
 console.log("---");
 
 for (let i = 0; i < 3; i++) {
-	console.log(s12.index(Conway.real(i).add(Conway.unit)));
+	console.log(s12.index(real(i).add(unit)));
 }
 
 console.log("---");
@@ -35,26 +35,26 @@ console.log(`b = ${b}`);
 console.log(`a/b = ${q}`);
 console.log(`b(${a}) = ${a.birthday()}`);
 console.log(`b(${b}) = ${b.birthday()}`);
-console.log(`b(${q}) = ${Conway.birthday(q)}`);
+console.log(`b(${q}) = ${birthday(q)}`);
 
 const x0 = new Conway([
 	[0, 1],
-	[Conway.unit.neg(), 2],
-	[Conway.unit.neg().add(Conway.real(-4)), 6],
+	[unit.neg(), 2],
+	[unit.neg().add(real(-4)), 6],
 ]);
-console.log(`b(${x0}) = ${Conway.birthday(x0)}`);
+console.log(`b(${x0}) = ${birthday(x0)}`);
 
 const x1 = new Conway([
 	[0, 1],
-	[Conway.unit.neg(), 2],
+	[unit.neg(), 2],
 ]);
-console.log(`b(${x1}) = ${Conway.birthday(x1)}`);
+console.log(`b(${x1}) = ${birthday(x1)}`);
 
 const x2 = new Conway([
 	[0, 4],
-	[Conway.one.neg(), 6],
+	[one.neg(), 6],
 ]);
-console.log(`b(${x2}) = ${Conway.birthday(x2)}`);
+console.log(`b(${x2}) = ${birthday(x2)}`);
 
 const x3 = new Conway([
 	[
@@ -64,18 +64,18 @@ const x3 = new Conway([
 		]),
 		1,
 	],
-	[Conway.one.neg(), 2],
+	[one.neg(), 2],
 ]);
-console.log(`b(${x3}) = ${Conway.birthday(x3)}`);
+console.log(`b(${x3}) = ${birthday(x3)}`);
 
 const ords = [
-	Conway.unit,
-	Conway.unit.mult(2n),
-	Conway.unit.mult(2n).add(mono(4n, Conway.unit)),
-	mono(4n, Conway.unit),
-	mono1(Conway.unit),
-	mono(2n, Conway.unit.add(2n))
-		.add(mono(4n, Conway.unit.add(10n)))
+	unit,
+	unit.mult(2n),
+	unit.mult(2n).add(mono(4n, unit)),
+	mono(4n, unit),
+	mono1(unit),
+	mono(2n, unit.add(2n))
+		.add(mono(4n, unit.add(10n)))
 		.add(mono(2n, 1)),
 ];
 
@@ -109,21 +109,10 @@ for (const ord of ords) {
 	countback(ord, 5);
 }
 
-console.log(Conway.unit.add(1).ordinalPow(4n));
-console.log(Conway.mono(4n, 6n).add(1n).ordinalPow(10n));
+console.log(unit.add(1).ordinalPow(4n));
+console.log(mono(4n, 6n).add(1n).ordinalPow(10n));
+console.log(mono(4n, 6n).add(mono(3n, 3n)).add(1n).ordinalPow(10n));
 console.log(
-	Conway.mono(4n, 6n).add(Conway.mono(3n, 3n)).add(1n).ordinalPow(10n),
+	mono(2n, unit).add(mono(4n, 6n)).add(mono(3n, 3n)).add(1n).ordinalPow(10n),
 );
-console.log(
-	Conway.mono(2n, Conway.unit)
-		.add(Conway.mono(4n, 6n))
-		.add(Conway.mono(3n, 3n))
-		.add(1n)
-		.ordinalPow(10n),
-);
-console.log(
-	Conway.mono(2n, Conway.unit)
-		.add(Conway.mono(4n, 6n))
-		.add(Conway.mono(3n, 3n))
-		.ordinalPow(10n),
-);
+console.log(mono(2n, unit).add(mono(4n, 6n)).add(mono(3n, 3n)).ordinalPow(10n));

@@ -1,6 +1,6 @@
 import { ensure, mono, one, zero } from ".";
 import { Conway, type Real } from "../conway";
-import { sub, mult, powInt, add } from "./arith";
+import { sub, mult, add, multReal } from "./arith";
 import { eq, isZero } from "./comparison";
 
 /**
@@ -16,7 +16,7 @@ const expLow = (x: Real | Conway, terms = null as number | null) => {
 
 	let sum = zero;
 	let f = 1.0;
-	let xPow: Real | Conway = Conway.one;
+	let xPow: Real | Conway = one;
 	for (let i = 0; i < terms; i++) {
 		sum = sum.add(mult(xPow, 1.0 / f));
 		xPow = mult(xPow, x);
@@ -29,7 +29,7 @@ const expLow = (x: Real | Conway, terms = null as number | null) => {
  * Evaluate the infinite series for `log(1 + x)` where `x` is infinitesimal.
  */
 export const log1pLow = (x: Real | Conway, terms = null as number | null) => {
-	if (Conway.isZero(x)) {
+	if (isZero(x)) {
 		return one;
 	}
 	if (terms === null) {
@@ -64,14 +64,14 @@ const logInf = (x: Real | Conway) => ensure(x).sumTerms((p, c) => mult(p, c));
  */
 export const factorLeadLow = (x: Conway) => {
 	const { leadingPower: pLead0, leadingCoeff: r } = x;
-	const pLead = pLead0 ?? Conway.zero;
+	const pLead = pLead0 ?? zero;
 	const inf = pLead;
 	const terms: [Real | Conway, Real][] = [];
 	for (const [p, c] of x) {
 		if (eq(p, pLead)) {
 			continue;
 		}
-		terms.push([sub(p, pLead), Conway.multReal(c, 1.0 / Number(r))]);
+		terms.push([sub(p, pLead), multReal(c, 1.0 / Number(r))]);
 	}
 
 	return { inf, r, low: new Conway(terms) };
@@ -97,11 +97,11 @@ export const exp = (
 
 	const inf = xp.multTerms((p, c) =>
 		// g(x) = x for below epsilon numbers
-		Conway.mono(Number(c), mult(p, c)),
+		mono(Number(c), mult(p, c)),
 	);
 	const r = Math.exp(Number(xr));
 	const low = isZero(xm) ? one : expLow(xm, terms);
-	return Conway.ensure(inf).mult(r).mult(low);
+	return ensure(inf).mult(r).mult(low);
 };
 
 export const log = (

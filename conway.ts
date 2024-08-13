@@ -115,6 +115,10 @@ export class Conway {
 		return new Conway([[power, value]]);
 	}
 
+	public static mono1(power: Real | Conway): Conway {
+		return new Conway([[power, 1n]]);
+	}
+
 	public static ensure(value: Real | Conway) {
 		return value instanceof Conway ? value : Conway.real(value);
 	}
@@ -658,7 +662,7 @@ export class Conway {
 
 				if (Conway.isOne(p)) {
 					// finite^(w.c) = (finite^w)^c = w^c
-					prod = prod.ordinalMult(Conway.mono(1n, c));
+					prod = prod.ordinalMult(Conway.mono1(c));
 					continue;
 				}
 
@@ -678,13 +682,13 @@ export class Conway {
 				const prv = Conway.ensure(p).realValue;
 				if (prv !== null) {
 					const exponent = Conway.ordinalMult(
-						Conway.mono(1n, Conway.addReal(prv, -1n)),
+						Conway.mono1(Conway.addReal(prv, -1n)),
 						c,
 					);
-					prod = prod.ordinalMult(Conway.mono(1n, exponent));
+					prod = prod.ordinalMult(Conway.mono1(exponent));
 				} else {
 					prod = prod.ordinalMult(
-						Conway.mono(1n, Conway.ordinalMult(Conway.mono(1n, p), c)),
+						Conway.mono1(Conway.ordinalMult(Conway.mono1(p), c)),
 					);
 				}
 			}
@@ -1173,7 +1177,7 @@ export class Conway {
 			}
 
 			const bp = Conway.ensure(p).birthday(realBirthday);
-			return Conway.mono(1n, bp).ordinalMult(bc);
+			return Conway.mono1(bp).ordinalMult(bc);
 		});
 	}
 

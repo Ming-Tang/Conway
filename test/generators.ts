@@ -1,6 +1,7 @@
 import fc from "fast-check";
 import { Conway } from "../conway";
 import type { Real } from "../conway";
+import { fromReal } from "../op";
 
 export const arbFinite = fc.float({
 	min: -1e3,
@@ -98,8 +99,7 @@ export const arbConway5 = (
 
 export const arbConwayReal = (
 	arbReal?: fc.Arbitrary<Real>,
-): fc.Arbitrary<Conway> =>
-	(arbReal ?? arbRealGeneral).map((r) => Conway.real(r));
+): fc.Arbitrary<Conway> => (arbReal ?? arbRealGeneral).map((r) => fromReal(r));
 
 export const arbOrd1 = arbConway1(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,

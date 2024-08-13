@@ -1,7 +1,7 @@
 import { Conway, type Real } from "../conway";
 import { ensure, unit, zero } from "../op";
 import { neg } from "../op/arith";
-import { gt, isNegative, isZero } from "../op/comparison";
+import { gt, isNegative, isOne, isZero } from "../op/comparison";
 import { ordinalRightSub } from "../op/ordinal";
 import {
 	concat,
@@ -9,7 +9,6 @@ import {
 	empty,
 	fromArray,
 	indexByPower,
-	leftTrunc,
 	map,
 	maybeSimplifyConst,
 	prod,
@@ -24,7 +23,7 @@ export const signExpansion = (
 	value: Real | Conway,
 	real = signExpansionReal,
 ): Seq<Sign> => {
-	if (Conway.isZero(value)) {
+	if (isZero(value)) {
 		return empty as Seq<Sign>;
 	}
 
@@ -33,7 +32,7 @@ export const signExpansion = (
 	}
 
 	let se = empty as Seq<Sign>;
-	let lastP: Real | Conway = Conway.zero;
+	let lastP: Real | Conway = zero;
 	for (const [p, c] of value) {
 		if (isZero(p)) {
 			// real
@@ -45,7 +44,7 @@ export const signExpansion = (
 		if (isNegative(p)) {
 			// infinitesimal
 			const p1 = sePower.length;
-			const dp = gt(lastP, p1) ? zero : ordinalRightSub(lastP, p1);
+			// const dp = gt(lastP, p1) ? zero : ordinalRightSub(lastP, p1);
 			const [pos, neg] = c > 0 ? [true, false] : [false, true];
 			// [+] & (-)^SE(p) & SE(c, true)
 			seMono = concat1(
@@ -64,9 +63,9 @@ export const signExpansion = (
 			se = concat1(se, seMono);
 			continue;
 		}
-		if (Conway.isOne(c)) {
+		if (isOne(c)) {
 			seMono = sePower;
-		} else if (Conway.isOne(neg(c))) {
+		} else if (isOne(neg(c))) {
 			seMono = map(sePower, (x) => !x);
 		} else {
 			seMono = map(prod(sePower, real(c)), ([cr, cp]) => cr === cp);

@@ -158,7 +158,7 @@ describe("concat: f & g", () => {
 		fc.assert(
 			fc.property(arbSeq3, arbSeq3, (f, g) => {
 				fc.pre(isPositive(f.length) && isPositive(g.length));
-				return concat(f, g).index(f.length) === g.index(Conway.zero);
+				return concat(f, g).index(f.length) === g.index(zero);
 			}),
 		);
 	});
@@ -379,7 +379,7 @@ describe("prod", () => {
 		});
 
 		it("|prod(s2, sw)| = w", () => {
-			assertEq(prod(s2, sw).length, Conway.ensure(2n).ordinalMult(unit));
+			assertEq(prod(s2, sw).length, ensure(2n).ordinalMult(unit));
 		});
 
 		it("prod(sw, s2)[w.i + j] = (j, i)", () => {
@@ -409,7 +409,7 @@ describe("prod", () => {
 					arbFiniteBigintOrd,
 					fc.bigInt({ min: 0n, max: 1n }),
 					(i, j) => {
-						const idx = Conway.ensure(2n * i + j);
+						const idx = ensure(2n * i + j);
 						fc.pre(lt(idx, p.length));
 						const [a, b] = p.index(idx);
 						assertEq(b, i);
@@ -519,7 +519,7 @@ describe("indexByPower", () => {
 				arbSeq3,
 				arbOrd3.map((k): [Conway, Conway] => [
 					k,
-					ensure(k.leadingPower ?? Conway.zero),
+					ensure(k.leadingPower ?? zero),
 				]),
 				(f, [k, i]) => {
 					fc.pre(lt(i, f.length));
