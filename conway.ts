@@ -916,7 +916,6 @@ export class Conway {
 		if (rv !== null) {
 			const q = Conway.finiteOrdinalDiv(this.leadingCoeff, rv);
 			const r = Conway.ordinalRightSub(Conway.ordinalMult(div, q), this);
-			// console.log('rv', {N: this, backMult: Conway.ordinalMult(div, q), d: rv, q, r});
 			return [q, r];
 		}
 
@@ -933,11 +932,8 @@ export class Conway {
 		// (p0, q0) = divMono(dp0, D0, p0, q0)
 		// D * qRest + (r + ...) = N_Rest
 
-		//console.log('----');
 		for (const [pUpper, cUpper] of this) {
-			//console.log(`(${this}) / (${v}) = (${quotient}) R (${remainder})`);
 			const [pd0, cd0] = v.#terms[0];
-			//console.log(` --> N0=${Conway.mono(cUpper, pUpper)} D0=${Conway.mono(cd0, pd0)}`);
 			if (Conway.lt(pUpper, pd0)) {
 				break;
 			}
@@ -947,37 +943,29 @@ export class Conway {
 				? Conway.finiteOrdinalDiv(cUpper, cd0)
 				: cUpper;
 			if (!cr) {
-				// console.log(' --> cr == 0');
 				continue;
 			}
 
 			let dq = Conway.mono(cr, de);
 			let toSub = Conway.ordinalMult(div, dq);
-			//console.log(` --> dq=${dq}, div=${div} toSub=${toSub}`);
 			if (Conway.lt(remainder, toSub)) {
 				if (cr > 1) {
-					//console.log(` --> remainder too low, dropping coeff ${cr}`);
 					const cr1 = Conway.addReal(cr, -1n);
 					const dq1 = Conway.mono(cr1, de);
 					const toSub1 = Conway.ordinalMult(div, dq1);
 					if (Conway.lt(remainder, toSub1)) {
-						//console.log(` --> remainder too low after dropping, ${remainder} < ${toSub1}`);
 						break;
 					}
-					//console.log(` --> drop success cr1=${cr1} dq1=${dq1}`);
 					dq = dq1;
 					toSub = toSub1;
 				} else {
-					//console.log(` --> remainder too low, ${remainder} < ${toSub}`);
 					break;
 				}
 			}
 			quotient = Conway.ordinalAdd(quotient, dq);
 			remainder = Conway.ordinalRightSub(toSub, remainder);
-			//console.log(` --> rem1=${remainder}`);
 		}
 
-		//console.log(`END (${this}) / (${v}) = (${quotient}) R (${remainder})`);
 		return [quotient, remainder];
 	}
 
