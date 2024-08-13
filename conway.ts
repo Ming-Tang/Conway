@@ -262,7 +262,7 @@ export class Conway {
 		return this.#terms.length === 0 ? 0 : this.get(0);
 	}
 
-	public get infinitesimalPart(): Real | Conway {
+	public get infinitesimalPart(): Conway {
 		return this.filterTerms((p) => Conway.isNegative(p));
 	}
 
@@ -1165,17 +1165,23 @@ export class Conway {
 		return this.ordSumTerms((p, c) => {
 			const bc = realBirthday(c);
 			if (Conway.isZero(p)) {
+				// Real part
 				return bc;
 			}
 			if (Conway.isNegative(p)) {
-				const p1 = Conway.birthday(p, realBirthday);
-				const dp = Conway.gt(lastP, p1)
-					? Conway.zero
-					: Conway.ordinalRightSub(lastP, p1);
-				lastP = p1;
-				return Conway.unit.ordinalMult(dp).ordinalAdd(Conway.sub(bc, 1n));
+				// Infinitesimal part:
+				// birthday(c0 p^-p0 + c1 p^-p1 + c2 p^-p2 + ...)
+				// = bLow(c0, p0) + bLow(c1, p1 - p0) + bLow(c2, p2 - p1) + ...
+				// bLow(c, p) = w.birthday(p) + (birthday(c) - 1)
+				const pPos = Conway.neg(p);
+				const dp = Conway.sub(pPos, lastP);
+				lastP = pPos;
+				const len = Conway.birthday(dp, realBirthday);
+				// +-^(birthday(dp)) SE(coeff)
+				return Conway.unit.ordinalMult(len).ordinalAdd(Conway.sub(bc, 1n));
 			}
 
+			// Infinite part
 			const bp = Conway.ensure(p).birthday(realBirthday);
 			return Conway.mono1(bp).ordinalMult(bc);
 		});

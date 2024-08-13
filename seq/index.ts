@@ -342,6 +342,22 @@ export class IndexByPower<T> implements Seq<T> {
 	}
 }
 
+class OverrideIsConstant<T, S extends Seq<T>> implements Seq<T> {
+	readonly _type = "OverrideIsConstant";
+	readonly length: Ord;
+
+	constructor(
+		private seq: S,
+		public readonly isConstant = true,
+	) {
+		this.length = this.seq.length;
+	}
+
+	index(i: Ord): T {
+		return this.seq.index(i);
+	}
+}
+
 export const fromArray = <T>(xs: T[]): Seq<T> => new FromArray(xs);
 
 export const concat = <T>(f: Seq<T>, g: Seq<T>): Seq<T> => new Concat(f, g);
@@ -381,6 +397,21 @@ export const maybeSimplifyConst = <T>(f: Seq<T>): Seq<T> => {
 	}
 	return f;
 };
+
+/**
+ * Override `isConstant` property for a particular sequence.
+ *
+ * If the second argument is true, create a sequence based on the first argument
+ * except with `isConstant` being true.
+ * Otherwise, return the first argument.
+ * @param seq The sequence to override `isConstant`.
+ * @param isConstant Should override the `isConstant` flag
+ * @returns
+ */
+export const maybeOverrideIsConstant = <T, S extends Seq<T> = Seq<T>>(
+	seq: S,
+	isConstant = true,
+) => (isConstant ? new OverrideIsConstant<T, S>(seq, true) : seq);
 
 export const identity = (length: Ord) => new Identity(length);
 

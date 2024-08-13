@@ -93,7 +93,7 @@ export const signExpansionNumber = (
 	const fracPart = r < 0 ? -r - integerPart : r - integerPart;
 	const integerSigns = cycleArray0(
 		[isPositive],
-		ensure(omitInitial ? integerPart - 1 : integerPart),
+		ensure(omitInitial && integerPart ? integerPart - 1 : integerPart),
 	);
 	if (fracPart === 0) {
 		return integerSigns;
@@ -118,9 +118,9 @@ export const signExpansionBigint = (
 		return empty as Seq<Sign>;
 	}
 	if (r > 0) {
-		return cycleArray0([true], ensure(omitInitial ? r - 1n : r));
+		return cycleArray0([true], ensure(omitInitial && r ? r - 1n : r));
 	}
-	return cycleArray0([false], ensure(omitInitial ? r + 1n : -r));
+	return cycleArray0([false], ensure(omitInitial && r ? r + 1n : -r));
 };
 
 export const signExpansionReal = (r: Real, omitInitial = false): Seq<Sign> =>
