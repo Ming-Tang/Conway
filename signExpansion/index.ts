@@ -13,23 +13,27 @@ import {
 	maybeOverrideIsConstant,
 	prod,
 	type Seq,
+	repeatEach,
 } from "../seq";
 import { signExpansionReal, type Sign } from "./real";
 
 const concat1 = <T>(a: Seq<T>, b: Seq<T>) =>
 	maybeSimplifyConst(a === empty ? b : b === empty ? a : concat(a, b));
 
+const flipSign = (x: Sign): Sign => !x;
+
 const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
 	const pos = coeff > 0;
 	const neg = !pos;
 	const sePower = signExpansion(power);
+	const rep = repeatEach(sePower, unit);
 	// [+] & rep(w, SE(power)) & SE_Real(coeff, true)
 	return concat1(
 		concat1(
 			fromArray<Sign>([pos]),
 			maybeSimplifyConst(
 				maybeOverrideIsConstant<Sign, Seq<Sign>>(
-					map(prod(cycleArray([null], unit), sePower), ([_, v]) => neg === v),
+					neg ? map(rep, flipSign) : rep,
 					sePower.isConstant,
 				),
 			),

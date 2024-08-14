@@ -1,7 +1,7 @@
 import type { Conway } from "../conway";
 import { ensure, mono1, one, unit, zero } from "../op";
 import { ge, gt, isAboveReals, isZero, le } from "../op/comparison";
-import { ordinalDivRem } from "../op/ordinal";
+import { ordinalDivRem, ordinalMult } from "../op/ordinal";
 
 export type Ord = Conway;
 
@@ -339,6 +339,29 @@ export class IndexByPower<T> implements Seq<T> {
 
 		const { leadingPower: p } = i;
 		return this.seq.index(ensure(p ?? 0n));
+	}
+}
+
+export class RepeatEach<T> implements Seq<T> {
+	readonly _type = "RepeatEach";
+	readonly length: Ord;
+	readonly isConstant: boolean;
+
+	constructor(
+		private seq: Seq<T>,
+		private multiplier = unit,
+	) {
+		this.length = ensure(ordinalMult(this.multiplier, seq.length));
+		this.isConstant = seq.isConstant;
+	}
+
+	index(i: Ord): T {
+		assertLength(i, this.length);
+		if (!isAboveReals(i)) {
+			return this.seq.index(zero);
+		}
+		const [q, _] = i.ordinalDivRem(this.multiplier);
+		return this.seq.index(ensure(q));
 	}
 }
 
