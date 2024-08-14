@@ -184,13 +184,13 @@ Let `a = inf + r + low` be a surreal number that can be decomposed into a sum of
 | `r` | `a.realPart` | Real part, or zero
 | `low` | `a.infinitesimalPart` | Purely infinitesimal part, or zero
 | N/A | `a.realValue` | If `a` is purely real (`inf = low = 0`), its real part. Otherwise, `null`
-| $r > 0$ | `isPositive(a)` | Is `a` positive? |
-| $r < 0$ | `isNegative(a)` | Is `a` negative? |
-| $r = 0$ | `isZero(a)` | `a` equals zero? |
-| $r = 1$ | `isOne(a)` | `a` equals one? |
-| $r = \omega$ | `isUnit(a)` | `a` equals omega? |
-| $r > \mathbb{R}$ | `isAboveReals(a)` | Is `a` infinite (or `inf` is positive)?
-| $r < -\mathbb{R}$ | `isBelowNegativeReals(a)` | Is `-a` infinite (or `inf` is negative)?
+| $a > 0$ | `isPositive(a)` | Is `a` positive? |
+| $a < 0$ | `isNegative(a)` | Is `a` negative? |
+| $a = 0$ | `isZero(a)` | `a` equals zero? |
+| $a = 1$ | `isOne(a)` | `a` equals one? |
+| $a = \omega$ | `isUnit(a)` | `a` equals omega? |
+| $a > \mathbb{R}$ | `isAboveReals(a)` | Is `a` infinite (or `inf` is positive)?
+| $a < -\mathbb{R}$ | `isBelowNegativeReals(a)` | Is `-a` infinite (or `inf` is negative)?
 | $a \in \text{Ord}$ | `isOrdinal(a)` | `a` represents an ordinal number? |
 
 ### Ordinal number operations
