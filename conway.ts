@@ -8,6 +8,7 @@ import {
 	realIsNegative,
 	realIsOne,
 	realIsPositive,
+	realIsZero,
 	realLt,
 	realMult,
 	realNeg,
@@ -130,7 +131,7 @@ export class Conway {
 	 * @returns A surreal number that constructs this real number.
 	 */
 	public static real(value: Real): Conway {
-		return new Conway([[realZero, value]]);
+		return new Conway(realIsZero(value) ? [] : [[realZero, value]], true);
 	}
 
 	/**
@@ -139,11 +140,14 @@ export class Conway {
 	 * @param power The exponent, which is a number, bigint or `Conway`.
 	 */
 	public static mono(value: Real, power: Real | Conway): Conway {
-		return new Conway([[power, value]]);
+		if (realIsZero(value)) {
+			return Conway.zero;
+		}
+		return new Conway([[Conway.maybeDowngrade(power), value]], true);
 	}
 
 	public static mono1(power: Real | Conway): Conway {
-		return new Conway([[power, realOne]]);
+		return new Conway([[Conway.maybeDowngrade(power), realOne]], true);
 	}
 
 	public static ensure(value: Real | Conway) {
@@ -160,10 +164,10 @@ export class Conway {
 		}
 
 		if (value.isZero) {
-			return 0;
+			return 0n;
 		}
 		if (value.isOne) {
-			return 1;
+			return 1n;
 		}
 
 		const rv = value.realValue;
