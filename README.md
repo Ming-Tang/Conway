@@ -162,7 +162,7 @@ Let `a, b` be surreal numbers.
 |--|--|--|
 | $a + b$ | `add(a, b)` | Addition |
 | $a - b$ | `sub(a, b)` | Subtraction |
-| $a * b$ | `mult(a, b)` | Multiplication |
+| $a \times b$ | `mult(a, b)` | Multiplication |
 | $a / b$ | `divRem(a, b)` | Surreal long division (returns quotient, remainder tuple) |
 | $a / b$ | `divRemIters(a, b, n)` | Repeat surreal long division by `n` times and returns (quotient, remainder) |
 | $-a$ | `neg(a)` | Negation |
@@ -173,9 +173,9 @@ Let `a, b` be surreal numbers.
 ### Surreal number properties
 
 Let `a = inf + r + low` be a surreal number that can be decomposed into a sum of
- - purely infinite value `inf`
- - real value `r`
- - and purely infinitesimal value `low`
+ - purely infinite value `inf` $\ \in \mathbb{J}$
+ - real value `r` $\ \in \mathbb{R}$
+ - and purely infinitesimal value `low` $\ \in \mathbf{No}^\prec$
 
 | Operation | Code | Description |
 |--|--|--|
@@ -200,9 +200,9 @@ Let `a, b` be ordinal numbers.
 | Operation | Code | Description |
 |--|--|--|
 | $a + b$ | `ordinalAdd(a, b)` | [Ordinal addition](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Addition) |
-| $a - b$ | `ordinalRightSub(b, a)` | Ordinal right subtraction (solution to `a + ? = b`) |
+| $a - b$ | `ordinalRightSub(b, a)` | Ordinal right subtraction (solution to $a + ? = b$) |
 | $a \times b$ | `ordinalMult(a, b)` | [Ordinal multiplication](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Multiplication) |
-| $a / b$ | `ordinalDivRem(b, a)` | Ordinal division and remainder (solution to `b . quotient + remainder`) |
+| $a / b$ | `ordinalDivRem(b, a)` | Ordinal division and remainder (returns `[q, r]` where $a = b q + r$ and $q$ is maximized) |
 | $a^b$ | `ordinalPow(a, b)` | [Ordinal exponentiation](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Exponentiation) |
 | $a\oplus b$ | `add(a, b)` | [Natural sum](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Natural_operations) (implemented as surreal sum) |
 | $a \otimes b$ | `mult(a, b)` | [Natural product](https://en.wikipedia.org/wiki/Ordinal_arithmetic#Natural_operations) (implemented as surreal product) |
