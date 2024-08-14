@@ -10,11 +10,21 @@ import {
 	leftTrunc,
 	map,
 	prod,
+	repeatEach,
 	type Ord,
 	type Seq,
 } from ".";
 import { arbFiniteBigintOrd, arbOrd3 } from "../test/generators";
-import { eq, ge, isPositive, isZero, le, lt, ne } from "../op/comparison";
+import {
+	eq,
+	ge,
+	isAboveReals,
+	isPositive,
+	isZero,
+	le,
+	lt,
+	ne,
+} from "../op/comparison";
 import { isLimit, ordinalAdd, ordinalMult, succ } from "../op/ordinal";
 import { ensure, mono1, one, unit, zero } from "../op";
 import { Conway } from "../conway";
@@ -492,6 +502,71 @@ describe("prod", () => {
 				),
 			);
 		});
+	});
+});
+
+describe("repeatEach", () => {
+	it("|repeatEach(f, 0)| = 0", () => {
+		fc.assert(
+			fc.property(arbSeq3, (f) => assertEq(repeatEach(f, zero).length, zero)),
+		);
+	});
+
+	it("|repeatEach(empty, n)| = 0", () => {
+		fc.assert(
+			fc.property(arbOrd3, (n) => assertEq(repeatEach(empty, n).length, zero)),
+		);
+	});
+
+	it("|repeatEach(f, n)| = n |f|", () => {
+		fc.assert(
+			fc.property(arbSeq3, arbOrd3, (f, n) =>
+				assertEq(repeatEach(f, n).length, ordinalMult(n, f.length)),
+			),
+		);
+	});
+
+	it("repeatEach(f, w)[w i + j] = f[i], where i < |f| and j is finite", () => {
+		fc.assert(
+			fc.property(arbSeq3, arbOrd3, arbFiniteBigintOrd, (f, i, j) => {
+				fc.pre(lt(i, f.length));
+				const idx = ensure(ordinalAdd(ordinalMult(unit, i), j));
+				return assertEq(repeatEach(f, unit).index(idx), f.index(i));
+			}),
+		);
+	});
+
+	it("repeatEach(f, n)[n i + j] = f[i], finites only", () => {
+		fc.assert(
+			fc.property(
+				arbSeq3.filter((x) => !isAboveReals(x.length)),
+				arbFiniteBigintOrd.filter((x) => ge(x, 2n)).map(ensure),
+				arbFiniteBigintOrd.map(ensure),
+				arbFiniteBigintOrd.map(ensure),
+				(f, n, i, j) => {
+					fc.pre(!isZero(f.length));
+					fc.pre(lt(i, f.length) && lt(j, n));
+					const idx = ensure(ordinalAdd(ordinalMult(n, i), j));
+					return assertEq(repeatEach(f, n).index(idx), f.index(i));
+				},
+			),
+		);
+	});
+
+	it("repeatEach(f, n)[n i + j] = f[i], where i < |f| and j < n and n > 0", () => {
+		fc.assert(
+			fc.property(
+				arbSeq3,
+				arbOrd3.filter(isPositive),
+				arbOrd3,
+				arbFiniteBigintOrd,
+				(f, n, i, j) => {
+					fc.pre(lt(i, f.length) && lt(j, n));
+					const idx = ensure(ordinalAdd(ordinalMult(n, i), j));
+					return assertEq(repeatEach(f, n).index(idx), f.index(i));
+				},
+			),
+		);
 	});
 });
 

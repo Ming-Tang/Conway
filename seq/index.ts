@@ -365,16 +365,18 @@ export class RepeatEach<T> implements Seq<T> {
 		private seq: Seq<T>,
 		private multiplier = unit,
 	) {
-		this.length = ensure(ordinalMult(this.multiplier, seq.length));
+		this.length = this.multiplier.ordinalMult(seq.length);
 		this.isConstant = seq.isConstant;
 	}
 
 	index(i: Ord): T {
 		assertLength(i, this.length);
-		if (!isAboveReals(i)) {
-			return this.seq.index(zero);
-		}
-		const [q, _] = i.ordinalDivRem(this.multiplier);
+		const [q, _] = modifiedDivRem(
+			i,
+			this.multiplier,
+			this.seq.length,
+			this.length,
+		);
 		return this.seq.index(ensure(q));
 	}
 }
