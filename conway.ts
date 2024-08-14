@@ -8,7 +8,6 @@ import {
 	realIsNegative,
 	realIsOne,
 	realIsPositive,
-	realIsZero,
 	realLt,
 	realMult,
 	realNeg,

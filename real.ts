@@ -62,8 +62,11 @@ export const realNe = (left: Real, right: Real): boolean =>
 	typeof left === "bigint" && typeof right === "bigint"
 		? left !== right
 		: Number(left) !== Number(right);
+
 export const realGt = (left: Real, right: Real): boolean => left > right;
+export const realGe = (left: Real, right: Real): boolean => left >= right;
 export const realLt = (left: Real, right: Real): boolean => left < right;
+export const realLe = (left: Real, right: Real): boolean => left <= right;
 export const realAbs = <R extends Real = Real>(value: R): R =>
 	realIsNegative(value) ? realNeg(value) : value;
 
