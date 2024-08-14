@@ -10,12 +10,26 @@ export type Ord = Conway;
  * transfinite length (`length`) and is indexed by ordinal numbers (`index`).
  */
 export interface Seq<T> {
-	length: Ord;
+	/**
+	 * The length, or order type of the transfinite sequence.
+	 *
+	 * Notation given transfinite sequence `f`: `|f|`
+	 */
+	readonly length: Ord;
+
+	/**
+	 * Given an index, return the element at the index.
+	 *
+	 * Notation for the `i`th element of sequence `f`: `f[i]`
+	 * @param i ndex The index in ordinal number, must be less than `length`.
+	 * @throws An exception if the index is out of bounds.
+	 */
 	index: (index: Ord) => T;
 
 	/**
 	 * True if all elements of this sequence are the same (or empty/singleton).
 	 * False otherwise or cannot be properly determined.
+	 * Used by "constant folding" procedures to simplify the sequence.
 	 */
 	readonly isConstant: boolean;
 }
@@ -381,16 +395,62 @@ class OverrideIsConstant<T, S extends Seq<T>> implements Seq<T> {
 	}
 }
 
+/**
+ * Given an array, create a new transfinite sequence based on the array.
+ * ```
+ * fromArray(xs)[i] = xs[i]
+ * |fromArray(xs)| = xs.length
+ * ```
+ */
 export const fromArray = <T>(xs: T[]): Seq<T> => new FromArray(xs);
 
+/**
+ * Given two transfinite sequences `f` and `g`, create a new
+ * transfinite sequence by joining them in sequence.
+ * Notation: `f & g`
+ * ```
+ * (f & g)[i] = f[i] if i < |f|
+ * (f & g)[i] = g[i - |f|] if |f| <= i < |f| + |g|
+ * |f & g| = |f| + |g|
+ * ```
+ */
 export const concat = <T>(f: Seq<T>, g: Seq<T>): Seq<T> => new Concat(f, g);
 
+/**
+ * Given a sequence `f`, create a new sequence without forst `trunc` elements.
+ * ```
+ * leftTrunc(n, f)[i] = f[n + i]
+ * |leftTrunc(n, f)| = |f| - n
+ * ```
+ * @param trunc The length to truncate
+ */
 export const leftTrunc = <T>(trunc: Ord, f: Seq<T>): Seq<T> =>
 	new LeftTruncate(trunc, f);
 
+// TODO rightTrunc
+
+/**
+ * Given an array, create a new transfinite sequence that repeats it
+ * `n` times.
+ * ```
+ * |cycleArray(xs, n)| = xs.length n
+ * ```
+ * @param xs The array to repeat
+ * @param n The number of repetitions
+ */
 export const cycleArray = <T>(xs: T[], n = unit): Seq<T> =>
 	new CycleArray(xs, n);
 
+/**
+ * Given a sequence `f`, repeat it `n` times.
+ *
+ * ```
+ * cycle(f, 0) = empty
+ * cycle(f, n+1) = f & cycle(f, n)
+ * cycle(f, limit n) = lim (i -> cycle(f, n(i)))
+ * |cycle(f, n)| = |f| n
+ * ```
+ */
 export const cycle = <T>(f: Seq<T>, n = one): Seq<T> => new Cycle(f, n);
 
 /**
@@ -399,14 +459,30 @@ export const cycle = <T>(f: Seq<T>, n = one): Seq<T> => new Cycle(f, n);
  * repeatEach(empty, n) = empty
  * repeatEach(cons(f, x), n) = repeatEach(x) & cycleArray(x, n)
  * repeatEach(lim f, n) = lim (i -> repeatEach(f(i), n))
+ * |repeatEach(f, n)| = n |f|
  * ```
  */
 export const repeatEach = <T>(f: Seq<T>, n = unit): Seq<T> =>
 	new RepeatEach(f, n);
 
+/**
+ * Constructs the Cartesian product between two transfinite sequences `f` and `g`.
+ * ```
+ * |prod(f, g)| = |f| |g|
+ * prod[|g| j + i] = (f[i], g[j]) where i < |g|
+ * ```
+ */
 export const prod = <A, B>(f: Seq<A>, g: Seq<B>): Seq<[A, B]> =>
 	new Product(f, g);
 
+/**
+ * Constructs a transfinite sequence that applies a function on the
+ * original element at the given index.
+ * ```
+ * |map(f, func)| = |f|
+ * map(f, func)[i] = func(f[i])
+ * ```
+ */
 export const map = <A, B>(f: Seq<A>, func: (value: A) => B): Seq<B> =>
 	new SeqMap(f, func);
 
@@ -422,6 +498,14 @@ export const mapNatural = <T>(
 	length = unit as Ord,
 ) => new MapNatural<T>(func, length);
 
+/**
+ * Given a transfinite sequence `f`, construct a transfinite sequence that indexes `f`
+ * based on the exponent of the leading power of the index.
+ * ```
+ * indexByPower(f)[w^p0 c0 + ...] = f[p0]
+ * |indexByPower(f)| = w^|f|
+ * ```
+ */
 export const indexByPower = <T>(f: Seq<T>): Seq<T> => new IndexByPower(f);
 
 /**
@@ -454,6 +538,21 @@ export const maybeOverrideIsConstant = <T, S extends Seq<T> = Seq<T>>(
 	isConstant = true,
 ) => (isConstant ? new OverrideIsConstant<T, S>(seq, true) : seq);
 
+/**
+ * Constructs a transfinite sequence that indexes to the index itself.
+ * ```
+ * identity(n)[i] = i
+ * ```
+ * @param length Length of the sequence.
+ * @returns
+ */
 export const identity = (length: Ord) => new Identity(length);
 
+/**
+ * The empty transfinite sequence with `unknown` as the type parameter.
+ * You can safely cast the type parameter.
+ * ```
+ * const empty1 = empty as Seq<T>;
+ * ```
+ */
 export const empty = Empty.instance;
