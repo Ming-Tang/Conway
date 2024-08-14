@@ -1,4 +1,5 @@
-import type { Conway, Real } from "../conway";
+import type { Conway } from "../conway";
+import type { Real } from "../real";
 import { ensure } from "../op";
 import { isOne, isZero } from "../op/comparison";
 import {

@@ -1,5 +1,6 @@
 import fc from "fast-check";
-import { type Real, Conway } from "../conway";
+import { Conway } from "../conway";
+import type { Real } from "../real";
 import { eq } from "../op/comparison";
 import { ensure } from "../op";
 

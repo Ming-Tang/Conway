@@ -1,4 +1,5 @@
-import { Conway, type Real } from "../conway";
+import { Conway } from "../conway";
+import type { Real } from "../real";
 
 export const {
 	zero,

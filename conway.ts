@@ -1,4 +1,13 @@
-export type Real = number | bigint;
+import {
+	realAdd,
+	realIntegerDiv,
+	realIntegerPow,
+	realMult,
+	realNeg,
+	realOne,
+	realSub,
+	type Real,
+} from "./real";
 
 const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
 
@@ -80,7 +89,7 @@ export class Conway {
 				newTerms.push([e, c]);
 				continue;
 			}
-			found[1] = Conway.addReal(c, found[1]);
+			found[1] = realAdd(c, found[1]);
 		}
 
 		this.#terms = freeze(
@@ -491,13 +500,10 @@ export class Conway {
 			let added = false;
 			for (const [e1, c1] of this) {
 				if (!added && Conway.isZero(e1)) {
-					newTerms.push([e1, Conway.addReal(c1, other)]);
+					newTerms.push([e1, realAdd(c1, other)]);
 					added = true;
 				} else {
-					newTerms.push([
-						e1,
-						Conway.isZero(e1) ? Conway.addReal(c1, other) : c1,
-					]);
+					newTerms.push([e1, Conway.isZero(e1) ? realAdd(c1, other) : c1]);
 				}
 			}
 			if (!added) {
@@ -516,7 +522,7 @@ export class Conway {
 			if (!found) {
 				terms.push([e1, c1]);
 			} else {
-				found[1] = Conway.addReal(found[1], c1);
+				found[1] = realAdd(found[1], c1);
 			}
 		}
 		return new Conway(terms);
@@ -560,10 +566,7 @@ export class Conway {
 			}
 			const pred = i - 1n;
 			const { leadingPower: p0, leadingCoeff: c0 } = inf;
-			return Conway.mono(
-				Conway.multReal(c0, pred),
-				p0 ?? Conway.zero,
-			).ordinalAdd(inf);
+			return Conway.mono(realMult(c0, pred), p0 ?? Conway.zero).ordinalAdd(inf);
 		}
 		return Conway.ordinalMultInfiniteFinite(inf, BigInt(i));
 	}
@@ -591,7 +594,7 @@ export class Conway {
 		const { realPart: i2 } = other;
 		// i1 * i2 = i1 * i2
 		if (!this.isAboveReals && !other.isAboveReals) {
-			return Conway.ensure(Conway.multReal(i1, i2));
+			return Conway.ensure(realMult(i1, i2));
 		}
 		// (...) * i2
 		if (!other.isAboveReals) {
@@ -600,9 +603,7 @@ export class Conway {
 		if (!this.isAboveReals) {
 			const { infinitePart: inf2 } = other;
 			// i1 nonzero: i1 * (inf2 + i2) = inf2 + i1 * i2
-			return Conway.isZero(i1)
-				? Conway.zero
-				: inf2.add(Conway.multReal(i1, i2));
+			return Conway.isZero(i1) ? Conway.zero : inf2.add(realMult(i1, i2));
 		}
 		const p0 = this.leadingPower ?? Conway.zero;
 		let tot = Conway.zero;
@@ -682,7 +683,7 @@ export class Conway {
 				const prv = Conway.ensure(p).realValue;
 				if (prv !== null) {
 					const exponent = Conway.ordinalMult(
-						Conway.mono1(Conway.addReal(prv, -1n)),
+						Conway.mono1(realSub(prv, realOne)),
 						c,
 					);
 					prod = prod.ordinalMult(Conway.mono1(exponent));
@@ -777,17 +778,14 @@ export class Conway {
 				break;
 			}
 
-			const diffCoeff = Conway.addReal(c2, -c1);
+			const diffCoeff = realAdd(c2, -c1);
 			if (Conway.isZero(diffCoeff)) {
 				left = new Conway(left.#terms.slice(1));
 				right = new Conway(right.#terms.slice(1));
 				continue;
 			}
 
-			return new Conway([
-				[p1, Conway.addReal(c2, -c1)],
-				...right.#terms.slice(1),
-			]);
+			return new Conway([[p1, realAdd(c2, -c1)], ...right.#terms.slice(1)]);
 		}
 		return right;
 	}
@@ -804,7 +802,7 @@ export class Conway {
 		if (!(other instanceof Conway)) {
 			const newTerms: [Real | Conway, Real][] = [];
 			for (const [e1, c1] of this) {
-				newTerms.push([e1, Conway.multReal(c1, other)]);
+				newTerms.push([e1, realMult(c1, other)]);
 			}
 			return new Conway(newTerms);
 		}
@@ -815,11 +813,11 @@ export class Conway {
 			for (const [e2, c2] of other) {
 				const e3 = Conway.add(e1, e2);
 				const found = terms.find(([e]) => Conway.eq(e, e3));
-				const prod = Conway.multReal(c1, c2);
+				const prod = realMult(c1, c2);
 				if (!found) {
 					terms.push([e3, prod]);
 				} else {
-					found[1] = Conway.addReal(found[1], prod);
+					found[1] = realAdd(found[1], prod);
 				}
 			}
 		}
@@ -887,12 +885,10 @@ export class Conway {
 		return [q, r];
 	}
 
-	public static finiteOrdinalDiv(value: Real, other: Real) {
-		if (typeof value === "bigint" && typeof other === "bigint") {
-			return value / other;
-		}
-		return Math.floor(Number(value) / Number(other));
+	private static finiteOrdinalDiv(value: Real, other: Real) {
+		return realIntegerDiv(value, other);
 	}
+
 	/**
 	 * Given this number (must be ordinal) `N` and another ordinal number `D`,
 	 * find `q, r` such that `r < d` and `D * q + r = N`.
@@ -954,7 +950,7 @@ export class Conway {
 			let toSub = Conway.ordinalMult(div, dq);
 			if (Conway.lt(remainder, toSub)) {
 				if (cr > 1) {
-					const cr1 = Conway.addReal(cr, -1n);
+					const cr1 = realSub(cr, realOne);
 					const dq1 = Conway.mono(cr1, de);
 					const toSub1 = Conway.ordinalMult(div, dq1);
 					if (Conway.lt(remainder, toSub1)) {
@@ -977,35 +973,12 @@ export class Conway {
 	// #region Arithmetic (static)
 
 	public static neg(value: Real | Conway): Real | Conway {
-		return value instanceof Conway ? value.neg() : -value;
-	}
-
-	public static addReal(left: Real, right: Real): Real {
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			return left + right;
-		}
-		if (typeof left === "number" && typeof right === "number") {
-			return left + right;
-		}
-		return Number(left) + Number(right);
-	}
-
-	public static multReal(left: Real, right: Real): Real {
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			return left * right;
-		}
-		if (typeof left === "number" && typeof right === "number") {
-			return left * right;
-		}
-		return Number(left) * Number(right);
+		return value instanceof Conway ? value.neg() : realNeg(value);
 	}
 
 	public static add(left: Real | Conway, right: Real | Conway): Real | Conway {
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			return left + right;
-		}
-		if (typeof left === "number" && typeof right === "number") {
-			return left + right;
+		if (!(left instanceof Conway) && !(right instanceof Conway)) {
+			return realAdd(left, right);
 		}
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
@@ -1013,11 +986,8 @@ export class Conway {
 	}
 
 	public static sub(left: Real | Conway, right: Real | Conway): Real | Conway {
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			return left - right;
-		}
-		if (typeof left === "number" && typeof right === "number") {
-			return left - right;
+		if (!(left instanceof Conway) && !(right instanceof Conway)) {
+			return realSub(left, right);
 		}
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
@@ -1028,11 +998,8 @@ export class Conway {
 		left: Real | Conway,
 		right: Real | Conway,
 	): Real | Conway {
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			return left + right;
-		}
-		if (typeof left === "number" && typeof right === "number") {
-			return left + right;
+		if (!(left instanceof Conway) && !(right instanceof Conway)) {
+			return realAdd(left, right);
 		}
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
@@ -1043,11 +1010,8 @@ export class Conway {
 		left: Real | Conway,
 		right: Real | Conway,
 	): Real | Conway {
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			return left * right;
-		}
-		if (typeof left === "number" && typeof right === "number") {
-			return left * right;
+		if (!(left instanceof Conway) && !(right instanceof Conway)) {
+			return realMult(left, right);
 		}
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
@@ -1055,11 +1019,8 @@ export class Conway {
 	}
 
 	public static ordinalPow(left: Real | Conway, right: Real | Conway) {
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			return left ** right;
-		}
-		if (typeof left === "number" && typeof right === "number") {
-			return left ** right;
+		if (!(left instanceof Conway) && !(right instanceof Conway)) {
+			return realIntegerPow(left, right);
 		}
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
@@ -1131,9 +1092,7 @@ export class Conway {
 			}
 
 			if (!(e instanceof Conway)) {
-				sum = sum.add(
-					Conway.mono(Conway.multReal(e, c), Conway.addReal(e, -1n)),
-				);
+				sum = sum.add(Conway.mono(realMult(e, c), realSub(e, realOne)));
 				continue;
 			}
 

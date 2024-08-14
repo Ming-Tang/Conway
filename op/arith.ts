@@ -1,8 +1,8 @@
 import { one, ensure } from ".";
 import { Conway } from "../conway";
-import type { Real } from "../conway";
+import type { Real } from "../real";
 
-export const { neg, add, addReal, sub, mult, multReal } = Conway;
+export const { neg, add, sub, mult } = Conway;
 export const divRem = (a: Conway, b: Conway | Real) => a.divRem(b);
 export const divRemIters = (a: Conway, b: Conway | Real, n: number) =>
 	a.divRemIters(b, n);

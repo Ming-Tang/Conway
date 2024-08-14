@@ -1,7 +1,8 @@
-import { Conway, type Real } from "../conway";
+import { Conway } from "../conway";
 import { unit, zero } from "../op";
 import { neg, sub } from "../op/arith";
 import { isNegative, isOne, isZero } from "../op/comparison";
+import type { Real } from "../real";
 import {
 	concat,
 	cycleArray,

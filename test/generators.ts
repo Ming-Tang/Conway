@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { Conway } from "../conway";
-import type { Real } from "../conway";
+import type { Real } from "../real";
 import { fromReal } from "../op";
 
 export const arbFinite = fc.float({

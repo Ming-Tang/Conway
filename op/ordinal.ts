@@ -1,5 +1,6 @@
-import { Conway, type Real } from "../conway";
-import { sub, add, addReal } from "./arith";
+import { Conway } from "../conway";
+import { realOne, realSub, type Real } from "../real";
+import { sub, add } from "./arith";
 import { isZero, isOne } from "./comparison";
 
 export const {
@@ -55,7 +56,7 @@ export const canon = (x: Conway, n: Real, limitCoeff = 1n): Real | Conway => {
 		return new Conway([...preTerms, [p0, n]]);
 	}
 
-	const c0 = addReal(c, -1n);
+	const c0 = realSub(c, realOne);
 	if (isLimit(p)) {
 		// ... + w^pn (p + 1)
 		return new Conway([

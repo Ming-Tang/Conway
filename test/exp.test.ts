@@ -3,7 +3,8 @@ import { add, mult } from "../op/arith";
 import { exp, factorLeadLow, log, log1pLow } from "../op/exp";
 import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
 import { eq, isPositive, isZero } from "../op/comparison";
-import { Conway, type Real } from "../conway";
+import { Conway } from "../conway";
+import type { Real } from "../real";
 import { ensure, mono, one, zero } from "../op";
 
 const close = (a: Real | Conway, b: Real | Conway) => {

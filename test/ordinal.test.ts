@@ -1,5 +1,6 @@
 import fc from "fast-check";
-import { Conway, type Real } from "../conway";
+import { Conway } from "../conway";
+import type { Real } from "../real";
 import {
 	arbConway3,
 	arbFiniteBigint,

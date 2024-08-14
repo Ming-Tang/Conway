@@ -1,5 +1,6 @@
-import { Conway, type Real } from "./conway";
-import { mono1, unit } from "./op";
+import { Conway } from "./conway";
+import type { Real } from "./real";
+import { unit } from "./op";
 import { eq, isOne, isZero } from "./op/comparison";
 import { canon, isLimit, pred } from "./op/ordinal";
 
