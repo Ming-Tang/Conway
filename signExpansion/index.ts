@@ -2,7 +2,7 @@ import { Conway } from "../conway";
 import { unit, zero } from "../op";
 import { neg, sub } from "../op/arith";
 import { isNegative, isOne, isZero } from "../op/comparison";
-import type { Real } from "../real";
+import { realAbs, realIsPositive, type Real } from "../real";
 import {
 	concat,
 	cycleArray,
@@ -24,7 +24,7 @@ const concat1 = <T>(a: Seq<T>, b: Seq<T>) =>
 const flipSign = (x: Sign): Sign => !x;
 
 const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
-	const pos = coeff > 0;
+	const pos = realIsPositive(coeff);
 	const neg = !pos;
 	const sePower = signExpansion(power);
 	const rep = repeatEach(sePower, unit);
@@ -39,7 +39,7 @@ const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
 				),
 			),
 		),
-		signExpansionReal(coeff < 0 ? -coeff : coeff, true),
+		signExpansionReal(realAbs(coeff), true),
 	);
 };
 

@@ -1,11 +1,22 @@
 import {
 	realAdd,
+	realBirthday,
+	realCompare,
+	realGt,
 	realIntegerDiv,
 	realIntegerPow,
+	realIsNegative,
+	realIsOne,
+	realIsPositive,
+	realIsZero,
+	realLt,
 	realMult,
 	realNeg,
 	realOne,
+	realSign,
 	realSub,
+	realToBigint,
+	realZero,
 	type Real,
 } from "./real";
 
@@ -102,7 +113,7 @@ export class Conway {
 	private static sortTermsDescending(terms: [Real | Conway, Real][]) {
 		terms.sort(([e1, c1], [e2, c2]): number => {
 			const compExp = Conway.compare(e1, e2);
-			return compExp === 0 ? (c2 > c1 ? 1 : c2 === c1 ? 0 : -1) : compExp;
+			return compExp === 0 ? realCompare(c1, c2) : compExp;
 		});
 	}
 
@@ -112,7 +123,7 @@ export class Conway {
 	 * @returns A surreal number that constructs this real number.
 	 */
 	public static real(value: Real): Conway {
-		return new Conway([[0, value]]);
+		return new Conway([[realZero, value]]);
 	}
 
 	/**
@@ -125,7 +136,7 @@ export class Conway {
 	}
 
 	public static mono1(power: Real | Conway): Conway {
-		return new Conway([[power, 1n]]);
+		return new Conway([[power, realOne]]);
 	}
 
 	public static ensure(value: Real | Conway) {
@@ -192,7 +203,7 @@ export class Conway {
 		}
 
 		const [_, c] = this.#terms[0];
-		return c > 0;
+		return realIsPositive(c);
 	}
 
 	public get isNegative(): boolean {
@@ -201,7 +212,7 @@ export class Conway {
 		}
 
 		const [_, c] = this.#terms[0];
-		return c < 0;
+		return realIsNegative(c);
 	}
 
 	/**
@@ -219,7 +230,10 @@ export class Conway {
 			return false;
 		}
 		const [p, c] = this.#terms[0];
-		return (p instanceof Conway ? p.isPositive : p > 0) && c > 0;
+		return (
+			(p instanceof Conway ? p.isPositive : realIsPositive(p)) &&
+			realIsPositive(c)
+		);
 	}
 
 	/**
@@ -230,7 +244,10 @@ export class Conway {
 			return false;
 		}
 		const [p, c] = this.#terms[0];
-		return (p instanceof Conway ? p.isPositive : p > 0) && c < 0;
+		return (
+			(p instanceof Conway ? p.isPositive : realIsPositive(p)) &&
+			realIsNegative(c)
+		);
 	}
 
 	/**
@@ -246,7 +263,7 @@ export class Conway {
 	 * Returns true if and only if all coefficients are positive.
 	 */
 	public get isPositiveDefinite() {
-		return this.#terms.every(([_, c]) => c >= 0);
+		return this.#terms.every(([_, c]) => !realIsNegative(c));
 	}
 
 	/**
@@ -344,13 +361,13 @@ export class Conway {
 
 		let h = 0n;
 		const [e0, c0] = this.#terms[0];
-		const sign = c0 === 0n || c0 === 0n ? 0n : c0 > 0n ? 1n : -1n;
+		const sign = realToBigint(realSign(c0));
 		let powHash = 0n;
 
 		if (e0 instanceof Conway && e0.isAboveReals) {
 			const [p0] = e0.#terms[0];
 			powHash = Conway.isAboveReals(p0)
-				? 21n + (p0 instanceof Conway ? BigInt(p0.order) : 0n)
+				? 21n + (p0 instanceof Conway ? realToBigint(p0.order) : 0n)
 				: Conway.isPositive(p0)
 					? 21n
 					: 20n;
@@ -414,14 +431,14 @@ export class Conway {
 		if (value instanceof Conway) {
 			return value.isPositive;
 		}
-		return value > 0;
+		return realIsPositive(value);
 	}
 
 	public static isNegative(value: Real | Conway): boolean {
 		if (value instanceof Conway) {
 			return value.isNegative;
 		}
-		return value < 0;
+		return realIsNegative(value);
 	}
 
 	public static isAboveReals(value: Real | Conway): boolean {
@@ -487,7 +504,7 @@ export class Conway {
 	// #region Arithmetic
 
 	public neg(): Conway {
-		return new Conway(this.#terms.map(([e, c]) => [e, -c]));
+		return new Conway(this.#terms.map(([e, c]) => [e, realNeg(c)]));
 	}
 
 	public add(other: Real | Conway): Conway {
@@ -529,7 +546,7 @@ export class Conway {
 	}
 
 	public sub(other: Real | Conway): Conway {
-		return this.add(other instanceof Conway ? other.neg() : -other);
+		return this.add(other instanceof Conway ? other.neg() : realNeg(other));
 	}
 
 	/**
@@ -556,7 +573,7 @@ export class Conway {
 		if (Conway.isOne(i)) {
 			return inf;
 		}
-		if (i < 0) {
+		if (realIsNegative(i)) {
 			throw new Error("Multiplier cannot be negative");
 		}
 
@@ -568,7 +585,7 @@ export class Conway {
 			const { leadingPower: p0, leadingCoeff: c0 } = inf;
 			return Conway.mono(realMult(c0, pred), p0 ?? Conway.zero).ordinalAdd(inf);
 		}
-		return Conway.ordinalMultInfiniteFinite(inf, BigInt(i));
+		return Conway.ordinalMultInfiniteFinite(inf, realToBigint(i));
 	}
 
 	/**
@@ -623,7 +640,7 @@ export class Conway {
 	 */
 	public ordinalPow(other: Real | Conway): Conway {
 		if (!(other instanceof Conway)) {
-			return this.ordinalPowFinite(BigInt(other));
+			return this.ordinalPowFinite(realToBigint(other));
 		}
 
 		if (other.isZero) {
@@ -644,7 +661,7 @@ export class Conway {
 
 		const otherFinite = other.realValue;
 		if (otherFinite !== null) {
-			return this.ordinalPowFinite(BigInt(otherFinite));
+			return this.ordinalPowFinite(realToBigint(otherFinite));
 		}
 
 		const thisFinite = this.realValue;
@@ -701,7 +718,7 @@ export class Conway {
 		for (const [p, c] of other) {
 			if (Conway.isZero(p)) {
 				// x^finite
-				prod = prod.ordinalMult(this.ordinalPowFinite(BigInt(c)));
+				prod = prod.ordinalMult(this.ordinalPowFinite(realToBigint(c)));
 				continue;
 			}
 			// x^(w^p . c)
@@ -758,7 +775,7 @@ export class Conway {
 	public ordinalRightSub(other: Real | Conway): Conway {
 		const c = Conway.compare(this, other);
 		if (c < 0) {
-			throw new RangeError(`No solution: ${this} > ${other}`);
+			throw new RangeError(`No solution: ${this} > ${other.toString()}`);
 		}
 		if (c === 0) {
 			return Conway.zero;
@@ -778,14 +795,14 @@ export class Conway {
 				break;
 			}
 
-			const diffCoeff = realAdd(c2, -c1);
+			const diffCoeff = realSub(c2, c1);
 			if (Conway.isZero(diffCoeff)) {
 				left = new Conway(left.#terms.slice(1));
 				right = new Conway(right.#terms.slice(1));
 				continue;
 			}
 
-			return new Conway([[p1, realAdd(c2, -c1)], ...right.#terms.slice(1)]);
+			return new Conway([[p1, realSub(c2, c1)], ...right.#terms.slice(1)]);
 		}
 		return right;
 	}
@@ -949,7 +966,7 @@ export class Conway {
 			let dq = Conway.mono(cr, de);
 			let toSub = Conway.ordinalMult(div, dq);
 			if (Conway.lt(remainder, toSub)) {
-				if (cr > 1) {
+				if (realGt(cr, realOne)) {
 					const cr1 = realSub(cr, realOne);
 					const dq1 = Conway.mono(cr1, de);
 					const toSub1 = Conway.ordinalMult(div, dq1);
@@ -1032,13 +1049,10 @@ export class Conway {
 		right: Real | Conway,
 	): Real | Conway {
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
-			if (right < left) {
+			if (realLt(right, left)) {
 				throw new RangeError(`No solution: ${left} + ? = ${right}`);
 			}
-			if (typeof left === "bigint" && typeof right === "bigint") {
-				return right - left;
-			}
-			return Number(right) - Number(left);
+			return realSub(right, left);
 		}
 
 		const l1 = Conway.ensure(left);
@@ -1050,8 +1064,8 @@ export class Conway {
 		right: Real | Conway,
 	): [Real | Conway, Real | Conway] {
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
-			const n = BigInt(left);
-			const d = BigInt(right);
+			const n = realToBigint(left);
+			const d = realToBigint(right);
 			const q = n / d;
 			const r = n - q * d;
 			return [q, r];
@@ -1160,39 +1174,7 @@ export class Conway {
 	 * have a finite birthday.
 	 */
 	public static realBirthday(real: Real): Real {
-		if (real === 0 || real === 0n) {
-			return real;
-		}
-
-		if (typeof real === "bigint") {
-			return real < 0n ? -real : real;
-		}
-
-		const x = real < 0 ? -real : real;
-		const iPart = Math.floor(x);
-		const fracPart = x - iPart;
-		if (fracPart === 0) {
-			return iPart;
-		}
-
-		let i = 1;
-		let mid = 1;
-		let half = 0.5;
-		while (half) {
-			if (fracPart === mid) {
-				break;
-			}
-
-			if (fracPart > mid) {
-				mid += half;
-			} else {
-				mid -= half;
-			}
-			i += 1;
-			half /= 2;
-		}
-
-		return iPart + i;
+		return realBirthday(real);
 	}
 
 	// #endregion Birthday
@@ -1310,12 +1292,12 @@ export class Conway {
 				m = `${variable}^[${e.toString()}]`;
 			}
 
-			if (c < 0) {
+			if (realIsNegative(c)) {
 				parts.push(
-					`-${first ? "" : " "}${Conway.isOne(-c) && m ? "" : -c}${m}`,
+					`-${first ? "" : " "}${realIsOne(realNeg(c)) && m ? "" : realNeg(c)}${m}`,
 				);
 			} else {
-				parts.push(`${first ? "" : "+ "}${Conway.isOne(c) && m ? "" : c}${m}`);
+				parts.push(`${first ? "" : "+ "}${realIsOne(c) && m ? "" : c}${m}`);
 			}
 			first = false;
 		}

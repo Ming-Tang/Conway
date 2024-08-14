@@ -1,5 +1,5 @@
 import { Conway } from "../conway";
-import { realOne, realSub, type Real } from "../real";
+import { realIsPositive, realOne, realSub, type Real } from "../real";
 import { sub, add } from "./arith";
 import { isZero, isOne } from "./comparison";
 
@@ -15,7 +15,7 @@ export const {
 export const isLimit = (x: Real | Conway): x is Conway =>
 	x instanceof Conway && !isZero(x) && isZero(x.realPart);
 export const isSucc = (x: Real | Conway) =>
-	x instanceof Conway ? x.realPart > 0 : x > 0;
+	x instanceof Conway ? realIsPositive(x.realPart) : realIsPositive(x);
 
 export const noSucc = (x: Real | Conway) =>
 	x instanceof Conway ? sub(x, x.realPart) : 0n;

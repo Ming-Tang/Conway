@@ -1,5 +1,5 @@
 import { Conway } from "./conway";
-import type { Real } from "./real";
+import { realToBigint, realZero, type Real } from "./real";
 import { unit } from "./op";
 import { eq, isOne, isZero } from "./op/comparison";
 import { canon, isLimit, pred } from "./op/ordinal";
@@ -44,7 +44,7 @@ export const hardy = (ord: Real | Conway, n: bigint): bigint => {
 		}
 		if (ord.length === 1) {
 			if (isOne(ord.leadingPower ?? 0)) {
-				const a = BigInt(ord.leadingCoeff);
+				const a = realToBigint(ord.leadingCoeff);
 				return n * (1n << a);
 			}
 		}
@@ -81,12 +81,12 @@ export const slow = (ord: Real | Conway, n: bigint): bigint => {
 			return n;
 		}
 		if (ord.length === 1) {
-			if (isOne(ord.leadingPower ?? 0)) {
-				const a = BigInt(ord.leadingCoeff);
+			if (isOne(ord.leadingPower ?? realZero)) {
+				const a = realToBigint(ord.leadingCoeff);
 				return n + a;
 			}
 			if (isOne(ord.leadingCoeff) && !(ord.leadingPower instanceof Conway)) {
-				return n ** BigInt(ord.leadingPower || 0n);
+				return n ** realToBigint(ord.leadingPower || 0n);
 			}
 			if (isOne(ord.leadingCoeff) && eq(ord.leadingPower ?? 0, unit)) {
 				return n ** n;
