@@ -407,7 +407,9 @@ export class Conway {
 		const sign = realToBigint(realSign(c0));
 		let powHash = 0n;
 
-		if (e0 instanceof Conway && e0.isAboveReals) {
+		if (e0 instanceof Conway && e0.order > 1) {
+			powHash = 64n * BigInt(e0.order);
+		} else if (e0 instanceof Conway && e0.isAboveReals) {
 			const [p0] = e0.#terms[0];
 			powHash = Conway.isAboveReals(p0)
 				? 21n + (p0 instanceof Conway ? realToBigint(p0.order) : 0n)
