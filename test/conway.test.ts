@@ -870,7 +870,7 @@ describe("Conway", () => {
 		});
 	});
 
-	describe("order", () => {
+	describe("order and negativeOrder", () => {
 		it("constants", () => {
 			expect(Conway.zero.order).toBe(0);
 			expect(Conway.one.order).toBe(0);
@@ -918,6 +918,65 @@ describe("Conway", () => {
 					arbFinite.filter(isPositive),
 					(x, c) => mono(c, x).order === x.order + 1,
 				),
+			);
+		});
+
+		const tower = (n: number): Conway =>
+			n <= 0 ? Conway.one : mono1(tower(n - 1));
+		it("x <= T(order(x) + 1) for power tower T(x)", () => {
+			fc.assert(
+				fc.property(arbConway3(arbFinite), (x) =>
+					Conway.lt(x, tower(x.order + 1)),
+				),
+			);
+		});
+
+		it("if order(x) > 0, then order(-x) != 0", () => {
+			fc.assert(
+				fc.property(arbConway3(arbFinite), (x) => {
+					fc.pre(x.order > 0);
+					return x.order > 0 !== x.neg().order > 0;
+				}),
+			);
+		});
+
+		it("for x > 0, if order(x) = 0, then order(-x) = 0", () => {
+			fc.assert(
+				fc.property(arbConway3(arbFinite).filter(Conway.isPositive), (x) => {
+					fc.pre(x.order === 0);
+					return x.neg().order === 0;
+				}),
+			);
+		});
+
+		it("negativeOrder(x) = order(-x)", () => {
+			fc.assert(
+				fc.property(arbConway3(arbFinite), (x) => {
+					return x.neg().order === x.negativeOrder;
+				}),
+			);
+		});
+	});
+
+	describe("isPositiveInfinitesimal and isNegativeInfinitesimal", () => {
+		it("isPositiveInfinitesimal --> equals to its infinitesimalPart", () => {
+			fc.property(arbConway3(arbFinite).filter(isPositive), (x) => {
+				fc.pre(x.isPositiveInfinitesimal);
+				return Conway.eq(x, x.infinitesimalPart);
+			});
+		});
+
+		it("isNegativeInfinitesimal --> equals to its infinitesimalPart", () => {
+			fc.property(arbConway3(arbFinite).filter(isNegative), (x) => {
+				fc.pre(x.isNegativeInfinitesimal);
+				return Conway.eq(x, x.infinitesimalPart);
+			});
+		});
+
+		it("both cannot be true at the same time", () => {
+			fc.property(
+				arbConway3(arbFinite),
+				(x) => !(x.isPositiveInfinitesimal && x.isNegativeInfinitesimal),
 			);
 		});
 	});

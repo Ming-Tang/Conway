@@ -233,6 +233,9 @@ export class Conway {
 		return this.length <= 1;
 	}
 
+	// Number line
+	// isBelowNegativeReals | realValue < 0 | isNegativeInfinitesimal | isZero | isPositiveInfinitesimal | realValue > 0 | isAboveReals
+
 	/**
 	 * Returns true if and only if this number is positive and infinite.
 	 */
@@ -241,10 +244,7 @@ export class Conway {
 			return false;
 		}
 		const [p, c] = this.#terms[0];
-		return (
-			(p instanceof Conway ? p.isPositive : realIsPositive(p)) &&
-			realIsPositive(c)
-		);
+		return Conway.isPositive(p) && realIsPositive(c);
 	}
 
 	/**
@@ -255,10 +255,23 @@ export class Conway {
 			return false;
 		}
 		const [p, c] = this.#terms[0];
-		return (
-			(p instanceof Conway ? p.isPositive : realIsPositive(p)) &&
-			realIsNegative(c)
-		);
+		return Conway.isPositive(p) && realIsNegative(c);
+	}
+
+	public get isPositiveInfinitesimal(): boolean {
+		if (this.#terms.length === 0) {
+			return false;
+		}
+		const [p, c] = this.#terms[0];
+		return Conway.isNegative(p) && realIsPositive(c);
+	}
+
+	public get isNegativeInfinitesimal(): boolean {
+		if (this.#terms.length === 0) {
+			return false;
+		}
+		const [p, c] = this.#terms[0];
+		return Conway.isNegative(p) && realIsNegative(c);
 	}
 
 	/**
@@ -323,12 +336,33 @@ export class Conway {
 		return this.#terms[0][1];
 	}
 
+	/**
+	 * Get the size of the power tower of omega this number is greater than.
+	 * Let `T(0) = 1, T(n) = w^T(n-1)`.
+	 * For all `x`, `x < T(x.order + 1)`
+	 */
 	public get order(): number {
 		if (this.#terms.length === 0) {
 			return 0;
 		}
 
 		if (!this.isAboveReals) {
+			return 0;
+		}
+
+		const [p, _] = this.#terms[0];
+		return 1 + (p instanceof Conway ? p.order : 0);
+	}
+
+	/**
+	 * Get the `order` of the negation of this value.
+	 */
+	public get negativeOrder(): number {
+		if (this.#terms.length === 0) {
+			return 0;
+		}
+
+		if (!this.isBelowNegativeReals) {
 			return 0;
 		}
 
@@ -499,7 +533,12 @@ export class Conway {
 
 		if (typeof value === "bigint" && value > -256n && value < 256n) {
 			Conway.#EQ_HASH_CACHE.set(value, h);
-		} else if (typeof value === "number" && Number.isInteger(value) && value > -256 && value < 256) {
+		} else if (
+			typeof value === "number" &&
+			Number.isInteger(value) &&
+			value > -256 &&
+			value < 256
+		) {
 			Conway.#EQ_HASH_CACHE.set(value, h);
 		}
 		return h;
@@ -516,7 +555,10 @@ export class Conway {
 	// #region Arithmetic
 
 	public neg(): Conway {
-		return new Conway(this.#terms.map(([e, c]) => [e, realNeg(c)]), true);
+		return new Conway(
+			this.#terms.map(([e, c]) => [e, realNeg(c)]),
+			true,
+		);
 	}
 
 	public add(other: Real | Conway): Conway {
