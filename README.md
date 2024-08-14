@@ -189,8 +189,8 @@ Let `a = inf + r + low` be a surreal number that can be decomposed into a sum of
 | $r = 0$ | `isZero(a)` | `a` equals zero? |
 | $r = 1$ | `isOne(a)` | `a` equals one? |
 | $r = \omega$ | `isUnit(a)` | `a` equals omega? |
-| $r > \reals$ | `isAboveReals(a)` | Is `a` infinite (or `inf` is positive)?
-| $r < \reals$ | `isBelowNegativeReals(a)` | Is `-a` infinite (or `inf` is negative)?
+| $r > \mathbb{R}$ | `isAboveReals(a)` | Is `a` infinite (or `inf` is positive)?
+| $r < -\mathbb{R}$ | `isBelowNegativeReals(a)` | Is `-a` infinite (or `inf` is negative)?
 | $a \in \text{Ord}$ | `isOrdinal(a)` | `a` represents an ordinal number? |
 
 ### Ordinal number operations
