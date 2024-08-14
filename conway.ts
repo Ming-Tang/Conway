@@ -1114,16 +1114,6 @@ export class Conway {
 	// #endregion
 	// #region Exponential Field
 
-	public exp(): Conway {
-		// TODO incomplete
-		const prod = Conway.one;
-		for (const [e, c] of this.#terms) {
-			// e = 0: exp(c) = Math.exp(c)
-			// e > 0: exp(w^e) = w^w^e (e is below epsilon_0)
-		}
-		return prod;
-	}
-
 	public derivative(): Conway {
 		// TODO incomplete
 		if (this.realValue !== null) {
