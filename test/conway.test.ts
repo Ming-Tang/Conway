@@ -19,6 +19,8 @@ import {
 	arbRealGeneral,
 	arbFinite,
 } from "./generators";
+import { gt, isAboveReals, isNegative, isPositive } from "../op/comparison";
+import { mono, mono1, one } from "../op";
 
 // fc.configureGlobal({ numRuns: 200000, verbose: false });
 
@@ -864,6 +866,58 @@ describe("Conway", () => {
 					},
 				),
 				{ numRuns: 200 },
+			);
+		});
+	});
+
+	describe("order", () => {
+		it("constants", () => {
+			expect(Conway.zero.order).toBe(0);
+			expect(Conway.one.order).toBe(0);
+			expect(Conway.unit.order).toBe(1);
+			expect(Conway.mono(1n, Conway.unit).order).toBe(2);
+			expect(Conway.mono(1n, Conway.mono(1n, Conway.unit)).order).toBe(3);
+		});
+		it("order(negative) = 0", () => {
+			fc.assert(
+				fc.property(
+					arbConway3(arbFinite).filter(isNegative),
+					(x) => x.order === 0,
+				),
+			);
+		});
+
+		it("order(finite) = 0", () => {
+			fc.assert(
+				fc.property(arbFinite.map(Conway.ensure), (x) => x.order === 0),
+			);
+		});
+
+		it("order(w^(R>0)) = 1", () => {
+			fc.assert(
+				fc.property(
+					arbConway1(arbFinite).filter(isAboveReals),
+					(x) => x.order === 1,
+				),
+			);
+		});
+
+		it("order(w^(w^(R>0))) = 2", () => {
+			fc.assert(
+				fc.property(
+					arbConway1(arbFinite).filter(isAboveReals).map(mono1),
+					(x) => x.order === 2,
+				),
+			);
+		});
+
+		it("order(c w^x) = order(x) + 1 if c > 0 and x > 1", () => {
+			fc.assert(
+				fc.property(
+					arbConway3(arbFinite).filter((x) => gt(x, one)),
+					arbFinite.filter(isPositive),
+					(x, c) => mono(c, x).order === x.order + 1,
+				),
 			);
 		});
 	});
