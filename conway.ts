@@ -49,6 +49,8 @@ export class Conway {
 	#eqHash: number | null = null;
 	#ordHash: bigint | null = null;
 
+	readonly #isOrdinal: boolean;
+
 	readonly #terms: Readonly<[Real | Conway, Real][]>;
 
 	/** 0 */
@@ -84,19 +86,22 @@ export class Conway {
 			this.#terms = freeze(
 				terms.map((x) => freeze<[Real | Conway, Real]>(x)),
 			) as Readonly<[Real | Conway, Real][]>;
+			this.#isOrdinal = this.#terms.every(
+				([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
+			);
 			return;
 		}
 		Conway.sortTermsDescending(terms);
 
 		const newTerms = [] as typeof terms;
-		terms = terms.map(([e, c]) => [Conway.maybeDowngrade(e), c]);
-		for (const [e, c] of terms) {
+		terms = terms.map(([p, c]) => [Conway.maybeDowngrade(p), c]);
+		for (const [p, c] of terms) {
 			if (Conway.isZero(c)) {
 				continue;
 			}
-			const found = newTerms.find(([e1]) => Conway.eq(e1, e));
+			const found = newTerms.find(([p1]) => Conway.eq(p1, p));
 			if (!found) {
-				newTerms.push([e, c]);
+				newTerms.push([p, c]);
 				continue;
 			}
 			found[1] = realAdd(c, found[1]);
@@ -107,6 +112,9 @@ export class Conway {
 				.filter(([_, c]) => !Conway.isZero(c))
 				.map((x) => freeze<[Real | Conway, Real]>(x)),
 		) as Readonly<[Real | Conway, Real][]>;
+		this.#isOrdinal = this.#terms.every(
+			([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
+		);
 	}
 
 	private static sortTermsDescending(terms: [Real | Conway, Real][]) {
@@ -253,9 +261,7 @@ export class Conway {
 	 * Returns true if and only if this number represents an ordinal number (natural number coefficients and exponents are ordinal).
 	 */
 	public get isOrdinal(): boolean {
-		return this.#terms.every(
-			([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
-		);
+		return this.#isOrdinal;
 	}
 
 	/**
