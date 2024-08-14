@@ -110,12 +110,12 @@ export class Identity implements Seq<Ord> {
 	}
 }
 
-export class MapNatural implements Seq<bigint> {
+export class MapNatural<T> implements Seq<T> {
 	readonly _type = "MapNatural";
 	readonly isConstant: boolean;
 
 	constructor(
-		readonly func: (value: bigint) => bigint,
+		readonly func: (value: bigint) => T,
 		readonly length = unit as Ord,
 	) {
 		if (gt(length, unit)) {
@@ -124,7 +124,7 @@ export class MapNatural implements Seq<bigint> {
 		this.isConstant = isConstantLength(length);
 	}
 
-	index(i: Ord): bigint {
+	index(i: Ord): T {
 		assertLength(i, this.length);
 		return this.func(BigInt(i.realPart));
 	}
@@ -393,16 +393,34 @@ export const cycleArray = <T>(xs: T[], n = unit): Seq<T> =>
 
 export const cycle = <T>(f: Seq<T>, n = one): Seq<T> => new Cycle(f, n);
 
+/**
+ * For each element, repeat it `n` times.
+ * ```
+ * repeatEach(empty, n) = empty
+ * repeatEach(cons(f, x), n) = repeatEach(x) & cycleArray(x, n)
+ * repeatEach(lim f, n) = lim (i -> repeatEach(f(i), n))
+ * ```
+ */
+export const repeatEach = <T>(f: Seq<T>, n = unit): Seq<T> =>
+	new RepeatEach(f, n);
+
 export const prod = <A, B>(f: Seq<A>, g: Seq<B>): Seq<[A, B]> =>
 	new Product(f, g);
 
 export const map = <A, B>(f: Seq<A>, func: (value: A) => B): Seq<B> =>
 	new SeqMap(f, func);
 
-export const mapNatural = (
-	func: (value: bigint) => bigint,
+/**
+ * Constructs a transfinite sequence with elements based on a function from a `bigint`.
+ * ```
+ * mapNatural(f, n)[i] = f(i)
+ * ```
+ * @param length Length of the sequence, must be a finite ordinal or `unit`
+ */
+export const mapNatural = <T>(
+	func: (value: bigint) => T,
 	length = unit as Ord,
-) => new MapNatural(func, length);
+) => new MapNatural<T>(func, length);
 
 export const indexByPower = <T>(f: Seq<T>): Seq<T> => new IndexByPower(f);
 
