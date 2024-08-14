@@ -478,11 +478,7 @@ export class Conway {
 
 	static #EQ_HASH_CACHE = new Map<Real, number>([]);
 
-	public static eqHash(value: Real | Conway): number {
-		if (value instanceof Conway) {
-			return value.eqHash;
-		}
-
+	private static realEqHash(value: Real): number {
 		if (value === 0 || value === 0n) {
 			return 0;
 		}
@@ -503,17 +499,24 @@ export class Conway {
 
 		if (typeof value === "bigint" && value > -256n && value < 256n) {
 			Conway.#EQ_HASH_CACHE.set(value, h);
-		} else if (typeof value === "number" && value > -256 && value < 256) {
+		} else if (typeof value === "number" && Number.isInteger(value) && value > -256 && value < 256) {
 			Conway.#EQ_HASH_CACHE.set(value, h);
 		}
 		return h;
+	}
+
+	public static eqHash(value: Real | Conway): number {
+		if (value instanceof Conway) {
+			return value.eqHash;
+		}
+		return Conway.realEqHash(value);
 	}
 
 	// #endregion
 	// #region Arithmetic
 
 	public neg(): Conway {
-		return new Conway(this.#terms.map(([e, c]) => [e, realNeg(c)]));
+		return new Conway(this.#terms.map(([e, c]) => [e, realNeg(c)]), true);
 	}
 
 	public add(other: Real | Conway): Conway {
@@ -533,7 +536,7 @@ export class Conway {
 				}
 			}
 			if (!added) {
-				newTerms.push([0, other]);
+				newTerms.push([realZero, other]);
 			}
 			return new Conway(newTerms);
 		}
