@@ -1378,6 +1378,27 @@ export class Conway {
 		return `Conway(${this.toString()})`;
 	}
 
+	public [Symbol.toPrimitive](hint: string) {
+		if (hint !== "number") {
+			return this.toString();
+		}
+
+		const rv = this.realValue;
+		if (rv !== null) {
+			return Number(rv);
+		}
+
+		if (this.isAboveReals) {
+			return Number.POSITIVE_INFINITY;
+		}
+		if (this.isBelowNegativeReals) {
+			return Number.NEGATIVE_INFINITY;
+		}
+
+		// infinitesimal
+		return 0;
+	}
+
 	// #endregion
 	// #region Ordering and comparison
 
