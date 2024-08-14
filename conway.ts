@@ -1088,6 +1088,14 @@ export class Conway {
 		left: Real | Conway,
 		right: Real | Conway,
 	): [Real | Conway, Real | Conway] {
+		if (!(left instanceof Conway) && !(right instanceof Conway)) {
+			const n = BigInt(left);
+			const d = BigInt(right);
+			const q = n / d;
+			const r = n - q * d;
+			return [q, r];
+		}
+
 		return Conway.ensure(left).ordinalDivRem(right);
 	}
 

@@ -604,6 +604,20 @@ describe("ordinals", () => {
 			);
 		});
 
+		it("finites only: n/d = [q, r] -> n = d*q + r and r < d", () => {
+			fc.assert(
+				fc.property(
+					arbFiniteBigintOrd,
+					arbFiniteBigintOrd.filter(isPositive),
+					(n, d) => {
+						const [q, r] = ordinalDivRem(n, d);
+						expect(lt(r, d)).toBe(true);
+						assertEq(n, ordinalAdd(ordinalMult(d, q), r));
+					},
+				),
+			);
+		});
+
 		it("multiple of w", () => {
 			fc.assert(
 				fc.property(
