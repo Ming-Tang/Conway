@@ -32,14 +32,19 @@ import { assertEq } from "../test/propsTest";
 
 // fc.configureGlobal({ numRuns: 2000, verbose: false });
 
+const arbFiniteOrUnit = fc.oneof(
+	fc.constant(unit),
+	arbFiniteBigintOrd.map(ensure),
+);
+
 const arbElem = fc.integer({ min: 0 });
 // Prevent empty arrays so shrinking eliminate them
 const arbFromArray = fc
 	.array(arbElem, { minLength: 1, maxLength: 50 })
 	.map(fromArray);
 const arbCycleArray = fc
-	.array(arbElem, { minLength: 1, maxLength: 10 })
-	.map(cycleArray);
+	.tuple(fc.array(arbElem, { minLength: 1, maxLength: 10 }), arbFiniteOrUnit)
+	.map(([xs, l]) => cycleArray(xs, l));
 const arbCycle = (arb: fc.Arbitrary<Seq<number>>) => arb.map(cycle);
 const arbConcat = (arb: fc.Arbitrary<Seq<number>>) =>
 	fc.tuple(arb, arb).map(([a, b]) => concat(a, b));

@@ -50,7 +50,9 @@ const ensureFinite = (x: Ord): number => {
 		rv < 0 ||
 		(typeof x === "number" && !Number.isInteger(x))
 	) {
-		throw new RangeError("must be zero or positive integer");
+		throw new RangeError(
+			"must be zero or positive integer. Cannot be infinite.",
+		);
 	}
 	return Number(x);
 };
@@ -175,8 +177,7 @@ export class CycleArray<T> implements Seq<T> {
 
 	index(i: Ord) {
 		assertLength(i, this.length);
-		const v = ensureFinite(i);
-		return this.array[v % this.array.length];
+		return this.array[Number(i.realPart) % this.array.length];
 	}
 }
 
@@ -207,7 +208,6 @@ export class Concat<T> implements Seq<T> {
 		const fl = this.left.length;
 		if (ge(i, fl)) {
 			const d = minus(i, fl);
-			// console.log(`(${fl}) + (${d}) = ${i}`);
 			return this.right.index(d);
 		}
 		return this.left.index(i);
@@ -558,3 +558,5 @@ export const identity = (length: Ord) => new Identity(length);
  * ```
  */
 export const empty = Empty.instance;
+
+export const isEmpty = <T>(f: Seq<T>) => f === empty || isZero(f.length);
