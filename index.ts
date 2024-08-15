@@ -54,7 +54,15 @@ const x3 = new Conway([
 	[one.neg(), 2],
 ]);
 
-for (const x of [x0, x1, x2, x3]) {
+const x4 = new Conway([[0, -4.2345]]);
+
+const x5 = new Conway([[-1, 2]]);
+
+const x6 = new Conway([[-1, -2]]);
+
+const x7 = new Conway([[0.75, 3.5]]);
+
+for (const x of [x0, x1, x2, x3, x4, x5, x6, x7]) {
 	console.log(`b(${x}) = ${birthday(x)}`);
 	console.log(`SE(${x}) =`, signExpansion(x));
 	console.log("");

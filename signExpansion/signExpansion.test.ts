@@ -6,6 +6,7 @@ import {
 	arbConway2,
 	arbConway3,
 	arbDyadic,
+	arbFinite,
 	arbFiniteBigint,
 	arbOrd1,
 	arbOrd2,
@@ -13,6 +14,9 @@ import {
 } from "../test/generators";
 import { assertEq } from "../test/propsTest";
 import { Conway } from "../conway";
+import { eq, isZero, lt } from "../op/comparison";
+import { neg } from "../op/arith";
+import type { Ord, Seq } from "../seq";
 
 fc.configureGlobal({ numRuns: 5000 });
 
@@ -69,6 +73,58 @@ describe("signExpansion", () => {
 				}),
 			);
 		});
+
+	describe("ordinals", () => {
+		const index1 = <T>(f: Seq<T>, index: Ord) => {
+			try {
+				return f.index(index);
+			} catch (e) {
+				console.error("Failed to index. ");
+				console.error("index = ", index);
+				console.error("seq = ", f);
+				throw e;
+			}
+		};
+
+		it("|SE(ord)| = ord", () => {
+			fc.assert(fc.property(arbOrd3, (x) => eq(signExpansion(x).length, x)));
+		});
+
+		it("SE(ord)[i] = +", () => {
+			fc.assert(
+				fc.property(arbOrd3, arbOrd3, (x, i) => {
+					const se = signExpansion(x);
+					fc.pre(lt(i, se.length));
+					return index1(se, i);
+				}),
+			);
+		});
+
+		it("SE(-ord)[i] = -", () => {
+			fc.assert(
+				fc.property(arbOrd3, arbOrd3, (x, i) => {
+					const se = signExpansion(neg(x));
+					fc.pre(lt(i, se.length));
+					return !se.index(i);
+				}),
+			);
+		});
+	});
+
+	describe("infinitesimals", () => {
+		it("SE(c w^-1)[0] = +, SE(w^-1)[1] = -", () => {
+			fc.assert(
+				fc.property(
+					arbNum16.filter((x) => !isZero(x)),
+					() => {
+						const se = signExpansion(mono1(-1n));
+						expect(se.index(zero)).toBe(true);
+						expect(se.index(one)).toBe(false);
+					},
+				),
+			);
+		});
+	});
 
 	describe("No0", () => {
 		describe("integers", () => {

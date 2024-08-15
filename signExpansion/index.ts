@@ -5,7 +5,6 @@ import { isNegative, isOne, isZero } from "../op/comparison";
 import { realAbs, realIsPositive, type Real } from "../real";
 import {
 	concat,
-	cycleArray,
 	empty,
 	fromArray,
 	indexByPower,
@@ -15,17 +14,21 @@ import {
 	prod,
 	type Seq,
 	repeatEach,
+	isEmpty,
 } from "../seq";
 import { signExpansionReal, type Sign } from "./real";
 
-const concat1 = <T>(a: Seq<T>, b: Seq<T>) =>
-	maybeSimplifyConst(a === empty ? b : b === empty ? a : concat(a, b));
+const concat1 = <T>(a: Seq<T>, b: Seq<T>): Seq<T> => {
+	if (isEmpty(a)) {
+		return isEmpty(b) ? (empty as Seq<T>) : b;
+	}
+	return maybeSimplifyConst(concat(a, b));
+};
 
 const flipSign = (x: Sign): Sign => !x;
 
 const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
 	const pos = realIsPositive(coeff);
-	const neg = !pos;
 	const sePower = signExpansion(power);
 	const rep = repeatEach(sePower, unit);
 	// [+] & rep(w, SE(power)) & SE_Real(coeff, true)
@@ -34,7 +37,7 @@ const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
 			fromArray<Sign>([pos]),
 			maybeSimplifyConst(
 				maybeOverrideIsConstant<Sign, Seq<Sign>>(
-					neg ? map(rep, flipSign) : rep,
+					pos ? map(rep, flipSign) : rep,
 					sePower.isConstant,
 				),
 			),
