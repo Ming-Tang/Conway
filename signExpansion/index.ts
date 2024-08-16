@@ -31,6 +31,7 @@ const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
 	const pos = realIsPositive(coeff);
 	const sePower = signExpansion(power);
 	const rep = repeatEach(sePower, unit);
+	const seCoeff = signExpansionReal(realAbs(coeff), true);
 	// [+] & rep(w, SE(power)) & SE_Real(coeff, true)
 	return concat1(
 		concat1(
@@ -42,7 +43,7 @@ const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
 				),
 			),
 		),
-		signExpansionReal(realAbs(coeff), true),
+		pos ? seCoeff : map(seCoeff, flipSign),
 	);
 };
 

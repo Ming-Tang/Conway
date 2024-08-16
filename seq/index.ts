@@ -17,6 +17,7 @@ import {
 } from "./classes";
 import type { Seq, Ord } from "./types";
 export type { Seq, Ord } from "./types";
+export { cnfOrDefault, defaultCnf } from "./cnf";
 
 /**
  * Given an array, create a new transfinite sequence based on the array.

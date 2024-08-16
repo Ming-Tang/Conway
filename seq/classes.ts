@@ -1,5 +1,7 @@
 import { ensure, mono1, unit, zero } from "../op";
-import { ge, gt, isAboveReals, isZero } from "../op/comparison";
+import { ge, gt, isAboveReals, isOne, isZero } from "../op/comparison";
+import { realToNumber } from "../real";
+import { cnfOrDefault, defaultCnf, simplifyConcat, simplifyCycle } from "./cnf";
 import {
 	assertLength,
 	isConstantLength,
@@ -8,7 +10,7 @@ import {
 	ensureFinite,
 	modifiedDivRem,
 } from "./helpers";
-import type { Ord, Seq } from "./types";
+import type { Cnf, CnfConcat, Ord, Seq } from "./types";
 
 const minus = (higher: Ord, lower: Ord) => lower.ordinalRightSub(higher);
 
@@ -24,6 +26,10 @@ export class Empty<T = unknown> implements Seq<T> {
 	index(_: Ord): T {
 		throw new RangeError("empty sequence");
 	}
+
+	cnf(_terms: number): Cnf<T> {
+		return [];
+	}
 }
 
 export class Constant<T = unknown> implements Seq<T> {
@@ -37,6 +43,18 @@ export class Constant<T = unknown> implements Seq<T> {
 	index(i: Ord): T {
 		assertLength(i, this.length);
 		return this.constant;
+	}
+
+	cnf(_terms: number): Cnf<T> {
+		if (isOne(this.length)) {
+			return [this.constant];
+		}
+
+		return {
+			cycle: [this.constant],
+			times: this.length,
+			length: this.length,
+		};
 	}
 }
 
@@ -83,6 +101,7 @@ export class FromArray<T> implements Seq<T> {
 		this.length = ordFromNumber(array.length);
 		this.isConstant = isConstantLength(this.length) || isConstantArray(array);
 	}
+
 	index(i: Ord) {
 		assertLength(i, this.length);
 		return this.array[ensureFinite(i)];
@@ -106,6 +125,19 @@ export class CycleArray<T> implements Seq<T> {
 	index(i: Ord) {
 		assertLength(i, this.length);
 		return this.array[Number(i.realPart) % this.array.length];
+	}
+
+	cnf(_terms: number): Cnf<T> {
+		const times = ensure(
+			this.length.isAboveReals
+				? this.length
+				: Math.ceil(realToNumber(this.length.realPart) / this.array.length),
+		);
+		return simplifyCycle({
+			cycle: this.array,
+			times,
+			length: this.length,
+		});
 	}
 }
 
@@ -140,10 +172,28 @@ export class Concat<T> implements Seq<T> {
 		}
 		return this.left.index(i);
 	}
+
+	cnf(terms: number): Cnf<T> {
+		const concat: Cnf<T>[] = [];
+		for (const cnf of [
+			cnfOrDefault(this.left, terms),
+			cnfOrDefault(this.right, terms),
+		]) {
+			if ("concat" in cnf && Array.isArray(cnf.concat)) {
+				for (const c of cnf.concat) {
+					concat.push(c);
+				}
+			} else {
+				concat.push(cnf);
+			}
+		}
+
+		return simplifyConcat({ concat, length: this.length });
+	}
 }
 
 export class LeftTruncate<T> implements Seq<T> {
-	readonly _type = "Concat";
+	readonly _type = "LeftTruncate";
 	readonly length: Ord;
 	readonly isConstant: boolean;
 
@@ -190,7 +240,39 @@ export class Cycle<T> implements Seq<T> {
 		)[1];
 		return this.seq.index(r);
 	}
+
+	cnf(terms: number): Cnf<T> {
+		return {
+			cycle: cnfOrDefault(this.seq, terms),
+			times: this.multiplier,
+			length: this.length,
+		};
+	}
 }
+
+const cnfMapRecursive = <A, B>(cnf0: Cnf<A>, func: (value: A) => B): Cnf<B> => {
+	if (Array.isArray(cnf0)) {
+		return cnf0.map(func);
+	}
+	const { length } = cnf0;
+	if ("concat" in cnf0) {
+		return {
+			concat: cnf0.concat.map((c) => cnfMapRecursive(c, func)),
+			length,
+		};
+	}
+
+	const { times } = cnf0;
+	if ("cycle" in cnf0) {
+		return {
+			cycle: cnfMapRecursive(cnf0.cycle, func),
+			times,
+			length,
+		};
+	}
+
+	throw new Error("cnfMapRecursive: invalid case");
+};
 
 export class Product<A, B> implements Seq<[A, B]> {
 	readonly _type = "Product";
@@ -221,6 +303,19 @@ export class Product<A, B> implements Seq<[A, B]> {
 		);
 		return [this.left.index(r), this.right.index(q)] as [A, B];
 	}
+
+	cnf(terms: number): Cnf<[A, B]> {
+		const left: Cnf<A> = cnfOrDefault(this.left, terms);
+		const right: B[] = defaultCnf(this.right, terms).concat[0];
+		const concat = right.map((b) =>
+			cnfMapRecursive(left, (a) => [a, b] as [A, B]),
+		);
+
+		return simplifyConcat({
+			concat,
+			length: this.length,
+		});
+	}
 }
 
 export class SeqMap<A, B> implements Seq<B> {
@@ -237,6 +332,11 @@ export class SeqMap<A, B> implements Seq<B> {
 
 	index(i: Ord) {
 		return this.func(this.seq.index(i));
+	}
+
+	cnf(terms: number): Cnf<B> {
+		const cnf0 = cnfOrDefault(this.seq, terms);
+		return cnfMapRecursive(cnf0, this.func);
 	}
 }
 
@@ -258,6 +358,27 @@ export class IndexByPower<T> implements Seq<T> {
 
 		const { leadingPower: p } = i;
 		return this.seq.index(ensure(p ?? 0n));
+	}
+
+	cnf(terms: number): Cnf<T> {
+		const concat: Cnf<T>[] = [];
+		let index = zero as Ord;
+		for (let i = 0; i < terms; i++) {
+			if (ge(index, this.length)) {
+				break;
+			}
+			const dLen = mono1(i);
+			concat.push(
+				simplifyCycle({
+					cycle: [this.index(index)],
+					times: dLen,
+					length: dLen,
+				}),
+			);
+			index = index.add(dLen);
+		}
+
+		return simplifyConcat({ concat, length: this.length });
 	}
 }
 
@@ -284,6 +405,18 @@ export class RepeatEach<T> implements Seq<T> {
 		);
 		return this.seq.index(ensure(q));
 	}
+
+	cnf(terms: number) {
+		const elems = defaultCnf(this.seq, terms).concat[0];
+		const concat = elems.map((e) =>
+			simplifyCycle({
+				cycle: [e],
+				times: this.multiplier,
+				length: this.multiplier,
+			}),
+		);
+		return simplifyConcat({ concat, length: this.length });
+	}
 }
 
 export class OverrideIsConstant<T, S extends Seq<T>> implements Seq<T> {
@@ -299,5 +432,9 @@ export class OverrideIsConstant<T, S extends Seq<T>> implements Seq<T> {
 
 	index(i: Ord): T {
 		return this.seq.index(i);
+	}
+
+	cnf(terms: number) {
+		return cnfOrDefault(this.seq, terms);
 	}
 }

@@ -1,10 +1,82 @@
 import { Conway } from "./conway";
-import type { Real } from "./real";
-import { birthday, mono, mono1, one, unit, fromReal as real } from "./op";
+import { realToBigint, realToNumber, type Real } from "./real";
+import {
+	birthday,
+	mono,
+	mono1,
+	one,
+	unit,
+	fromReal as real,
+	ensure,
+} from "./op";
 import { isZero } from "./op/comparison";
-import { canon, isLimit, isSucc, noSucc } from "./op/ordinal";
-import { concat, cycleArray, fromArray } from "./seq";
+import { canon, isLimit, isSucc, noSucc, ordinalAdd } from "./op/ordinal";
+import { cnfOrDefault, concat, cycleArray, fromArray, type Seq } from "./seq";
 import { signExpansion } from "./signExpansion";
+import type { Sign } from "./signExpansion/real";
+import {
+	summarizeCnf,
+	signExpansionToString,
+	summarizeCnfLaTeX,
+	ordToLaTeX,
+} from "./seq/cnf";
+
+const unSucc = (x: Real | Conway, n: number): (Real | Conway)[] => {
+	const sp = realToNumber(ensure(x).realPart);
+	const i0 = Math.max(sp - n - 1, 0);
+	const row = [] as (Real | Conway)[];
+	const x0 = noSucc(x);
+	for (let i = i0; i < sp; i++) {
+		row.push(ordinalAdd(x0, BigInt(i)));
+	}
+	return row;
+};
+
+const countbackOrd = (ord: Real | Conway, n: number): (Real | Conway)[][] => {
+	const arr: (Real | Conway)[][] = [];
+	let x: Real | Conway = ord;
+
+	while (true) {
+		if (isSucc(x)) {
+			const row = unSucc(x, n);
+			if (row.length) {
+				arr.push(row);
+			}
+			x = noSucc(x);
+		}
+		if (isZero(x)) {
+			break;
+		}
+		const row: (Real | Conway)[] = [];
+		x = ensure(x);
+		let n0 = 1;
+		for (let i = n; i >= n0; i--) {
+			const last = canon(x, i);
+			row.push(last);
+			if (isSucc(last) && n0) {
+				n0 = 0;
+				row.shift();
+			}
+		}
+		arr.push(row.reverse());
+		if (!isLimit(x)) {
+			break;
+		}
+		x = canon(x, n0);
+	}
+	return arr.reverse();
+};
+
+const summarizesignExpansion = (seq: Seq<Sign>, n: number) => {
+	const len = seq.length;
+	const cb = countbackOrd(len, n);
+	for (const row of cb) {
+		console.log(
+			`f[${row[0]}, ${row[1]}, ...] =`,
+			row.map((i) => (seq.index(ensure(i)) ? "+" : "-")).join(""),
+		);
+	}
+};
 
 const s1 = cycleArray([1, 2, 3]);
 const s2 = fromArray([4, 5, 6]);
@@ -56,17 +128,50 @@ const x3 = new Conway([
 
 const x4 = new Conway([[0, -4.2345]]);
 
-const x5 = new Conway([[-1, 2]]);
+const x5 = new Conway([[2, 0.5]]);
 
-const x6 = new Conway([[-1, -2]]);
+const x6 = new Conway([[-1, 2]]);
 
-const x7 = new Conway([[0.75, 3.5]]);
+const x7 = new Conway([[-1, -2]]);
 
-for (const x of [x0, x1, x2, x3, x4, x5, x6, x7]) {
+const x8 = new Conway([[0.75, 3.5]]);
+
+const x9 = new Conway([
+	[mono1(mono1(unit)).add(-0.5), 2.75],
+	[unit, -2.5],
+	[1, 4],
+	[-Math.E, 3],
+	[-Math.PI, 8],
+	[unit.add(unit.mult(0.5)).add(2.44).neg(), 3],
+]);
+
+const x10 = new Conway([
+	[1, 4],
+	[-Math.E, 3],
+	[-Math.PI, 8],
+	[unit.add(unit.mult(0.5)).add(2.44).neg(), 3],
+]);
+
+const xs = [a, b, q, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10];
+for (const x of xs) {
 	console.log(`b(${x}) = ${birthday(x)}`);
-	console.log(`SE(${x}) =`, signExpansion(x));
+	const se = signExpansion(x);
+	console.log(`SE(${x}) =`, se);
+	summarizesignExpansion(se, 5);
+	const cnf = cnfOrDefault(se, 10);
+	console.log(`cnf(SE(${x})) = `, cnf);
+	console.log(`cnf(SE(${x})) =`, summarizeCnf(cnf, signExpansionToString));
 	console.log("");
 }
+
+for (const x of xs) {
+	const se = signExpansion(x);
+	const cnf = cnfOrDefault(se, 10);
+	console.log(
+		`\$\$\\text{signExpansion}(${ordToLaTeX(ensure(x))}) = ${summarizeCnfLaTeX(cnf, signExpansionToString)}\$\$`,
+	);
+}
+console.log("");
 
 // biome-ignore lint/correctness/noConstantCondition: <explanation>
 if (false) {

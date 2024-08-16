@@ -1361,6 +1361,13 @@ export class Conway {
 		return parts.length === 0 ? "0" : parts.join(" ");
 	}
 
+	public toLaTeX(): string {
+		return this.toString()
+			.replace(/\^(-?[0-9]+(?:\.[0-9]*)?)/g, "^{$1}")
+			.replace(/w\b/g, "\\omega")
+			.replace(/[\[\]]/g, (x) => (x === "[" ? "{" : "}"));
+	}
+
 	public [customInspectSymbol]() {
 		return `Conway(${this.toString()})`;
 	}

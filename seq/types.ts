@@ -2,6 +2,29 @@ import type { Conway } from "../conway";
 
 export type Ord = Conway;
 
+export type CnfArray<T> = T[];
+
+export type CnfConcat<T> = {
+	concat: Cnf<T>[];
+	length: Ord;
+};
+
+export type CnfCycle<T> = {
+	cycle: Cnf<T>;
+	times: Ord;
+	length: Ord;
+};
+
+/**
+ * Concat normal form (CNF).
+ * A human-readable expansion of a transfinite sequence, which is one of:
+ * - Array
+ * - Concat of a list of CNF terms
+ * - Cycle (repeat) of a CNF term by a particular ordinal number of times
+ * - Repeat each of a CNF term by a particular ordinal number of times
+ */
+export type Cnf<T> = CnfArray<T> | CnfConcat<T> | CnfCycle<T>;
+
 /**
  * Interface for a transfinite sequence, which is a sequence of a
  * transfinite length (`length`) and is indexed by ordinal numbers (`index`).
@@ -29,4 +52,10 @@ export interface Seq<T> {
 	 * Used by "constant folding" procedures to simplify the sequence.
 	 */
 	readonly isConstant: boolean;
+
+	/**
+	 * Get the concat normal form expansion of this sequence.
+	 * @param terms The maximum number of CNF terms to expand for each sub-expression.
+	 */
+	cnf?: (terms: number) => Cnf<T>;
 }
