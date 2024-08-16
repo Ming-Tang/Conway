@@ -20,6 +20,7 @@ import {
 	succ,
 	pred,
 	ordinalPow,
+	noSucc,
 } from "../op/ordinal";
 import { ensure, fromReal, isMono, mono, mono1, one, unit, zero } from "../op";
 import {
@@ -873,6 +874,18 @@ describe("ordinals", () => {
 					fc.pre(isSucc(n));
 					return isOrdinal(pred(n));
 				}),
+			);
+		});
+	});
+
+	describe("noSucc", () => {
+		it("noSucc(x) is zero for finite x", () => {
+			fc.assert(fc.property(arbFiniteBigintOrd, (x) => isZero(noSucc(x))));
+		});
+
+		it("noSucc(x) is limit for non-zero x", () => {
+			fc.assert(
+				fc.property(arbOrd3.filter(isAboveReals), (x) => isLimit(noSucc(x))),
 			);
 		});
 	});
