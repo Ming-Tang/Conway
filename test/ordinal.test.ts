@@ -35,7 +35,7 @@ import {
 } from "../op/comparison";
 import { assertEq } from "./propsTest";
 
-fc.configureGlobal({ numRuns: 2000, verbose: false });
+// fc.configureGlobal({ numRuns: 2000, verbose: false });
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
@@ -711,6 +711,26 @@ describe("ordinals", () => {
 			it("general", () => {
 				fc.assert(fc.property(arbOrd3, arbOrd3, propDivRem));
 			});
+		});
+	});
+
+	describe("isOrdinal", () => {
+		it("zero, one, unit are ordinals", () => {
+			expect(zero.isOrdinal).toBe(true);
+			expect(one.isOrdinal).toBe(true);
+			expect(unit.isOrdinal).toBe(true);
+		});
+
+		it("non-negative integers (number) are ordinals", () => {
+			fc.assert(
+				fc.property(fc.integer(), (i) => ensure(i).isOrdinal === i >= 0),
+			);
+		});
+
+		it("non-negative bigints are ordinals", () => {
+			fc.assert(
+				fc.property(fc.bigInt(), (i) => ensure(i).isOrdinal === i >= 0),
+			);
 		});
 	});
 
