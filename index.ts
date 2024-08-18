@@ -20,6 +20,7 @@ import {
 	summarizeCnfLaTeX,
 	ordToLaTeX,
 } from "./seq/cnf";
+import { expandOrDefault, summarizeExpansionLaTeX } from "./seq/expansion";
 
 const unSucc = (x: Real | Conway, n: number): (Real | Conway)[] => {
 	const sp = realToNumber(ensure(x).realPart);
@@ -153,22 +154,27 @@ const x10 = new Conway([
 ]);
 
 const xs = [a, b, q, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10];
-for (const x of xs) {
+for (const x of [mono1(-1)]) {
 	console.log(`b(${x}) = ${birthday(x)}`);
 	const se = signExpansion(x);
 	console.log(`SE(${x}) =`, se);
-	summarizesignExpansion(se, 5);
-	const cnf = cnfOrDefault(se, 10);
-	console.log(`cnf(SE(${x})) = `, cnf);
-	console.log(`cnf(SE(${x})) =`, summarizeCnf(cnf, signExpansionToString));
+	summarizesignExpansion(se, 6);
+	// const cnf = cnfOrDefault(se, 10);
+	const e = expandOrDefault(se, 10);
+	console.log(`e(SE(${x})) =`, e);
+	// console.log(`cnf(SE(${x})) = `, cnf);
+	// console.log(`cnf(SE(${x})) =`, summarizeCnf(cnf, signExpansionToString));
+	console.log(
+		`\$\$\\text{signExpansion}(${ordToLaTeX(ensure(x))}) = ${summarizeExpansionLaTeX(e, signExpansionToString)}\$\$`,
+	);
 	console.log("");
 }
 
 for (const x of xs) {
 	const se = signExpansion(x);
-	const cnf = cnfOrDefault(se, 10);
+	const e = expandOrDefault(se, 10);
 	console.log(
-		`\$\$\\text{signExpansion}(${ordToLaTeX(ensure(x))}) = ${summarizeCnfLaTeX(cnf, signExpansionToString)}\$\$`,
+		`\$\$\\text{signExpansion}(${ordToLaTeX(ensure(x))}) = ${summarizeExpansionLaTeX(e, signExpansionToString)}\$\$`,
 	);
 }
 console.log("");

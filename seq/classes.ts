@@ -3,6 +3,12 @@ import { ge, gt, isAboveReals, isOne, isZero } from "../op/comparison";
 import { realToNumber } from "../real";
 import { cnfOrDefault, defaultCnf, simplifyConcat, simplifyCycle } from "./cnf";
 import {
+	defaultExpansion,
+	expandOrDefault,
+	SeqExpansion,
+	type ExpansionEntryConstructor,
+} from "./expansion";
+import {
 	assertLength,
 	isConstantLength,
 	ordFromNumber,
@@ -30,6 +36,10 @@ export class Empty<T = unknown> implements Seq<T> {
 	cnf(_terms: number): Cnf<T> {
 		return [];
 	}
+
+	expand(_terms: number): SeqExpansion<T> {
+		return SeqExpansion.empty as SeqExpansion<T>;
+	}
 }
 
 export class Constant<T = unknown> implements Seq<T> {
@@ -55,6 +65,10 @@ export class Constant<T = unknown> implements Seq<T> {
 			times: this.length,
 			length: this.length,
 		};
+	}
+
+	expand(_terms: number): SeqExpansion<T> {
+		return SeqExpansion.constant(this.constant, this.length);
 	}
 }
 
@@ -106,6 +120,10 @@ export class FromArray<T> implements Seq<T> {
 		assertLength(i, this.length);
 		return this.array[ensureFinite(i)];
 	}
+
+	expand(terms: number): SeqExpansion<T> {
+		return SeqExpansion.mono(this.array.slice(terms)).withLength(this.length);
+	}
 }
 
 export class CycleArray<T> implements Seq<T> {
@@ -138,6 +156,15 @@ export class CycleArray<T> implements Seq<T> {
 			times,
 			length: this.length,
 		});
+	}
+
+	expand(_terms: number): SeqExpansion<T> {
+		const times = ensure(
+			this.length.isAboveReals
+				? this.length
+				: Math.floor(realToNumber(this.length.realPart) / this.array.length),
+		);
+		return SeqExpansion.mono(this.array, times).withLength(this.length);
 	}
 }
 
@@ -189,6 +216,13 @@ export class Concat<T> implements Seq<T> {
 		}
 
 		return simplifyConcat({ concat, length: this.length });
+	}
+
+	expand(terms: number): SeqExpansion<T> {
+		return SeqExpansion.concat(
+			expandOrDefault(this.left, terms),
+			expandOrDefault(this.right, terms),
+		);
 	}
 }
 
@@ -247,6 +281,10 @@ export class Cycle<T> implements Seq<T> {
 			times: this.multiplier,
 			length: this.length,
 		};
+	}
+
+	expand(terms: number): SeqExpansion<T> {
+		return SeqExpansion.mono(expandOrDefault(this.seq, terms), this.multiplier);
 	}
 }
 
@@ -316,6 +354,15 @@ export class Product<A, B> implements Seq<[A, B]> {
 			length: this.length,
 		});
 	}
+
+	expand(terms: number): SeqExpansion<[A, B]> {
+		const left: SeqExpansion<A> = expandOrDefault(this.left, terms);
+		const right: B[] = defaultExpansion(this.right, terms).elems;
+		const concat = right.map((b) => left.map((a) => [a, b] as [A, B]));
+		return concat
+			.reduce((s, a) => SeqExpansion.concat(s, a), SeqExpansion.empty)
+			.withLength(this.length);
+	}
 }
 
 export class SeqMap<A, B> implements Seq<B> {
@@ -337,6 +384,10 @@ export class SeqMap<A, B> implements Seq<B> {
 	cnf(terms: number): Cnf<B> {
 		const cnf0 = cnfOrDefault(this.seq, terms);
 		return cnfMapRecursive(cnf0, this.func);
+	}
+
+	expand(terms: number): SeqExpansion<B> {
+		return expandOrDefault(this.seq, terms).map(this.func);
 	}
 }
 
@@ -380,6 +431,21 @@ export class IndexByPower<T> implements Seq<T> {
 
 		return simplifyConcat({ concat, length: this.length });
 	}
+
+	expand(terms: number): SeqExpansion<T> {
+		const concat: ExpansionEntryConstructor<T>[] = [];
+		let index = zero as Ord;
+		for (let i = 0; i < terms; i++) {
+			if (ge(index, this.length)) {
+				break;
+			}
+			const dLen = mono1(i);
+			concat.push([[this.index(index)], dLen]);
+			index = index.add(dLen);
+		}
+
+		return new SeqExpansion(concat, this.length);
+	}
 }
 
 export class RepeatEach<T> implements Seq<T> {
@@ -417,6 +483,14 @@ export class RepeatEach<T> implements Seq<T> {
 		);
 		return simplifyConcat({ concat, length: this.length });
 	}
+
+	expand(terms: number): SeqExpansion<T> {
+		const elems = defaultCnf(this.seq, terms).concat[0];
+		const concat = elems.map(
+			(e) => [[e], this.multiplier] as ExpansionEntryConstructor<T>,
+		);
+		return new SeqExpansion(concat, this.length);
+	}
 }
 
 export class OverrideIsConstant<T, S extends Seq<T>> implements Seq<T> {
@@ -432,9 +506,5 @@ export class OverrideIsConstant<T, S extends Seq<T>> implements Seq<T> {
 
 	index(i: Ord): T {
 		return this.seq.index(i);
-	}
-
-	cnf(terms: number) {
-		return cnfOrDefault(this.seq, terms);
 	}
 }

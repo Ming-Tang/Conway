@@ -45,7 +45,14 @@ const arbSERepMultiArray = fc
 		),
 	}));
 
-const arbSE0 = fc.oneof(arbSERepSingleton, arbSESingleArray, arbSEMultiSingleArray, arbSERepMultiArray).map((x) => x.seq);
+const arbSE0 = fc
+	.oneof(
+		arbSERepSingleton,
+		arbSESingleArray,
+		arbSEMultiSingleArray,
+		arbSERepMultiArray,
+	)
+	.map((x) => x.seq);
 const arbSE = (arb: fc.Arbitrary<SeqExpansion<Value>>) => fc.oneof(arb, arbSE0);
 const arbSE1 = arbSE(arbSE0);
 const arbSE2 = arbSE(arbSE1);
@@ -252,28 +259,84 @@ describe("constant folding", () => {
 
 describe("flattening", () => {
 	it("filters out zero-length entries", () => {
-		fc.assert(fc.property(arbSE3, (f) => f.entries.findIndex(({ length }) => isZero(length)) === -1));
+		fc.assert(
+			fc.property(
+				arbSE3,
+				(f) => f.entries.findIndex(({ length }) => isZero(length)) === -1,
+			),
+		);
 	});
 
 	it("flatten anything repeated once", () => {
-		fc.assert(fc.property(arbSE3.filter((x) => !x.isEmpty), (f) => new SeqExpansion([[f, one]]).entries.length === f.entries.length));
+		fc.assert(
+			fc.property(
+				arbSE3.filter((x) => !x.isEmpty),
+				(f) => new SeqExpansion([[f, one]]).entries.length === f.entries.length,
+			),
+		);
 	});
 
 	it("folds adjacent constants (in general)", () => {
-		fc.assert(fc.property(arbSE3.filter(f => f.entries.length > 1), (f) => {
-			const n = f.entries.length;
-			for (let i = 0; i + 1 < n; i++) {
-				const e1 = f.entries[i];
-				const e2 = f.entries[i + 1];
-				if (e1.isConstant && e2.isConstant) {
-					const v1 =  Array.isArray(e1.seq) ? e1.seq[0] : e1.seq.index(zero);
-					const v2 =  Array.isArray(e2.seq) ? e2.seq[0] : e2.seq.index(zero);
-					if (v1 === v2) {
-						return false;
+		fc.assert(
+			fc.property(
+				arbSE3.filter((f) => f.entries.length > 1),
+				(f) => {
+					const n = f.entries.length;
+					for (let i = 0; i + 1 < n; i++) {
+						const e1 = f.entries[i];
+						const e2 = f.entries[i + 1];
+						if (e1.isConstant && e2.isConstant) {
+							const v1 = Array.isArray(e1.seq) ? e1.seq[0] : e1.seq.index(zero);
+							const v2 = Array.isArray(e2.seq) ? e2.seq[0] : e2.seq.index(zero);
+							if (v1 === v2) {
+								return false;
+							}
+						}
 					}
-				}
-			}
-			return true;
-		}));
+					return true;
+				},
+			),
+		);
+	});
+});
+
+describe("concat", () => {
+	it("empty and empty", () => {
+		assertEq(
+			SeqExpansion.concat(SeqExpansion.empty, SeqExpansion.empty).length,
+			zero,
+		);
+	});
+
+	it("lengths add up", () => {
+		fc.assert(
+			fc.property(arbSE3, arbSE3, (f, g) =>
+				assertEq(
+					SeqExpansion.concat(f, g).length,
+					f.length.ordinalAdd(g.length),
+				),
+			),
+		);
+	});
+
+	it("first element", () => {
+		fc.assert(
+			fc.property(
+				arbSE3.filter((f) => !f.isEmpty),
+				arbSE3,
+				(f, g) => f.index(zero) === SeqExpansion.concat(f, g).index(zero),
+			),
+		);
+	});
+
+	it("first element of empty and non-empty", () => {
+		fc.assert(
+			fc.property(
+				arbSE3.filter((f) => !f.isEmpty),
+				(g) =>
+					g.index(zero) ===
+					SeqExpansion.concat(SeqExpansion.empty, g).index(zero),
+			),
+		);
 	});
 });

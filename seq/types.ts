@@ -1,4 +1,5 @@
 import type { Conway } from "../conway";
+import type { SeqExpansion } from "./expansion";
 
 export type Ord = Conway;
 
@@ -58,4 +59,10 @@ export interface Seq<T> {
 	 * @param terms The maximum number of CNF terms to expand for each sub-expression.
 	 */
 	cnf?: (terms: number) => Cnf<T>;
+
+	/**
+	 * Get the expansion of this sequence.
+	 * @param terms The maximum number of terms to expand for each sub-expression.
+	 */
+	expand?: (terms: number) => SeqExpansion<T>;
 }

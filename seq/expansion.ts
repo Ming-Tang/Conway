@@ -1,5 +1,5 @@
 import { cycle, cycleArray } from ".";
-import { ensure, zero } from "../op";
+import { ensure, one, zero } from "../op";
 import { ge, gt, isOne, isZero, lt, ne } from "../op/comparison";
 import { ordinalMult } from "../op/ordinal";
 import { assertLength, isConstantArray } from "./helpers";
@@ -64,11 +64,21 @@ const canMergeEntry = <T>(
 	return isConstant && constValue === first;
 };
 
-const convertEntry = <T>(c: ExpansionEntry<T>): ExpansionEntryConstructor<T> => (
-	[c.seq, c.repeat]
-);
+const convertEntry = <T>(
+	c: ExpansionEntry<T>,
+): ExpansionEntryConstructor<T> => [c.seq, c.repeat];
 
-function *flattenSeqExpansion<T>(entries: Iterable<ExpansionEntryConstructor<T>>): Iterable<ExpansionEntryConstructor<T>> {
+const mapEntry = <A, B>(
+	c: ExpansionEntry<A>,
+	func: (value: A) => B,
+): ExpansionEntryConstructor<B> => [
+	Array.isArray(c) ? c.map(func) : c.seq.map<B>(func),
+	c.repeat,
+];
+
+function* flattenSeqExpansion<T>(
+	entries: Iterable<ExpansionEntryConstructor<T>>,
+): Iterable<ExpansionEntryConstructor<T>> {
 	for (const e of entries) {
 		const [subseq, cr] = e;
 		if (isZero(subseq.length) || isZero(cr)) {
@@ -93,6 +103,31 @@ function *flattenSeqExpansion<T>(entries: Iterable<ExpansionEntryConstructor<T>>
 	}
 }
 
+export const defaultExpansion = <T>(f: Seq<T>, terms: number) => {
+	const elems: T[] = [];
+	for (let i = 0; i < terms; i++) {
+		const idx = ensure(i);
+		if (ge(idx, f.length)) {
+			break;
+		}
+
+		elems.push(f.index(idx));
+	}
+
+	return { elems, seq: SeqExpansion.mono(elems) };
+};
+
+export const expandOrDefault = <T>(
+	f: Seq<T>,
+	terms: number,
+): SeqExpansion<T> => {
+	if (f.expand) {
+		return f.expand(terms);
+	}
+
+	return defaultExpansion(f, terms).seq.withLength(f.length);
+};
+
 /**
  * A restricted form of transfinite sequences that can be expressed
  * in terms of an array of `[subseq[i], reps[i]]` pairs.
@@ -107,6 +142,8 @@ function *flattenSeqExpansion<T>(entries: Iterable<ExpansionEntryConstructor<T>>
  *
  */
 export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
+	static readonly empty = new SeqExpansion<never>();
+
 	readonly isConstant: boolean;
 	/**
 	 * True if and only if this se quence contains unexpanded elements (`totalLength < length`).
@@ -204,6 +241,35 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 		this.isConstant = !hasNonConstant && !hasPartial;
 	}
 
+	static constant<T>(value: T, length: Ord): SeqExpansion<T> {
+		return new SeqExpansion([[[value], length]]);
+	}
+
+	static mono<T>(f: SeqExpansion<T> | T[], reps = one as Ord): SeqExpansion<T> {
+		return new SeqExpansion([[f, reps]]);
+	}
+
+	static concat<T>(
+		f: SeqExpansion<T> | T[],
+		g: SeqExpansion<T> | T[],
+	): SeqExpansion<T> {
+		return new SeqExpansion([
+			[f, one],
+			[g, one],
+		]);
+	}
+
+	map<B>(func: (value: T) => B): SeqExpansion<B> {
+		return new SeqExpansion(
+			this.entries.map((e) => mapEntry(e, func)),
+			this.length,
+		);
+	}
+
+	withLength(newLength: Ord): SeqExpansion<T> {
+		return new SeqExpansion(this.entries.map(convertEntry), newLength);
+	}
+
 	index(index: Ord): T | typeof NotExpanded {
 		assertLength(index, this.length);
 		if (ge(index, this.totalLength)) {
@@ -222,7 +288,50 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 		throw new Error("index: out of range");
 	}
 
+	expand(_terms: number): SeqExpansion<T> {
+		return this;
+	}
+
 	get isEmpty() {
 		return isZero(this.length);
 	}
 }
+
+export const signExpansionToString = (xs: boolean[]) =>
+	xs.map((f) => (f ? "+" : "-")).join("");
+
+const surround = (x: string) => (x.length <= 1 ? x : `\\left(${x}\\right)`);
+
+export const summarizeExpansionLaTeX = <T>(
+	f: SeqExpansion<T> | T[],
+	arrayToString: (array: T[]) => string,
+): string => {
+	if (Array.isArray(f)) {
+		return arrayToString(f);
+	}
+
+	const parts: string[] = [];
+	for (const e of f.entries) {
+		const { repeat, seq } = e;
+		const sub = summarizeExpansionLaTeX(seq, arrayToString);
+		if (isOne(repeat)) {
+			parts.push(sub);
+		} else {
+			parts.push(
+				`${surround(summarizeExpansionLaTeX(seq, arrayToString))}^{${repeat.toLaTeX()}}`,
+			);
+		}
+	}
+	const { totalLength, length } = f;
+	const dLen = lt(f.length, totalLength)
+		? zero
+		: totalLength.ordinalRightSub(length);
+	const el = isZero(dLen) ? "" : ` \\ldots^{${dLen.toLaTeX()}}`;
+	if (parts.length === 1 && !el) {
+		return parts[0];
+	}
+	if (el) {
+		return `\\underbrace{${parts.join(" ")}${el}}_{${length.toLaTeX()}}`;
+	}
+	return `${parts.join(" ")}${el}`;
+};
