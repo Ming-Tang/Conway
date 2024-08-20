@@ -1,4 +1,4 @@
-import { ensure, mono, one, zero } from ".";
+import { ensure, mono, mono1, one, zero } from ".";
 import { Conway } from "../conway";
 import { realMult, type Real } from "../real";
 import { sub, mult, add } from "./arith";
@@ -54,7 +54,8 @@ export const log1pLow = (x: Real | Conway, terms = null as number | null) => {
  *
  * h(x) = x due to x being smaller than epsilon numbers.
  */
-const logInf = (x: Real | Conway) => ensure(x).sumTerms((p, c) => mult(p, c));
+const logInf = (x: Real | Conway) =>
+	ensure(x).sumTerms((p, c) => mult(mono1(p), c));
 
 /**
  * Given a surreal number, factor it into `(r w^inf) * (1 + low)`.
@@ -96,9 +97,13 @@ export const exp = (
 		return Math.log(Number(rv));
 	}
 
+	// exp(sum_i c_i w^p_i) = prod_i exp(c_i w^p_i)
+	// = prod_i exp(w^p_i)^c_i
+	// = prod_i (w^(w^p_i))^c_i
+	// = prod_i w^(w^p_i . c_i)
 	const inf = xp.multTerms((p, c) =>
 		// g(x) = x for below epsilon numbers
-		mono(Number(c), mult(p, c)),
+		mono1(mono(c, p)),
 	);
 	const r = Math.exp(Number(xr));
 	const low = isZero(xm) ? one : expLow(xm, terms);

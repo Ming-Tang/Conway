@@ -4,8 +4,9 @@ import { exp, factorLeadLow, log, log1pLow } from "../op/exp";
 import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
 import { eq, isPositive, isZero } from "../op/comparison";
 import { Conway } from "../conway";
-import type { Real } from "../real";
-import { ensure, mono, one, zero } from "../op";
+import { realToNumber, type Real } from "../real";
+import { ensure, mono, mono1, one, unit, zero } from "../op";
+import { assertEq } from "./propsTest";
 
 const close = (a: Real | Conway, b: Real | Conway) => {
 	expect(ensure(a)).toEqual(ensure(b));
@@ -161,5 +162,19 @@ describe("exp", () => {
 			),
 			{ numRuns: 100 },
 		);
+	});
+});
+
+// https://arxiv.org/pdf/2008.06878
+// Example 16.1
+describe("(w + 1)^w = e w^w - e w^(w-1)/2 + ...", () => {
+	it("expand to 5 terms", () => {
+		const expanded = ensure(exp(unit.mult(log(unit.add(one), 10)), 10));
+		console.log(expanded);
+		[...expanded].slice(0, 2).forEach(([p, c], i) => {
+			const s = i % 2 === 0 ? 1 : -1;
+			assertEq(unit.sub(i), p);
+			expect(c).toBeCloseTo((s * Math.E) / (i + 1));
+		});
 	});
 });
