@@ -5,6 +5,8 @@ import { cnfOrDefault, defaultCnf, simplifyConcat, simplifyCycle } from "./cnf";
 import {
 	defaultExpansion,
 	expandOrDefault,
+	getFirst,
+	NotExpanded,
 	SeqExpansion,
 	type ExpansionEntryConstructor,
 } from "./expansion";
@@ -122,7 +124,9 @@ export class FromArray<T> implements Seq<T> {
 	}
 
 	expand(terms: number): SeqExpansion<T> {
-		return SeqExpansion.mono(this.array.slice(terms)).withLength(this.length);
+		return SeqExpansion.mono(this.array.slice(0, terms)).withLength(
+			this.length,
+		);
 	}
 }
 
@@ -162,7 +166,7 @@ export class CycleArray<T> implements Seq<T> {
 		const times = ensure(
 			this.length.isAboveReals
 				? this.length
-				: Math.floor(realToNumber(this.length.realPart) / this.array.length),
+				: Math.ceil(realToNumber(this.length.realPart) / this.array.length),
 		);
 		return SeqExpansion.mono(this.array, times).withLength(this.length);
 	}
@@ -222,7 +226,7 @@ export class Concat<T> implements Seq<T> {
 		return SeqExpansion.concat(
 			expandOrDefault(this.left, terms),
 			expandOrDefault(this.right, terms),
-		);
+		).withLength(this.length);
 	}
 }
 
@@ -391,6 +395,24 @@ export class SeqMap<A, B> implements Seq<B> {
 	}
 }
 
+const indexByPowerPrefix = <T>(
+	seq: Seq<T>,
+	terms: number,
+	initIndex = zero as Ord,
+) => {
+	const concat: ExpansionEntryConstructor<T>[] = [];
+	let index = initIndex;
+	for (let i = 0; i < terms; i++) {
+		if (ge(index, seq.length)) {
+			break;
+		}
+		const dLen = mono1(i);
+		concat.push([[seq.index(index)], dLen]);
+		index = index.add(dLen);
+	}
+	return new SeqExpansion<T>(concat, mono1(seq.length));
+};
+
 export class IndexByPower<T> implements Seq<T> {
 	readonly _type = "IndexByPower";
 	readonly length: Ord;
@@ -433,18 +455,39 @@ export class IndexByPower<T> implements Seq<T> {
 	}
 
 	expand(terms: number): SeqExpansion<T> {
-		const concat: ExpansionEntryConstructor<T>[] = [];
-		let index = zero as Ord;
-		for (let i = 0; i < terms; i++) {
-			if (ge(index, this.length)) {
-				break;
-			}
-			const dLen = mono1(i);
-			concat.push([[this.index(index)], dLen]);
-			index = index.add(dLen);
+		if (!this.seq.expand) {
+			return indexByPowerPrefix(this, terms);
 		}
 
-		return new SeqExpansion(concat, this.length);
+		let combined: SeqExpansion<T> = SeqExpansion.empty;
+		for (const e of this.seq.expand(terms).entries) {
+			const first = getFirst(e.seq);
+			if (e.isConstant && first !== NotExpanded) {
+				combined = SeqExpansion.concat(
+					combined,
+					SeqExpansion.constant(first, mono1(e.partialUpper)),
+				);
+				continue;
+			}
+
+			if (Array.isArray(e.seq)) {
+				combined = SeqExpansion.concat(
+					combined,
+					indexByPowerPrefix<T>(new FromArray(e.seq), terms, e.partialLen),
+				);
+				continue;
+			}
+
+			combined = SeqExpansion.concat(
+				combined,
+				indexByPowerPrefix<T>(
+					new LeftTruncate<T>(e.partialLen, e.seq as never),
+					terms,
+					e.partialLen,
+				),
+			);
+		}
+		return combined.withLength(this.length);
 	}
 }
 

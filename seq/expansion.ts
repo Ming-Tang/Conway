@@ -36,7 +36,13 @@ const ensureSeq = <T>({
 	return cycle(seq, repeat);
 };
 
-const inspectEntry = <T>([subseq, cr]: ExpansionEntryConstructor<T>): {
+export const getFirst = <T>(
+	subseq: SeqExpansion<T> | T[],
+): T | typeof NotExpanded => {
+	return Array.isArray(subseq) ? subseq[0] : subseq.index(zero);
+};
+
+export const inspectEntry = <T>([subseq, cr]: ExpansionEntryConstructor<T>): {
 	len: Ord;
 	hasPartial: boolean;
 	isConstant: boolean;
@@ -44,9 +50,7 @@ const inspectEntry = <T>([subseq, cr]: ExpansionEntryConstructor<T>): {
 } => {
 	const len = ensure(subseq.length).ordinalMult(cr);
 	const hasPartial = Array.isArray(subseq) ? false : subseq.isPartial;
-	const first: T | typeof NotExpanded = Array.isArray(subseq)
-		? subseq[0]
-		: subseq.index(zero);
+	const first: T | typeof NotExpanded = getFirst<T>(subseq);
 	const isConstant =
 		isOne(len) ||
 		(Array.isArray(subseq) ? isConstantArray(subseq) : subseq.isConstant);
@@ -122,7 +126,7 @@ export const expandOrDefault = <T>(
 	terms: number,
 ): SeqExpansion<T> => {
 	if (f.expand) {
-		return f.expand(terms);
+		return f.expand(terms).withLength(f.length);
 	}
 
 	return defaultExpansion(f, terms).seq.withLength(f.length);
@@ -170,6 +174,7 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 		const entriesMerged: ExpansionEntryConstructor<T>[] = [];
 		let i = 0;
 		const entriesArr = [...flattenSeqExpansion(entries ?? [])];
+		// TODO collect like terms using JSON
 		while (i < entriesArr.length) {
 			const [subseq, cr] = entriesArr[i];
 
@@ -226,7 +231,7 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 			totalLen = totalLen.ordinalAdd(len);
 		}
 
-		this.length = totalLen ?? length;
+		this.length = length ?? totalLen;
 		this.totalLength = totalLen;
 		if (gt(this.totalLength, this.length)) {
 			throw new RangeError(

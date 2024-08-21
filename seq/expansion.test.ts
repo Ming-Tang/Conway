@@ -329,6 +329,27 @@ describe("concat", () => {
 		);
 	});
 
+	it("non-empty and empty - same length", () => {
+		fc.assert(
+			fc.property(
+				arbSE3.filter((f) => !f.isEmpty),
+				(f) =>
+					assertEq(f.length, SeqExpansion.concat(f, SeqExpansion.empty).length),
+			),
+		);
+	});
+
+	it("non-empty and empty", () => {
+		fc.assert(
+			fc.property(
+				arbSE3.filter((f) => !f.isEmpty),
+				(f) =>
+					f.index(zero) ===
+					SeqExpansion.concat(f, SeqExpansion.empty).index(zero),
+			),
+		);
+	});
+
 	it("first element of empty and non-empty", () => {
 		fc.assert(
 			fc.property(
