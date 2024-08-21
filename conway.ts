@@ -2,9 +2,6 @@ import {
 	realAdd,
 	realBirthday,
 	realCompare,
-	realGt,
-	realIntegerDiv,
-	realIntegerPow,
 	realIsNegative,
 	realIsOne,
 	realIsPositive,
@@ -25,6 +22,26 @@ const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
 const freeze = <T>(v: T) => Object.freeze(v);
 
 export type Ord = Conway;
+
+type Ord0 = Real | Ord;
+
+const notImplemented = () => {
+	throw new Error("Not implemented. Need to import the correct module.");
+};
+
+// For splitting up this Conway class into different modules
+export const STATIC_IMPLS = {
+	ordinalRightSub: (a: Ord0, b: Ord0): Ord0 => notImplemented(),
+	ordinalDivRem: (a: Ord0, b: Ord0): [Ord0, Ord0] => notImplemented(),
+	ordinalPow: (a: Ord0, b: Ord0): Ord0 => notImplemented(),
+};
+
+// For splitting up this Conway class into different modules
+export const INSTANCE_IMPLS = {
+	ordinalRightSub: (a: Ord, b: Ord0): Ord => notImplemented(),
+	ordinalDivRem: (a: Ord, b: Ord0): [Ord, Ord] => notImplemented(),
+	ordinalPow: (a: Ord, b: Ord0): Ord => notImplemented(),
+};
 
 /**
  * Represents the Conway normal form of a surreal number.
@@ -611,7 +628,7 @@ export class Conway {
 	 * Performs ordinal number addition.
 	 * Does not check if `this` and `other` are both ordinals.
 	 */
-	public ordinalAdd(other: Real | Conway): Conway {
+	public ordinalAdd(other: Ord0): Ord {
 		if (!(other instanceof Conway)) {
 			return this.add(other);
 		}
@@ -624,7 +641,7 @@ export class Conway {
 		return this.filterTerms((p1) => Conway.ge(p1, cutoff)).add(other);
 	}
 
-	private static ordinalMultInfiniteFinite(inf: Conway, i: Real): Conway {
+	private static ordinalMultInfiniteFinite(inf: Ord, i: Real): Ord {
 		if (Conway.isZero(i)) {
 			return Conway.zero;
 		}
@@ -650,7 +667,7 @@ export class Conway {
 	 * Performs ordinal number multiplication.
 	 * Does not check if `this` and `other` are both ordinals.
 	 */
-	public ordinalMult(other: Real | Conway): Conway {
+	public ordinalMult(other: Ord0): Ord {
 		if (!(other instanceof Conway)) {
 			return this.mult(other);
 		}
@@ -696,141 +713,14 @@ export class Conway {
 	 * Performs ordinal number exponentiation. `0^0 = 1` instead of throwing an error.
 	 * Does not check if `this` and `other` are both ordinals.
 	 */
-	public ordinalPow(other: Real | Conway): Conway {
-		if (!(other instanceof Conway)) {
-			return this.ordinalPowFinite(realToBigint(other));
-		}
-
-		if (other.isZero) {
-			return Conway.one;
-		}
-
-		if (this.isZero) {
-			return Conway.zero;
-		}
-
-		if (this.isOne) {
-			return Conway.one;
-		}
-
-		if (other.isOne) {
-			return this;
-		}
-
-		const otherFinite = other.realValue;
-		if (otherFinite !== null) {
-			return this.ordinalPowFinite(realToBigint(otherFinite));
-		}
-
-		const thisFinite = this.realValue;
-		let prod = Conway.one;
-		if (thisFinite !== null) {
-			for (const [p, c] of other) {
-				if (Conway.isZero(p)) {
-					// finite^finite
-					const coeff1 =
-						typeof thisFinite === "bigint" && typeof c === "bigint"
-							? thisFinite ** c
-							: Number(thisFinite) ** Number(c);
-					prod = prod.ordinalMult(coeff1);
-					continue;
-				}
-
-				if (Conway.isOne(p)) {
-					// finite^(w.c) = (finite^w)^c = w^c
-					prod = prod.ordinalMult(Conway.mono1(c));
-					continue;
-				}
-
-				// finite^(w^p . c)
-
-				// p is finite:
-				// finite^(w^0) = finite
-				// finite^(w^(n+1))
-				// = finite^(w . w^n) = (finite^w)^(w^n)
-				// = w^(w^n)
-				// finite^(w^(n+1).c)
-				// = w^(w^n.c)
-
-				// p is infinite:
-				// = finite^(w^p . c)
-				// = w^(w^p . c)
-				const prv = Conway.ensure(p).realValue;
-				if (prv !== null) {
-					const exponent = Conway.ordinalMult(
-						Conway.mono1(realSub(prv, realOne)),
-						c,
-					);
-					prod = prod.ordinalMult(Conway.mono1(exponent));
-				} else {
-					prod = prod.ordinalMult(
-						Conway.mono1(Conway.ordinalMult(Conway.mono1(p), c)),
-					);
-				}
-			}
-
-			return prod;
-		}
-
-		const leadPow = Conway.ensure(this.leadingPower ?? Conway.zero);
-		for (const [p, c] of other) {
-			if (Conway.isZero(p)) {
-				// x^finite
-				prod = prod.ordinalMult(this.ordinalPowFinite(realToBigint(c)));
-				continue;
-			}
-			// x^(w^p . c)
-			// = (w^leadPow)^(w^p . c)
-			// = w^(leadPow . (w^p . c))
-			const prodPow = Conway.mono(
-				1n,
-				Conway.ordinalMult(leadPow, Conway.mono(c, p)),
-			);
-			prod = prod.ordinalMult(prodPow);
-		}
-
-		return prod;
-	}
-
-	public ordinalPowFinite(other: bigint): Conway {
-		if (other === 0n) {
-			return Conway.one;
-		}
-		if (other === 1n) {
-			return this;
-		}
-		const rv = this.realValue;
-		if (rv !== null) {
-			// finite^finite
-			return Conway.ensure(
-				typeof rv === "bigint" ? rv ** other : Number(rv) ** Number(other),
-			);
-		}
-
-		// infinite^finite
-		if (other === 2n) {
-			return this.ordinalMult(this);
-		}
-
-		if (other === 3n) {
-			return this.ordinalMult(this).ordinalMult(this);
-		}
-
-		const m = this.ordinalPowFinite(other >> 2n);
-		const m2 = m.ordinalMult(m);
-		const m4 = m2.ordinalMult(m2);
-		let prod = m4;
-		const mod = other % 4n;
-		for (let i = 0n; i < mod; i += 1n) {
-			prod = prod.ordinalMult(this);
-		}
-		return prod;
+	public ordinalPow(other: Ord0): Ord0 {
+		return INSTANCE_IMPLS.ordinalPow(this, other);
 	}
 
 	/**
 	 * Find the solution `x` such that `this.ordinalAdd(x).eq(other)`.
 	 */
-	public ordinalRightSub(other: Real | Conway): Conway {
+	public ordinalRightSub(other: Ord0): Ord {
 		const c = Conway.compare(this, other);
 		if (c < 0) {
 			throw new RangeError(`No solution: ${this} > ${other.toString()}`);
@@ -960,90 +850,6 @@ export class Conway {
 		return [q, r];
 	}
 
-	private static finiteOrdinalDiv(value: Real, other: Real) {
-		return realIntegerDiv(value, other);
-	}
-
-	/**
-	 * Given this number (must be ordinal) `N` and another ordinal number `D`,
-	 * find `q, r` such that `r < d` and `D * q + r = N`.
-	 * @param value The divisor
-	 * @returns The quotient and remainder as a tuple
-	 */
-	public ordinalDivRem(div: Conway | Real): [Conway | Real, Conway | Real] {
-		if (Conway.isZero(div)) {
-			throw new RangeError("division by zero");
-		}
-
-		if (this.isZero) {
-			return [this, Conway.zero];
-		}
-
-		if (Conway.isOne(div)) {
-			return [this, Conway.zero];
-		}
-
-		if (Conway.eq(this, div)) {
-			return [Conway.one, Conway.zero];
-		}
-
-		const rv = div instanceof Conway ? div.realValue : div;
-		if (rv !== null) {
-			const q = Conway.finiteOrdinalDiv(this.leadingCoeff, rv);
-			const r = Conway.ordinalRightSub(Conway.ordinalMult(div, q), this);
-			return [q, r];
-		}
-
-		// div is infinite below
-
-		const v = Conway.ensure(div);
-		let quotient: Conway | Real = Conway.zero;
-		let remainder: Conway | Real = this;
-		// D * ((w^p0).q0 + qRest) + r = (w^P0).C0 + N_Rest
-		// ((w^dp0) D0 + ...) * ((w^p0).q0 + ...) + r = (w^P0) C0 + ...
-		//  --> (w^dp0 D0) * (w^p0 q0) = (w^P0 C0)
-		//      Case 1 (dp0 = P0): w^P0 (D0 q0) = w^P0 C0 --> use division
-		//      Case 2           : w^P0 w^p0 q0 = w^P0 C0 --> q0 = c0, p0 = subtraction
-		// (p0, q0) = divMono(dp0, D0, p0, q0)
-		// D * qRest + (r + ...) = N_Rest
-
-		for (const [pUpper, cUpper] of this) {
-			const [pd0, cd0] = v.#terms[0];
-			if (Conway.lt(pUpper, pd0)) {
-				break;
-			}
-
-			const de = Conway.ordinalRightSub(pd0, pUpper);
-			const cr = Conway.isZero(de)
-				? Conway.finiteOrdinalDiv(cUpper, cd0)
-				: cUpper;
-			if (!cr) {
-				continue;
-			}
-
-			let dq = Conway.mono(cr, de);
-			let toSub = Conway.ordinalMult(div, dq);
-			if (Conway.lt(remainder, toSub)) {
-				if (realGt(cr, realOne)) {
-					const cr1 = realSub(cr, realOne);
-					const dq1 = Conway.mono(cr1, de);
-					const toSub1 = Conway.ordinalMult(div, dq1);
-					if (Conway.lt(remainder, toSub1)) {
-						break;
-					}
-					dq = dq1;
-					toSub = toSub1;
-				} else {
-					break;
-				}
-			}
-			quotient = Conway.ordinalAdd(quotient, dq);
-			remainder = Conway.ordinalRightSub(toSub, remainder);
-		}
-
-		return [quotient, remainder];
-	}
-
 	// #endregion
 	// #region Arithmetic (static)
 
@@ -1069,10 +875,7 @@ export class Conway {
 		return l1.sub(r1);
 	}
 
-	public static ordinalAdd(
-		left: Real | Conway,
-		right: Real | Conway,
-	): Real | Conway {
+	public static ordinalAdd(left: Ord0, right: Ord0): Ord0 {
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
 			return realAdd(left, right);
 		}
@@ -1081,10 +884,7 @@ export class Conway {
 		return l1.ordinalAdd(r1);
 	}
 
-	public static ordinalMult(
-		left: Real | Conway,
-		right: Real | Conway,
-	): Real | Conway {
+	public static ordinalMult(left: Ord0, right: Ord0): Ord0 {
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
 			return realMult(left, right);
 		}
@@ -1093,19 +893,11 @@ export class Conway {
 		return l1.ordinalMult(r1);
 	}
 
-	public static ordinalPow(left: Real | Conway, right: Real | Conway) {
-		if (!(left instanceof Conway) && !(right instanceof Conway)) {
-			return realIntegerPow(left, right);
-		}
-		const l1 = Conway.ensure(left);
-		const r1 = Conway.ensure(right);
-		return l1.ordinalPow(r1);
+	public static ordinalPow(left: Ord0, right: Ord0): Ord0 {
+		return STATIC_IMPLS.ordinalPow(left, right);
 	}
 
-	public static ordinalRightSub(
-		left: Real | Conway,
-		right: Real | Conway,
-	): Real | Conway {
+	public static ordinalRightSub(left: Ord0, right: Ord0): Ord0 {
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
 			if (realLt(right, left)) {
 				throw new RangeError(`No solution: ${left} + ? = ${right}`);
@@ -1117,19 +909,12 @@ export class Conway {
 		return l1.ordinalRightSub(right);
 	}
 
-	public static ordinalDivRem(
-		left: Real | Conway,
-		right: Real | Conway,
-	): [Real | Conway, Real | Conway] {
-		if (!(left instanceof Conway) && !(right instanceof Conway)) {
-			const n = realToBigint(left);
-			const d = realToBigint(right);
-			const q = n / d;
-			const r = n - q * d;
-			return [q, r];
-		}
+	public ordinalDivRem(this: Ord, right: Ord0): [Ord, Ord] {
+		return INSTANCE_IMPLS.ordinalDivRem(this, right);
+	}
 
-		return Conway.ensure(left).ordinalDivRem(right);
+	public static ordinalDivRem(left: Ord0, right: Ord0): [Ord0, Ord0] {
+		return STATIC_IMPLS.ordinalDivRem(left, right);
 	}
 
 	public static mult(left: Real | Conway, right: Real | Conway): Real | Conway {
