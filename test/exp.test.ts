@@ -170,7 +170,6 @@ describe("exp", () => {
 describe("(w + 1)^w = e w^w - e w^(w-1)/2 + ...", () => {
 	it("expand to 5 terms", () => {
 		const expanded = ensure(exp(unit.mult(log(unit.add(one), 10)), 10));
-		console.log(expanded);
 		[...expanded].slice(0, 2).forEach(([p, c], i) => {
 			const s = i % 2 === 0 ? 1 : -1;
 			assertEq(unit.sub(i), p);
