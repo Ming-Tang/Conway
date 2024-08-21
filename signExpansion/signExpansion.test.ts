@@ -6,17 +6,16 @@ import {
 	arbConway2,
 	arbConway3,
 	arbDyadic,
-	arbFinite,
 	arbFiniteBigint,
 	arbOrd1,
 	arbOrd2,
 	arbOrd3,
 } from "../test/generators";
 import { assertEq } from "../test/propsTest";
-import { Conway } from "../conway";
+import { Conway, type Ord } from "../conway";
 import { eq, isZero, lt } from "../op/comparison";
 import { neg } from "../op/arith";
-import type { Ord, Seq } from "../seq";
+import type { Seq } from "../seq";
 
 fc.configureGlobal({ numRuns: 5000 });
 

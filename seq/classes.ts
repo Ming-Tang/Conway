@@ -1,3 +1,4 @@
+import type { Ord } from "../conway";
 import { ensure, mono1, unit, zero } from "../op";
 import { ge, gt, isAboveReals, isOne, isZero } from "../op/comparison";
 import { realToNumber } from "../real";
@@ -18,7 +19,7 @@ import {
 	ensureFinite,
 	modifiedDivRem,
 } from "./helpers";
-import type { Cnf, CnfConcat, Ord, Seq } from "./types";
+import type { Cnf, Seq } from "./types";
 
 const minus = (higher: Ord, lower: Ord) => lower.ordinalRightSub(higher);
 

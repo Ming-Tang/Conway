@@ -1,7 +1,5 @@
-import type { Conway } from "../conway";
+import type { Ord } from "../conway";
 import type { SeqExpansion } from "./expansion";
-
-export type Ord = Conway;
 
 export type CnfArray<T> = T[];
 

@@ -1,8 +1,7 @@
-import type { Conway } from "../conway";
-import { ensure, mono1, one, unit, zero } from "../op";
-import { ge, gt, isAboveReals, isZero, le } from "../op/comparison";
-import { ordinalDivRem, ordinalMult } from "../op/ordinal";
-import type { Ord } from "./types";
+import type { Conway, Ord } from "../conway";
+import { ensure, one, unit } from "../op";
+import { ge, isAboveReals, le } from "../op/comparison";
+import { ordinalDivRem } from "../op/ordinal";
 
 // @ts-expect-error
 export const ensureOrd = (x: Conway): x is Ord<Conway> => {

@@ -1,9 +1,9 @@
 import { cycle, cycleArray } from ".";
+import type { Ord } from "../conway";
 import { ensure, one, zero } from "../op";
 import { ge, gt, isOne, isZero, lt, ne } from "../op/comparison";
-import { ordinalMult } from "../op/ordinal";
 import { assertLength, isConstantArray } from "./helpers";
-import type { Ord, Seq } from "./types";
+import type { Seq } from "./types";
 
 export const NotExpanded = Symbol("NotExpanded");
 

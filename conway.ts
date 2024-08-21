@@ -24,6 +24,8 @@ const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
 
 const freeze = <T>(v: T) => Object.freeze(v);
 
+export type Ord = Conway;
+
 /**
  * Represents the Conway normal form of a surreal number.
  *

@@ -1,12 +1,13 @@
 import fc from "fast-check";
 import { isPositive, isZero, lt } from "../op/comparison";
-import type { Seq, Ord } from "./types";
+import type { Seq } from "./types";
 import { assertEq } from "../test/propsTest";
 import { SeqExpansion, type ExpansionEntryConstructor } from "./expansion";
 import { ensure, one, zero } from "../op";
 import { concat, cycleArray, empty, fromArray } from ".";
 import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "../test/generators";
 import { ordinalMult } from "../op/ordinal";
+import type { Ord } from "../conway";
 
 type Value = number;
 const arbValue: fc.Arbitrary<Value> = fc.integer({ min: 0, max: 1000 });

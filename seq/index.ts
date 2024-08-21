@@ -1,3 +1,4 @@
+import type { Ord } from "../conway";
 import { one, unit, zero } from "../op";
 import { isZero } from "../op/comparison";
 import {
@@ -15,8 +16,8 @@ import {
 	Identity,
 	Empty,
 } from "./classes";
-import type { Seq, Ord } from "./types";
-export type { Seq, Ord } from "./types";
+import type { Seq } from "./types";
+export type { Seq } from "./types";
 export { cnfOrDefault, defaultCnf } from "./cnf";
 
 /**

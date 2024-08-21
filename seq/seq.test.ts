@@ -11,7 +11,6 @@ import {
 	map,
 	prod,
 	repeatEach,
-	type Ord,
 	type Seq,
 } from ".";
 import { arbFiniteBigintOrd, arbOrd3 } from "../test/generators";
@@ -21,13 +20,12 @@ import {
 	isAboveReals,
 	isPositive,
 	isZero,
-	le,
 	lt,
 	ne,
 } from "../op/comparison";
 import { isLimit, ordinalAdd, ordinalMult, succ } from "../op/ordinal";
 import { ensure, mono1, one, unit, zero } from "../op";
-import { Conway } from "../conway";
+import { Conway, type Ord } from "../conway";
 import { assertEq } from "../test/propsTest";
 
 // fc.configureGlobal({ numRuns: 2000, verbose: false });
