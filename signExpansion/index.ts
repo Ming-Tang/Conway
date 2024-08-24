@@ -70,7 +70,7 @@ export const signExpansion = (
 		let seMono: Seq<Sign> = empty as Seq<Sign>;
 		if (isNegative(p)) {
 			// infinitesimal
-			const pPos = Conway.neg(p);
+			const pPos = neg(p);
 			const dp = sub(pPos, lastP);
 			lastP = pPos;
 			se = concat1(se, signExpansionLow(dp, c));

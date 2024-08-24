@@ -71,21 +71,10 @@ c2.index(unit.add(1)); // c2[w + 1] = 1
 num1.add(num2).mult(num3)
 ```
 
-`num1` must be `Conway` and if `num1` could be a real number, `Conway.ensure` is required
+`num1` must be `Conway` and if `num1` could be a real number, `ensure` is required
 to wrap it.
 
-### Static method
-
-Unlike class methods, the arguments can be real numbers or `Conway` and return real numbers if possible.
-
-```typescript
-// num1 : Real | Conway
-Conway.mult(Conway.add(num1, num2))
-```
-
 ### Module exports
-
-Similar to static method, without the `Conway.` prefix.
 
 ```typescript
 import { ... } from "...";

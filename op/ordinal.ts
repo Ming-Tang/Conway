@@ -22,6 +22,7 @@ export const { isOrdinal, ordinalAdd, ordinalMult, ordinalRightSub } = Conway;
 
 const {
 	compare,
+	eq,
 	mono: _mono,
 	mono1: _mono1,
 	ensure: _ensure,
@@ -216,7 +217,7 @@ export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 		return [num, zero];
 	}
 
-	if (Conway.eq(num, div)) {
+	if (eq(num, div)) {
 		return [one, zero];
 	}
 
