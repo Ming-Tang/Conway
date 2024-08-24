@@ -23,7 +23,10 @@ const freeze = <T>(v: T) => Object.freeze(v);
 
 export type Ord = Conway;
 
-type Ord0 = Real | Ord;
+export type Ord0 = Real | Ord;
+
+// TODO refactor to use this type
+export type Conway0 = Real | Conway;
 
 const notImplemented = () => {
 	throw new Error("Not implemented. Need to import the correct module.");

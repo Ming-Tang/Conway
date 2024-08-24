@@ -1,5 +1,10 @@
-import { ensure } from ".";
-import { Conway, INSTANCE_IMPLS, STATIC_IMPLS, type Ord } from "../conway";
+import {
+	Conway,
+	INSTANCE_IMPLS,
+	STATIC_IMPLS,
+	type Ord,
+	type Ord0,
+} from "../conway";
 import {
 	realGt,
 	realIntegerDiv,
@@ -15,9 +20,41 @@ import { isZero, isOne } from "./comparison";
 
 export const { isOrdinal, ordinalAdd, ordinalMult, ordinalRightSub } = Conway;
 
+const {
+	compare,
+	mono: _mono,
+	mono1: _mono1,
+	ensure: _ensure,
+	zero: _zero,
+	one: _one,
+	unit: _unit,
+} = Conway;
+
+// TODO assert ordinal function
+
+const mono1 = _mono1 as (p: Ord0) => Ord;
+// TODO type check arguments
+export const ordinalMono1 = mono1;
+
+const mono = _mono as (c: Ord0, p: Ord0) => Ord;
+// TODO type check arguments
+export const ordinalMono = mono;
+
+const ensure = _ensure as (x: Ord0) => Ord;
+// TODO type check arguments
+export const ordinalEnsure = ensure;
+
+const zero = _zero as Ord;
+export const ordinalZero: Ord = zero;
+
+const one = _one as Ord;
+export const ordinalOne: Ord = one;
+
+export const ordinalUnit: Ord = _unit as Ord;
+
 const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 	if (other === 0n) {
-		return Conway.one;
+		return one;
 	}
 	if (other === 1n) {
 		return base;
@@ -26,7 +63,7 @@ const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 	const rv = base.realValue;
 	if (rv !== null) {
 		// finite^finite
-		return Conway.ensure(
+		return ensure(
 			typeof rv === "bigint" ? rv ** other : Number(rv) ** Number(other),
 		);
 	}
@@ -51,28 +88,28 @@ const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 	return prod;
 };
 
-export const ordinalPow = (left: Real | Ord, other: Real | Ord): Real | Ord => {
+export const ordinalPow = (left: Ord0, other: Ord0): Ord0 => {
 	if (!(left instanceof Conway)) {
 		if (!(other instanceof Conway)) {
 			return realIntegerPow(left, other);
 		}
 	}
-	const base = Conway.ensure(left);
+	const base = ensure(left);
 
 	if (!(other instanceof Conway)) {
 		return ordinalPowFinite(base, realToBigint(other));
 	}
 
 	if (other.isZero) {
-		return Conway.one;
+		return one;
 	}
 
 	if (base.isZero) {
-		return Conway.zero;
+		return zero;
 	}
 
 	if (base.isOne) {
-		return Conway.one;
+		return one;
 	}
 
 	if (other.isOne) {
@@ -85,10 +122,10 @@ export const ordinalPow = (left: Real | Ord, other: Real | Ord): Real | Ord => {
 	}
 
 	const thisFinite = base.realValue;
-	let prod = Conway.one;
+	let prod = one;
 	if (thisFinite !== null) {
 		for (const [p, c] of other) {
-			if (Conway.isZero(p)) {
+			if (isZero(p)) {
 				// finite^finite
 				const coeff1 =
 					typeof thisFinite === "bigint" && typeof c === "bigint"
@@ -98,9 +135,9 @@ export const ordinalPow = (left: Real | Ord, other: Real | Ord): Real | Ord => {
 				continue;
 			}
 
-			if (Conway.isOne(p)) {
+			if (isOne(p)) {
 				// finite^(w.c) = (finite^w)^c = w^c
-				prod = prod.ordinalMult(Conway.mono1(c));
+				prod = prod.ordinalMult(mono1(c));
 				continue;
 			}
 
@@ -117,26 +154,21 @@ export const ordinalPow = (left: Real | Ord, other: Real | Ord): Real | Ord => {
 			// p is infinite:
 			// = finite^(w^p . c)
 			// = w^(w^p . c)
-			const prv = Conway.ensure(p).realValue;
+			const prv = ensure(p).realValue;
 			if (prv !== null) {
-				const exponent = Conway.ordinalMult(
-					Conway.mono1(realSub(prv, realOne)),
-					c,
-				);
-				prod = prod.ordinalMult(Conway.mono1(exponent));
+				const exponent = ordinalMult(mono1(realSub(prv, realOne)), c);
+				prod = prod.ordinalMult(mono1(exponent));
 			} else {
-				prod = prod.ordinalMult(
-					Conway.mono1(Conway.ordinalMult(Conway.mono1(p), c)),
-				);
+				prod = prod.ordinalMult(mono1(ordinalMult(mono1(p), c)));
 			}
 		}
 
 		return prod;
 	}
 
-	const leadPow = Conway.ensure(base.leadingPower ?? Conway.zero);
+	const leadPow = ensure(base.leadingPower ?? zero);
 	for (const [p, c] of other) {
-		if (Conway.isZero(p)) {
+		if (isZero(p)) {
 			// x^finite
 			prod = prod.ordinalMult(ordinalPowFinite(base, realToBigint(c)));
 			continue;
@@ -144,10 +176,7 @@ export const ordinalPow = (left: Real | Ord, other: Real | Ord): Real | Ord => {
 		// x^(w^p . c)
 		// = (w^leadPow)^(w^p . c)
 		// = w^(leadPow . (w^p . c))
-		const prodPow = Conway.mono(
-			1n,
-			Conway.ordinalMult(leadPow, Conway.mono(c, p)),
-		);
+		const prodPow = mono(1n, ordinalMult(leadPow, mono(c, p)));
 		prod = prod.ordinalMult(prodPow);
 	}
 
@@ -163,10 +192,7 @@ const finiteOrdinalDiv = (value: Real, other: Real) =>
  * @param value The divisor
  * @returns The quotient and remainder as a tuple
  */
-export const ordinalDivRem = (
-	left: Real | Ord,
-	right: Real | Ord,
-): [Real | Ord, Real | Ord] => {
+export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 	if (!(left instanceof Conway) && !(right instanceof Conway)) {
 		const n = realToBigint(left);
 		const d = realToBigint(right);
@@ -175,36 +201,36 @@ export const ordinalDivRem = (
 		return [q, r];
 	}
 
-	const num: Ord = Conway.ensure(left);
-	const div: Ord = Conway.ensure(right);
+	const num: Ord = ensure(left);
+	const div: Ord = ensure(right);
 
-	if (Conway.isZero(div)) {
+	if (isZero(div)) {
 		throw new RangeError("division by zero");
 	}
 
 	if (num.isZero) {
-		return [num, Conway.zero];
+		return [num, zero];
 	}
 
-	if (Conway.isOne(div)) {
-		return [num, Conway.zero];
+	if (isOne(div)) {
+		return [num, zero];
 	}
 
 	if (Conway.eq(num, div)) {
-		return [Conway.one, Conway.zero];
+		return [one, zero];
 	}
 
 	const rv = div instanceof Conway ? div.realValue : div;
 	if (rv !== null) {
 		const q = finiteOrdinalDiv(num.leadingCoeff, rv);
-		const r = Conway.ordinalRightSub(Conway.ordinalMult(div, q), num);
+		const r = ordinalRightSub(ordinalMult(div, q), num);
 		return [q, r];
 	}
 
 	// div is infinite below
 
-	const v = Conway.ensure(div);
-	let quotient: Conway | Real = Conway.zero;
+	const v = ensure(div);
+	let quotient: Conway | Real = zero;
 	let remainder: Conway | Real = num;
 	// D * ((w^p0).q0 + qRest) + r = (w^P0).C0 + N_Rest
 	// ((w^dp0) D0 + ...) * ((w^p0).q0 + ...) + r = (w^P0) C0 + ...
@@ -215,26 +241,26 @@ export const ordinalDivRem = (
 	// D * qRest + (r + ...) = N_Rest
 
 	for (const [pUpper, cUpper] of num) {
-		const pd0 = v.leadingPower ?? Conway.zero;
-		const cd0 = v.leadingCoeff ?? Conway.zero;
-		if (Conway.compare(pUpper, pd0) > 0) {
+		const pd0 = v.leadingPower ?? zero;
+		const cd0 = v.leadingCoeff ?? zero;
+		if (compare(pUpper, pd0) > 0) {
 			break;
 		}
 
-		const de = Conway.ordinalRightSub(pd0, pUpper);
-		const cr = Conway.isZero(de) ? finiteOrdinalDiv(cUpper, cd0) : cUpper;
+		const de = ordinalRightSub(pd0, pUpper);
+		const cr = isZero(de) ? finiteOrdinalDiv(cUpper, cd0) : cUpper;
 		if (!cr) {
 			continue;
 		}
 
-		let dq = Conway.mono(cr, de);
-		let toSub = Conway.ordinalMult(div, dq);
-		if (Conway.compare(remainder, toSub) > 0) {
+		let dq = mono(cr, de);
+		let toSub = ordinalMult(div, dq);
+		if (compare(remainder, toSub) > 0) {
 			if (realGt(cr, realOne)) {
 				const cr1 = realSub(cr, realOne);
-				const dq1 = Conway.mono(cr1, de);
-				const toSub1 = Conway.ordinalMult(div, dq1);
-				if (Conway.compare(remainder, toSub1) > 0) {
+				const dq1 = mono(cr1, de);
+				const toSub1 = ordinalMult(div, dq1);
+				if (compare(remainder, toSub1) > 0) {
 					break;
 				}
 				dq = dq1;
@@ -243,8 +269,8 @@ export const ordinalDivRem = (
 				break;
 			}
 		}
-		quotient = Conway.ordinalAdd(quotient, dq);
-		remainder = Conway.ordinalRightSub(toSub, remainder);
+		quotient = ordinalAdd(quotient, dq);
+		remainder = ordinalRightSub(toSub, remainder);
 	}
 
 	return [quotient, remainder];
