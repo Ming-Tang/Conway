@@ -1,4 +1,4 @@
-import { Conway } from "../conway";
+import { Conway, type Conway0 } from "../conway";
 import type { Real } from "../real";
 
 export const {
@@ -13,13 +13,9 @@ export const {
 	maybeDowngrade,
 	real: fromReal,
 } = Conway;
-export const isMono = (x: Real | Conway) =>
+export const isMono = (x: Conway0) =>
 	x instanceof Conway ? x.length <= 1 : true;
 
 export const create = (
-	x:
-		| [Conway | Real, Real][]
-		| Iterable<[Conway | Real, Real]>
-		| null
-		| undefined,
+	x: [Conway0, Real][] | Iterable<[Conway0, Real]> | null | undefined,
 ) => new Conway(x);

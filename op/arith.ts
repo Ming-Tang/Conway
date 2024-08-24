@@ -1,10 +1,9 @@
 import { one, ensure } from ".";
-import { Conway } from "../conway";
-import type { Real } from "../real";
+import { Conway, type Conway0 } from "../conway";
 
 export const { neg, add, sub, mult } = Conway;
-export const divRem = (a: Conway, b: Conway | Real) => a.divRem(b);
-export const divRemIters = (a: Conway, b: Conway | Real, n: number) =>
+export const divRem = (a: Conway, b: Conway0) => a.divRem(b);
+export const divRemIters = (a: Conway, b: Conway0, n: number) =>
 	a.divRemIters(b, n);
 
 const powBigint = (value: Conway, pow: bigint): Conway => {
@@ -43,7 +42,7 @@ const powNumberInt = (value: Conway, pow: number): Conway => {
 	return p.mult(p);
 };
 
-export const powInt = (value: Conway | Real, pow: number | bigint): Conway => {
+export const powInt = (value: Conway0, pow: number | bigint): Conway => {
 	if (pow < 0) {
 		throw new RangeError("negative power");
 	}

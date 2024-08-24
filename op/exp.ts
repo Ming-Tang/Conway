@@ -1,5 +1,5 @@
 import { ensure, mono, mono1, one, zero } from ".";
-import { Conway } from "../conway";
+import { Conway, type Conway0 } from "../conway";
 import { realMult, type Real } from "../real";
 import { sub, mult, add } from "./arith";
 import { eq, isZero } from "./comparison";
@@ -7,7 +7,7 @@ import { eq, isZero } from "./comparison";
 /**
  * exp(w^x)
  */
-const expLow = (x: Real | Conway, terms = null as number | null) => {
+const expLow = (x: Conway0, terms = null as number | null) => {
 	if (isZero(x)) {
 		return one;
 	}
@@ -17,7 +17,7 @@ const expLow = (x: Real | Conway, terms = null as number | null) => {
 
 	let sum = zero;
 	let f = 1.0;
-	let xPow: Real | Conway = one;
+	let xPow: Conway0 = one;
 	for (let i = 0; i < terms; i++) {
 		sum = sum.add(mult(xPow, 1.0 / f));
 		xPow = mult(xPow, x);
@@ -29,7 +29,7 @@ const expLow = (x: Real | Conway, terms = null as number | null) => {
 /**
  * Evaluate the infinite series for `log(1 + x)` where `x` is infinitesimal.
  */
-export const log1pLow = (x: Real | Conway, terms = null as number | null) => {
+export const log1pLow = (x: Conway0, terms = null as number | null) => {
 	if (isZero(x)) {
 		return one;
 	}
@@ -54,8 +54,7 @@ export const log1pLow = (x: Real | Conway, terms = null as number | null) => {
  *
  * h(x) = x due to x being smaller than epsilon numbers.
  */
-const logInf = (x: Real | Conway) =>
-	ensure(x).sumTerms((p, c) => mult(mono1(p), c));
+const logInf = (x: Conway0) => ensure(x).sumTerms((p, c) => mult(mono1(p), c));
 
 /**
  * Given a surreal number, factor it into `(r w^inf) * (1 + low)`.
@@ -68,7 +67,7 @@ export const factorLeadLow = (x: Conway) => {
 	const { leadingPower: pLead0, leadingCoeff: r } = x;
 	const pLead = pLead0 ?? zero;
 	const inf = pLead;
-	const terms: [Real | Conway, Real][] = [];
+	const terms: [Conway0, Real][] = [];
 	for (const [p, c] of x) {
 		if (eq(p, pLead)) {
 			continue;
@@ -79,10 +78,7 @@ export const factorLeadLow = (x: Conway) => {
 	return { inf, r, low: new Conway(terms) };
 };
 
-export const exp = (
-	x: Real | Conway,
-	terms: number | null = null,
-): Conway | Real => {
+export const exp = (x: Conway0, terms: number | null = null): Conway0 => {
 	if (isZero(x)) {
 		return one;
 	}
@@ -110,10 +106,7 @@ export const exp = (
 	return ensure(inf).mult(r).mult(low);
 };
 
-export const log = (
-	x: Real | Conway,
-	terms: number | null = null,
-): Conway | Real => {
+export const log = (x: Conway0, terms: number | null = null): Conway0 => {
 	// Given a term
 	//   c_lead w^p_lead + c_1 w^p_i + ...,
 	// factor it into

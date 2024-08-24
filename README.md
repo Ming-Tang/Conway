@@ -78,7 +78,7 @@ to wrap it.
 
 ```typescript
 import { ... } from "...";
-// num1 : Real | Conway
+// num1 : Conway0
 mult(add(num1, num2))
 ```
 

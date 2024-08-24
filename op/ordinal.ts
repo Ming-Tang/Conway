@@ -1,4 +1,10 @@
-import { Conway, INSTANCE_IMPLS, type Ord, type Ord0 } from "../conway";
+import {
+	Conway,
+	INSTANCE_IMPLS,
+	type Conway0,
+	type Ord,
+	type Ord0,
+} from "../conway";
 import {
 	realAdd,
 	realGt,
@@ -443,16 +449,16 @@ INSTANCE_IMPLS.ordinalRightSub = ordinalRightSub0;
 INSTANCE_IMPLS.ordinalAdd = ordinalAdd0;
 INSTANCE_IMPLS.ordinalMult = ordinalMult0;
 
-export const isLimit = (x: Real | Conway): x is Conway =>
+export const isLimit = (x: Conway0): x is Conway =>
 	x instanceof Conway && !isZero(x) && isZero(x.realPart);
-export const isSucc = (x: Real | Conway) =>
+export const isSucc = (x: Conway0) =>
 	x instanceof Conway ? realIsPositive(x.realPart) : realIsPositive(x);
 
-export const noSucc = (x: Real | Conway) =>
+export const noSucc = (x: Conway0) =>
 	x instanceof Conway ? sub(x, x.realPart) : 0n;
 
-export const succ = (x: Real | Conway) => add(x, 1n);
-export const pred = (x: Real | Conway) => sub(x, 1n);
+export const succ = (x: Conway0) => add(x, 1n);
+export const pred = (x: Conway0) => sub(x, 1n);
 
 /**
  * Get the nth element of the canonical sequence of a limit ordinal.
@@ -465,13 +471,13 @@ export const pred = (x: Real | Conway) => sub(x, 1n);
  * @param limitCoeff The trailing coefficient when the trailing term is a limit ordinal
  * @param n The index (natural number) of the sequence
  */
-export const canon = (x: Conway, n: Real, limitCoeff = 1n): Real | Conway => {
+export const canon = (x: Conway, n: Real, limitCoeff = 1n): Conway0 => {
 	if (isZero(x) || !x.isOrdinal || isSucc(x)) {
 		throw new RangeError("Must be a limit ordinal");
 	}
 
 	const idx = x.length - 1;
-	const terms = [...x] as [Conway | Real, Real][];
+	const terms = [...x] as [Conway0, Real][];
 	const [p, c] = terms[idx];
 	const preTerms = terms.slice(0, idx);
 	if (isOne(c)) {

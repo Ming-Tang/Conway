@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { Conway } from "../conway";
+import { Conway, type Ord0 } from "../conway";
 import type { Real } from "../real";
 import {
 	arbConway3,
@@ -298,14 +298,14 @@ describe("ordinals", () => {
 			});
 		});
 
-		const arbs: [fc.Arbitrary<Real | Conway>, string][] = [
+		const arbs: [fc.Arbitrary<Ord0>, string][] = [
 			[arbFinite, "finite"],
 			[arbOrd3, "infinite"],
 		];
 		const arb3s: [
-			fc.Arbitrary<Real | Conway>,
-			fc.Arbitrary<Real | Conway>,
-			fc.Arbitrary<Real | Conway>,
+			fc.Arbitrary<Ord0>,
+			fc.Arbitrary<Ord0>,
+			fc.Arbitrary<Ord0>,
 			string,
 		][] = [];
 		for (const [arb0, name0] of arbs) {
@@ -353,7 +353,7 @@ describe("ordinals", () => {
 		it("is repeated addition for finite multipliers", () => {
 			fc.assert(
 				fc.property(arbOrd3, fc.integer({ min: 1, max: 32 }), (a, n) => {
-					let sum: Conway | Real = zero;
+					let sum: Ord0 = zero;
 					for (let i = 0; i < n; i++) {
 						sum = ordinalAdd(sum, a);
 					}
@@ -433,7 +433,7 @@ describe("ordinals", () => {
 					arbFiniteBigintOrd.filter((x) => x < 10n),
 					(a, p) => {
 						fc.pre(p > 0n);
-						let fromMult: Real | Conway = one;
+						let fromMult: Ord0 = one;
 						for (let i = 0n; i < p; i += 1n) {
 							fromMult = ordinalMult(fromMult, a);
 						}
@@ -570,12 +570,7 @@ describe("ordinals", () => {
 	});
 
 	describe("ordinalDivRem", () => {
-		const checkDivRem = (
-			n: Real | Conway,
-			d: Real | Conway,
-			q: Real | Conway,
-			r: Real | Conway,
-		) => {
+		const checkDivRem = (n: Ord0, d: Ord0, q: Ord0, r: Ord0) => {
 			if (!(isAboveReals(n) && !isAboveReals(d)) && le(d, r)) {
 				throw new Error(
 					`remainder is too large. n=${n}, q=${q}, d=${d}, r=${r}`,
@@ -585,7 +580,7 @@ describe("ordinals", () => {
 			assertEq(n, backAdd);
 		};
 
-		const propDivRem = (n: Real | Conway, d: Real | Conway) => {
+		const propDivRem = (n: Ord0, d: Ord0) => {
 			fc.pre(!isZero(d));
 			const [q, r] = ordinalDivRem(n, d);
 			//console.log(`(${n}) / (${d}) = ${q} rem ${r}`);

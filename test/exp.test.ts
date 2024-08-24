@@ -3,12 +3,11 @@ import { add, mult } from "../op/arith";
 import { exp, factorLeadLow, log, log1pLow } from "../op/exp";
 import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
 import { eq, isPositive, isZero } from "../op/comparison";
-import type { Conway } from "../conway";
-import type { Real } from "../real";
+import type { Conway0 } from "../conway";
 import { ensure, mono, zero, one, unit } from "../op";
 import { assertEq } from "./propsTest";
 
-const close = (a: Real | Conway, b: Real | Conway) => {
+const close = (a: Conway0, b: Conway0) => {
 	expect(ensure(a)).toEqual(ensure(b));
 };
 

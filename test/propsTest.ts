@@ -1,14 +1,13 @@
 import fc from "fast-check";
-import { Conway } from "../conway";
-import type { Real } from "../real";
+import { Conway, type Conway0 } from "../conway";
 import { eq } from "../op/comparison";
 import { ensure } from "../op";
 
 type BinOp<T> = (a: T, b: T) => T;
 
 export const assertEq = (
-	a: Real | Conway,
-	b: Real | Conway,
+	a: Conway0,
+	b: Conway0,
 	leftName = "a",
 	rightName = "b",
 ) => {

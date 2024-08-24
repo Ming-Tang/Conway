@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { Conway } from "../conway";
+import { Conway, type Conway0 } from "../conway";
 import type { Real } from "../real";
 import {
 	propCommAssoc,
@@ -48,7 +48,7 @@ const ensureIncreasing = (x: Conway) => {
 };
 
 const ensureSimplified = (x: Conway) => {
-	const f = (x: Conway | Real, root: boolean) => {
+	const f = (x: Conway0, root: boolean) => {
 		if (!(x instanceof Conway)) {
 			return true;
 		}
@@ -702,7 +702,7 @@ describe("Conway", () => {
 			let k = 0;
 			let a: Conway;
 			let b: Conway;
-			let expected: [Conway | Real, Real][];
+			let expected: [Conway0, Real][];
 
 			beforeEach(() => {
 				k = 0;

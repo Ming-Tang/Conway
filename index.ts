@@ -1,4 +1,4 @@
-import { Conway } from "./conway";
+import { Conway, type Conway0 } from "./conway";
 import { realToBigint, realToNumber, type Real } from "./real";
 import {
 	birthday,
@@ -11,21 +11,16 @@ import {
 } from "./op";
 import { isZero } from "./op/comparison";
 import { canon, isLimit, isSucc, noSucc, ordinalAdd } from "./op/ordinal";
-import { cnfOrDefault, concat, cycleArray, fromArray, type Seq } from "./seq";
+import { concat, cycleArray, fromArray, type Seq } from "./seq";
 import { signExpansion } from "./signExpansion";
 import type { Sign } from "./signExpansion/real";
-import {
-	summarizeCnf,
-	signExpansionToString,
-	summarizeCnfLaTeX,
-	ordToLaTeX,
-} from "./seq/cnf";
+import { signExpansionToString, ordToLaTeX } from "./seq/cnf";
 import { expandOrDefault, summarizeExpansionLaTeX } from "./seq/expansion";
 
-const unSucc = (x: Real | Conway, n: number): (Real | Conway)[] => {
+const unSucc = (x: Conway0, n: number): Conway0[] => {
 	const sp = realToNumber(ensure(x).realPart);
 	const i0 = Math.max(sp - n - 1, 0);
-	const row = [] as (Real | Conway)[];
+	const row = [] as Conway0[];
 	const x0 = noSucc(x);
 	for (let i = i0; i < sp; i++) {
 		row.push(ordinalAdd(x0, BigInt(i)));
@@ -33,9 +28,9 @@ const unSucc = (x: Real | Conway, n: number): (Real | Conway)[] => {
 	return row;
 };
 
-const countbackOrd = (ord: Real | Conway, n: number): (Real | Conway)[][] => {
-	const arr: (Real | Conway)[][] = [];
-	let x: Real | Conway = ord;
+const countbackOrd = (ord: Conway0, n: number): Conway0[][] => {
+	const arr: Conway0[][] = [];
+	let x: Conway0 = ord;
 
 	while (true) {
 		if (isSucc(x)) {
@@ -48,7 +43,7 @@ const countbackOrd = (ord: Real | Conway, n: number): (Real | Conway)[][] => {
 		if (isZero(x)) {
 			break;
 		}
-		const row: (Real | Conway)[] = [];
+		const row: Conway0[] = [];
 		x = ensure(x);
 		let n0 = 1;
 		for (let i = n; i >= n0; i--) {
@@ -192,8 +187,8 @@ if (false) {
 			.add(mono(2n, 1)),
 	];
 
-	const countback = (ord: Real | Conway, n: number) => {
-		let x: Real | Conway = ord;
+	const countback = (ord: Conway0, n: number) => {
+		let x: Conway0 = ord;
 		while (true) {
 			if (isSucc(x)) {
 				x = noSucc(x);
