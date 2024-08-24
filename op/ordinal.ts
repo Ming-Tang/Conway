@@ -71,20 +71,22 @@ const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
 	let left: Ord = ord;
 	let right = other1;
 	while (left.length > 0 && right.length > 0) {
-		const [p2, c2] = right.terms[0];
-		const [p1, c1] = left.terms[0];
+		const leftTerms = left.getTerms();
+		const rightTerms = right.getTerms();
+		const [p2, c2] = rightTerms[0];
+		const [p1, c1] = leftTerms[0];
 		if (!eq(p1, p2)) {
 			break;
 		}
 
 		const diffCoeff = realSub(c2, c1);
 		if (isZero(diffCoeff)) {
-			left = new Conway(left.terms.slice(1));
-			right = new Conway(right.terms.slice(1));
+			left = new Conway(leftTerms.slice(1));
+			right = new Conway(rightTerms.slice(1));
 			continue;
 		}
 
-		return new Conway([[p1, realSub(c2, c1)], ...right.terms.slice(1)]);
+		return new Conway([[p1, realSub(c2, c1)], ...rightTerms.slice(1)]);
 	}
 
 	return right;
