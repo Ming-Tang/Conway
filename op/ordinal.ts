@@ -10,6 +10,7 @@ import {
 	realIntegerDiv,
 	realIntegerPow,
 	realIsPositive,
+	realLt,
 	realOne,
 	realSub,
 	realToBigint,
@@ -18,7 +19,7 @@ import {
 import { sub, add } from "./arith";
 import { isZero, isOne } from "./comparison";
 
-export const { isOrdinal, ordinalAdd, ordinalMult, ordinalRightSub } = Conway;
+export const { isOrdinal, ordinalAdd, ordinalMult } = Conway;
 
 const {
 	compare,
@@ -52,6 +53,57 @@ const one = _one as Ord;
 export const ordinalOne: Ord = one;
 
 export const ordinalUnit: Ord = _unit as Ord;
+
+const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
+	const c = Conway.compare(ord, other);
+	if (c < 0) {
+		throw new RangeError(`No solution: ${ord} > ${other.toString()}`);
+	}
+	if (c === 0) {
+		return zero;
+	}
+
+	const other1 = ensure(other);
+	if (ord.isZero) {
+		return other1;
+	}
+
+	let left: Ord = ord;
+	let right = other1;
+	while (left.length > 0 && right.length > 0) {
+		const [p2, c2] = right.terms[0];
+		const [p1, c1] = left.terms[0];
+		if (!eq(p1, p2)) {
+			break;
+		}
+
+		const diffCoeff = realSub(c2, c1);
+		if (isZero(diffCoeff)) {
+			left = new Conway(left.terms.slice(1));
+			right = new Conway(right.terms.slice(1));
+			continue;
+		}
+
+		return new Conway([[p1, realSub(c2, c1)], ...right.terms.slice(1)]);
+	}
+
+	return right;
+};
+
+/**
+ * Find the solution `x` such that `this.ordinalAdd(x).eq(other)`.
+ */
+export const ordinalRightSub = (left: Ord0, right: Ord0): Ord0 => {
+	if (!(left instanceof Conway) && !(right instanceof Conway)) {
+		if (realLt(right, left)) {
+			throw new RangeError(`No solution: ${left} + ? = ${right}`);
+		}
+		return realSub(right, left);
+	}
+
+	const l1 = Conway.ensure(left);
+	return ordinalRightSub0(l1, right);
+};
 
 const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 	if (other === 0n) {
@@ -277,14 +329,15 @@ export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 	return [quotient, remainder];
 };
 
+STATIC_IMPLS.ordinalRightSub = ordinalRightSub;
 STATIC_IMPLS.ordinalDivRem = ordinalDivRem;
 INSTANCE_IMPLS.ordinalDivRem = (x, y) => {
 	const [a, b] = ordinalDivRem(x, y);
 	return [ensure(a), ensure(b)];
 };
 
-STATIC_IMPLS.ordinalPow = ordinalPow;
 INSTANCE_IMPLS.ordinalPow = (x, y) => ensure(ordinalPow(x, y));
+INSTANCE_IMPLS.ordinalRightSub = ordinalRightSub0;
 
 export const isLimit = (x: Real | Conway): x is Conway =>
 	x instanceof Conway && !isZero(x) && isZero(x.realPart);

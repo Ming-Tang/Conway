@@ -6,7 +6,6 @@ import {
 	realIsOne,
 	realIsPositive,
 	realIsZero,
-	realLt,
 	realMult,
 	realNeg,
 	realOne,
@@ -36,7 +35,6 @@ const notImplemented = () => {
 export const STATIC_IMPLS = {
 	ordinalRightSub: (a: Ord0, b: Ord0): Ord0 => notImplemented(),
 	ordinalDivRem: (a: Ord0, b: Ord0): [Ord0, Ord0] => notImplemented(),
-	ordinalPow: (a: Ord0, b: Ord0): Ord0 => notImplemented(),
 };
 
 // For splitting up this Conway class into different modules
@@ -74,7 +72,7 @@ export class Conway {
 
 	readonly #isOrdinal: boolean;
 
-	readonly #terms: Readonly<[Real | Conway, Real][]>;
+	public readonly terms: Readonly<[Real | Conway, Real][]>;
 
 	/** 0 */
 	public static readonly zero: Conway = new Conway();
@@ -106,10 +104,10 @@ export class Conway {
 	) {
 		let terms = Array.isArray(iter) ? [...iter] : iter ? [...iter] : [];
 		if (_unchecked) {
-			this.#terms = freeze(
+			this.terms = freeze(
 				terms.map((x) => freeze<[Real | Conway, Real]>(x)),
 			) as Readonly<[Real | Conway, Real][]>;
-			this.#isOrdinal = this.#terms.every(
+			this.#isOrdinal = this.terms.every(
 				([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
 			);
 			return;
@@ -130,12 +128,12 @@ export class Conway {
 			found[1] = realAdd(c, found[1]);
 		}
 
-		this.#terms = freeze(
+		this.terms = freeze(
 			newTerms
 				.filter(([_, c]) => !Conway.isZero(c))
 				.map((x) => freeze<[Real | Conway, Real]>(x)),
 		) as Readonly<[Real | Conway, Real][]>;
-		this.#isOrdinal = this.#terms.every(
+		this.#isOrdinal = this.terms.every(
 			([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
 		);
 	}
@@ -204,18 +202,18 @@ export class Conway {
 	// #region Properties
 
 	public get isZero(): boolean {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return true;
 		}
 
-		return this.#terms.every(([_, c]) => Conway.isZero(c));
+		return this.terms.every(([_, c]) => Conway.isZero(c));
 	}
 
 	public get isOne(): boolean {
 		return (
-			this.#terms.length === 1 &&
-			Conway.isZero(this.#terms[0][0]) &&
-			Conway.isOne(this.#terms[0][1])
+			this.terms.length === 1 &&
+			Conway.isZero(this.terms[0][0]) &&
+			Conway.isOne(this.terms[0][1])
 		);
 	}
 
@@ -224,27 +222,27 @@ export class Conway {
 	 */
 	public get isUnit(): boolean {
 		return (
-			this.#terms.length === 1 &&
-			Conway.isOne(this.#terms[0][0]) &&
-			Conway.isOne(this.#terms[0][1])
+			this.terms.length === 1 &&
+			Conway.isOne(this.terms[0][0]) &&
+			Conway.isOne(this.terms[0][1])
 		);
 	}
 
 	public get isPositive(): boolean {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return false;
 		}
 
-		const [_, c] = this.#terms[0];
+		const [_, c] = this.terms[0];
 		return realIsPositive(c);
 	}
 
 	public get isNegative(): boolean {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return false;
 		}
 
-		const [_, c] = this.#terms[0];
+		const [_, c] = this.terms[0];
 		return realIsNegative(c);
 	}
 
@@ -262,10 +260,10 @@ export class Conway {
 	 * Returns true if and only if this number is positive and infinite.
 	 */
 	public get isAboveReals(): boolean {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return false;
 		}
-		const [p, c] = this.#terms[0];
+		const [p, c] = this.terms[0];
 		return Conway.isPositive(p) && realIsPositive(c);
 	}
 
@@ -273,26 +271,26 @@ export class Conway {
 	 * Returns true if and only if this number is positive and is negative infinite.
 	 */
 	public get isBelowNegativeReals(): boolean {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return false;
 		}
-		const [p, c] = this.#terms[0];
+		const [p, c] = this.terms[0];
 		return Conway.isPositive(p) && realIsNegative(c);
 	}
 
 	public get isPositiveInfinitesimal(): boolean {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return false;
 		}
-		const [p, c] = this.#terms[0];
+		const [p, c] = this.terms[0];
 		return Conway.isNegative(p) && realIsPositive(c);
 	}
 
 	public get isNegativeInfinitesimal(): boolean {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return false;
 		}
-		const [p, c] = this.#terms[0];
+		const [p, c] = this.terms[0];
 		return Conway.isNegative(p) && realIsNegative(c);
 	}
 
@@ -307,7 +305,7 @@ export class Conway {
 	 * Returns true if and only if all coefficients are positive.
 	 */
 	public get isPositiveDefinite() {
-		return this.#terms.every(([_, c]) => !realIsNegative(c));
+		return this.terms.every(([_, c]) => !realIsNegative(c));
 	}
 
 	/**
@@ -315,13 +313,13 @@ export class Conway {
 	 * Otherwise, return null.
 	 */
 	public get realValue(): null | Real {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return 0n;
 		}
-		if (this.#terms.length > 1 || !Conway.isZero(this.#terms[0][0])) {
+		if (this.terms.length > 1 || !Conway.isZero(this.terms[0][0])) {
 			return null;
 		}
-		return this.#terms[0][1];
+		return this.terms[0][1];
 	}
 
 	public get infinitePart(): Conway {
@@ -329,7 +327,7 @@ export class Conway {
 	}
 
 	public get realPart(): Real {
-		return this.#terms.length === 0 ? 0 : this.get(0);
+		return this.terms.length === 0 ? 0 : this.get(0);
 	}
 
 	public get infinitesimalPart(): Conway {
@@ -340,22 +338,22 @@ export class Conway {
 	 * Get the exponent of the leading term (or null if this surreal number is zero.)
 	 */
 	public get leadingPower(): Conway | Real | null {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return null;
 		}
 
-		return this.#terms[0][0];
+		return this.terms[0][0];
 	}
 
 	/**
 	 * Get the coefficient of the leading term (or null if this surreal number is zero.)
 	 */
 	public get leadingCoeff(): Real {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return 0;
 		}
 
-		return this.#terms[0][1];
+		return this.terms[0][1];
 	}
 
 	/**
@@ -364,7 +362,7 @@ export class Conway {
 	 * For all `x`, `x < T(x.order + 1)`
 	 */
 	public get order(): number {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return 0;
 		}
 
@@ -372,7 +370,7 @@ export class Conway {
 			return 0;
 		}
 
-		const [p, _] = this.#terms[0];
+		const [p, _] = this.terms[0];
 		return 1 + (p instanceof Conway ? p.order : 0);
 	}
 
@@ -380,7 +378,7 @@ export class Conway {
 	 * Get the `order` of the negation of this value.
 	 */
 	public get negativeOrder(): number {
-		if (this.#terms.length === 0) {
+		if (this.terms.length === 0) {
 			return 0;
 		}
 
@@ -388,7 +386,7 @@ export class Conway {
 			return 0;
 		}
 
-		const [p, _] = this.#terms[0];
+		const [p, _] = this.terms[0];
 		return 1 + (p instanceof Conway ? p.order : 0);
 	}
 
@@ -425,14 +423,14 @@ export class Conway {
 		}
 
 		let h = 0n;
-		const [e0, c0] = this.#terms[0];
+		const [e0, c0] = this.terms[0];
 		const sign = realToBigint(realSign(c0));
 		let powHash = 0n;
 
 		if (e0 instanceof Conway && e0.order > 1) {
 			powHash = 64n * BigInt(e0.order);
 		} else if (e0 instanceof Conway && e0.isAboveReals) {
-			const [p0] = e0.#terms[0];
+			const [p0] = e0.terms[0];
 			powHash = Conway.isAboveReals(p0)
 				? 21n + (p0 instanceof Conway ? realToBigint(p0.order) : 0n)
 				: Conway.isPositive(p0)
@@ -465,7 +463,7 @@ export class Conway {
 		const MASK = 0xffff_ffff;
 		const MULT = 31;
 		let h = 0;
-		for (const [e, c] of this.#terms) {
+		for (const [e, c] of this.terms) {
 			if (Conway.isZero(c)) {
 				continue;
 			}
@@ -580,7 +578,7 @@ export class Conway {
 
 	public neg(): Conway {
 		return new Conway(
-			this.#terms.map(([e, c]) => [e, realNeg(c)]),
+			this.terms.map(([e, c]) => [e, realNeg(c)]),
 			true,
 		);
 	}
@@ -720,44 +718,6 @@ export class Conway {
 		return INSTANCE_IMPLS.ordinalPow(this, other);
 	}
 
-	/**
-	 * Find the solution `x` such that `this.ordinalAdd(x).eq(other)`.
-	 */
-	public ordinalRightSub(other: Ord0): Ord {
-		const c = Conway.compare(this, other);
-		if (c < 0) {
-			throw new RangeError(`No solution: ${this} > ${other.toString()}`);
-		}
-		if (c === 0) {
-			return Conway.zero;
-		}
-
-		const other1 = Conway.ensure(other);
-		if (this.isZero) {
-			return other1;
-		}
-
-		let left: Conway = this;
-		let right = other1;
-		while (left.length > 0 && right.length > 0) {
-			const [p2, c2] = right.#terms[0];
-			const [p1, c1] = left.#terms[0];
-			if (!Conway.eq(p1, p2)) {
-				break;
-			}
-
-			const diffCoeff = realSub(c2, c1);
-			if (Conway.isZero(diffCoeff)) {
-				left = new Conway(left.#terms.slice(1));
-				right = new Conway(right.#terms.slice(1));
-				continue;
-			}
-
-			return new Conway([[p1, realSub(c2, c1)], ...right.#terms.slice(1)]);
-		}
-		return right;
-	}
-
 	public mult(other: Real | Conway): Conway {
 		if (Conway.isZero(other)) {
 			return Conway.zero;
@@ -818,8 +778,8 @@ export class Conway {
 
 		// (c0 w^e0 + ...) / (c1 w^e1 + ...)
 		// = (c0/c1) w^(e0-e1) + ...
-		const [e0, c0] = this.#terms[0];
-		const [e1, c1] = value.#terms[0];
+		const [e0, c0] = this.terms[0];
+		const [e1, c1] = value.terms[0];
 		const de = Conway.sub(e0, e1);
 		const cr =
 			/*typeof c0 === "bigint" && typeof c1 === "bigint" && (c1 === 1n || c1 === -1n || c0 % c1 === 0n)
@@ -896,28 +856,12 @@ export class Conway {
 		return l1.ordinalMult(r1);
 	}
 
-	public static ordinalPow(left: Ord0, right: Ord0): Ord0 {
-		return STATIC_IMPLS.ordinalPow(left, right);
-	}
-
-	public static ordinalRightSub(left: Ord0, right: Ord0): Ord0 {
-		if (!(left instanceof Conway) && !(right instanceof Conway)) {
-			if (realLt(right, left)) {
-				throw new RangeError(`No solution: ${left} + ? = ${right}`);
-			}
-			return realSub(right, left);
-		}
-
-		const l1 = Conway.ensure(left);
-		return l1.ordinalRightSub(right);
+	public ordinalRightSub(right: Ord0): Ord {
+		return INSTANCE_IMPLS.ordinalRightSub(this, right);
 	}
 
 	public ordinalDivRem(this: Ord, right: Ord0): [Ord, Ord] {
 		return INSTANCE_IMPLS.ordinalDivRem(this, right);
-	}
-
-	public static ordinalDivRem(left: Ord0, right: Ord0): [Ord0, Ord0] {
-		return STATIC_IMPLS.ordinalDivRem(left, right);
 	}
 
 	public static mult(left: Real | Conway, right: Real | Conway): Real | Conway {
@@ -946,7 +890,7 @@ export class Conway {
 		}
 
 		let sum = Conway.zero;
-		for (const [e, c] of this.#terms) {
+		for (const [e, c] of this.terms) {
 			if (Conway.isZero(e)) {
 				continue;
 			}
@@ -1027,22 +971,22 @@ export class Conway {
 	// #region Collection
 
 	public get length(): number {
-		return this.#terms.length;
+		return this.terms.length;
 	}
 
 	public getByIndex(index: number): Readonly<[Conway | Real, Real]> {
-		if (index < 0 || index > this.#terms.length) {
+		if (index < 0 || index > this.terms.length) {
 			throw new RangeError("getByIndex: out of bounds");
 		}
-		return this.#terms[index];
+		return this.terms[index];
 	}
 
 	public has(exp: Real | Conway): boolean {
-		return !!this.#terms.find(([e1]) => Conway.compare(exp, e1) === 0);
+		return !!this.terms.find(([e1]) => Conway.compare(exp, e1) === 0);
 	}
 
 	public get(exp: Real | Conway): Real {
-		const found = this.#terms.find(([e1]) => Conway.compare(exp, e1) === 0);
+		const found = this.terms.find(([e1]) => Conway.compare(exp, e1) === 0);
 		return found ? found[1] : 0;
 	}
 
@@ -1050,17 +994,17 @@ export class Conway {
 	public [Symbol.iterator](): IterableIterator<
 		Readonly<[Conway | Real, Real]>
 	> {
-		return this.#terms[Symbol.iterator]();
+		return this.terms[Symbol.iterator]();
 	}
 
 	public filterTerms(f: (pow: Real | Conway, coeff: Real) => boolean): Conway {
-		return new Conway(this.#terms.filter(([p, c]) => f(p, c)));
+		return new Conway(this.terms.filter(([p, c]) => f(p, c)));
 	}
 
 	public ordSumTerms(
 		f: (pow: Real | Conway, coeff: Real) => Real | Conway,
 	): Real | Conway {
-		return this.#terms
+		return this.terms
 			.map(([p, c]) => f(p, c))
 			.reduce(Conway.ordinalAdd, Conway.zero);
 	}
@@ -1068,13 +1012,13 @@ export class Conway {
 	public sumTerms(
 		f: (pow: Real | Conway, coeff: Real) => Real | Conway,
 	): Real | Conway {
-		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.add, Conway.zero);
+		return this.terms.map(([p, c]) => f(p, c)).reduce(Conway.add, Conway.zero);
 	}
 
 	public multTerms(
 		f: (pow: Real | Conway, coeff: Real) => Real | Conway,
 	): Real | Conway {
-		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.mult, Conway.one);
+		return this.terms.map(([p, c]) => f(p, c)).reduce(Conway.mult, Conway.one);
 	}
 
 	// #endregion
@@ -1083,7 +1027,7 @@ export class Conway {
 	// TODO fromRepr/fromJson factory methods
 
 	public toRepr(): [unknown, Real][] {
-		return this.#terms.map(([e, c]) => [
+		return this.terms.map(([e, c]) => [
 			e instanceof Conway ? e.toRepr() : e,
 			c,
 		]);
@@ -1097,7 +1041,7 @@ export class Conway {
 		return {
 			oh: `${this.ordHash}`,
 			eh: this.eqHash,
-			t: this.#terms.map(([e, c]) => ({
+			t: this.terms.map(([e, c]) => ({
 				e:
 					e instanceof Conway
 						? e.toJson(preserveBigint)
@@ -1116,7 +1060,7 @@ export class Conway {
 		const parts: string[] = [];
 		let first = true;
 		let foundZero = false;
-		for (const [e, c] of this.#terms) {
+		for (const [e, c] of this.terms) {
 			if (Conway.isZero(c)) {
 				continue;
 			}
@@ -1202,9 +1146,9 @@ export class Conway {
 
 		let i = 0;
 		let j = 0;
-		while (i < this.#terms.length && j < other.#terms.length) {
-			const [e1, c1] = this.#terms[i];
-			const [e2, c2] = other.#terms[j];
+		while (i < this.terms.length && j < other.terms.length) {
+			const [e1, c1] = this.terms[i];
+			const [e2, c2] = other.terms[j];
 			const ce = Conway.compare(e1, e2);
 			if (ce > 0) {
 				return Conway.compare(0, c2);
@@ -1221,15 +1165,15 @@ export class Conway {
 			j += 1;
 		}
 
-		while (i < this.#terms.length && j >= other.#terms.length) {
-			const [, c1] = this.#terms[i];
+		while (i < this.terms.length && j >= other.terms.length) {
+			const [, c1] = this.terms[i];
 			const cc = Conway.compare(c1, 0, _noHash);
 			if (cc !== 0) {
 				return cc;
 			}
 		}
-		while (i >= this.#terms.length && j < other.#terms.length) {
-			const [, c2] = other.#terms[j];
+		while (i >= this.terms.length && j < other.terms.length) {
+			const [, c2] = other.terms[j];
 			const cc = Conway.compare(0, c2, _noHash);
 			if (cc !== 0) {
 				return cc;
@@ -1261,8 +1205,8 @@ export class Conway {
 
 		const n = this.length;
 		for (let i = 0; i < n; i++) {
-			const [e1, c1] = this.#terms[i] ?? [0, 0];
-			const [e2, c2] = other.#terms[i] ?? [0, 0];
+			const [e1, c1] = this.terms[i] ?? [0, 0];
+			const [e2, c2] = other.terms[i] ?? [0, 0];
 			if (!Conway.eq(c1, c2)) {
 				return false;
 			}
