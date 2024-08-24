@@ -3,9 +3,9 @@ import { add, mult } from "../op/arith";
 import { exp, factorLeadLow, log, log1pLow } from "../op/exp";
 import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
 import { eq, isPositive, isZero } from "../op/comparison";
-import { Conway } from "../conway";
-import { realToNumber, type Real } from "../real";
-import { ensure, mono, mono1, one, unit, zero } from "../op";
+import type { Conway } from "../conway";
+import type { Real } from "../real";
+import { ensure, mono, zero, one, unit } from "../op";
 import { assertEq } from "./propsTest";
 
 const close = (a: Real | Conway, b: Real | Conway) => {
@@ -26,7 +26,7 @@ describe("factorLeadLow", () => {
 			fc.property(
 				arbWithBigint
 					.filter(isPositive)
-					.map((x) => mono(x.leadingCoeff, x.leadingPower ?? Conway.zero)),
+					.map((x) => mono(x.leadingCoeff, x.leadingPower ?? zero)),
 				(x) => {
 					const { inf, r, low } = factorLeadLow(x);
 					const lead = mono(r, inf);
@@ -42,7 +42,7 @@ describe("factorLeadLow", () => {
 			fc.property(arb.filter(isPositive), (x) => {
 				const { inf, r, low } = factorLeadLow(x);
 				const lead = mono(r, inf);
-				return eq(mult(lead, low.add(Conway.one)), x);
+				return eq(mult(lead, low.add(one)), x);
 			}),
 		);
 	});
