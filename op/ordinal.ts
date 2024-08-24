@@ -1,16 +1,13 @@
+import { Conway, INSTANCE_IMPLS, type Ord, type Ord0 } from "../conway";
 import {
-	Conway,
-	INSTANCE_IMPLS,
-	STATIC_IMPLS,
-	type Ord,
-	type Ord0,
-} from "../conway";
-import {
+	realAdd,
 	realGt,
 	realIntegerDiv,
 	realIntegerPow,
+	realIsNegative,
 	realIsPositive,
 	realLt,
+	realMult,
 	realOne,
 	realSub,
 	realToBigint,
@@ -19,7 +16,7 @@ import {
 import { sub, add } from "./arith";
 import { isZero, isOne } from "./comparison";
 
-export const { isOrdinal, ordinalAdd, ordinalMult } = Conway;
+export const { isOrdinal } = Conway;
 
 const {
 	compare,
@@ -53,6 +50,109 @@ const one = _one as Ord;
 export const ordinalOne: Ord = one;
 
 export const ordinalUnit: Ord = _unit as Ord;
+
+const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
+	if (!(other instanceof Conway)) {
+		return ord.add(other);
+	}
+
+	const cutoff = other.leadingPower;
+	if (cutoff === null) {
+		return ord.add(other);
+	}
+
+	return ord.filterTerms((p1) => compare(p1, cutoff) <= 0).add(other);
+};
+
+/**
+ * Performs ordinal number addition.
+ * Does not check if `this` and `other` are both ordinals.
+ */
+export const ordinalAdd = (left: Ord0, right: Ord0): Ord0 => {
+	if (!(left instanceof Conway) && !(right instanceof Conway)) {
+		return realAdd(left, right);
+	}
+	const l1 = ensure(left);
+	const r1 = ensure(right);
+	return ordinalAdd0(l1, r1);
+};
+
+const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord => {
+	if (isZero(i)) {
+		return Conway.zero;
+	}
+	if (isOne(i)) {
+		return inf;
+	}
+	if (realIsNegative(i)) {
+		throw new Error("Multiplier cannot be negative");
+	}
+
+	if (typeof i === "bigint") {
+		if (i === 2n) {
+			return inf.ordinalAdd(inf);
+		}
+		const pred = i - 1n;
+		const { leadingPower: p0, leadingCoeff: c0 } = inf;
+		return Conway.mono(realMult(c0, pred), p0 ?? Conway.zero).ordinalAdd(inf);
+	}
+	return ordinalMultInfiniteFinite(inf, realToBigint(i));
+};
+
+const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
+	if (!(other instanceof Conway)) {
+		return ord.mult(other);
+	}
+
+	if (ord.isZero || other.isZero) {
+		return Conway.zero;
+	}
+	if (ord.isOne) {
+		return other;
+	}
+	if (other.isOne) {
+		return ord;
+	}
+
+	const { realPart: i1 } = ord;
+	const { realPart: i2 } = other;
+	// i1 * i2 = i1 * i2
+	if (!ord.isAboveReals && !other.isAboveReals) {
+		return ensure(realMult(i1, i2));
+	}
+	// (...) * i2
+	if (!other.isAboveReals) {
+		return ordinalMultInfiniteFinite(ord, i2);
+	}
+	if (!ord.isAboveReals) {
+		const { infinitePart: inf2 } = other;
+		// i1 nonzero: i1 * (inf2 + i2) = inf2 + i1 * i2
+		return Conway.isZero(i1) ? Conway.zero : inf2.add(realMult(i1, i2));
+	}
+	const p0 = ord.leadingPower ?? Conway.zero;
+	let tot = Conway.zero;
+	for (const [p, c] of other) {
+		if (Conway.isZero(p)) {
+			tot = tot.ordinalAdd(ordinalMultInfiniteFinite(ord, c));
+			continue;
+		}
+		tot = tot.ordinalAdd(mono(c, ordinalAdd(p0, p)));
+	}
+	return tot;
+};
+
+/**
+ * Performs ordinal number multiplication.
+ * Does not check if `this` and `other` are both ordinals.
+ */
+export const ordinalMult = (left: Ord0, right: Ord0): Ord0 => {
+	if (!(left instanceof Conway) && !(right instanceof Conway)) {
+		return realMult(left, right);
+	}
+	const l1 = ensure(left);
+	const r1 = ensure(right);
+	return ordinalMult0(l1, r1);
+};
 
 const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
 	const c = Conway.compare(ord, other);
@@ -143,14 +243,7 @@ const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 	return prod;
 };
 
-export const ordinalPow = (left: Ord0, other: Ord0): Ord0 => {
-	if (!(left instanceof Conway)) {
-		if (!(other instanceof Conway)) {
-			return realIntegerPow(left, other);
-		}
-	}
-	const base = ensure(left);
-
+const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
 		return ordinalPowFinite(base, realToBigint(other));
 	}
@@ -238,27 +331,17 @@ export const ordinalPow = (left: Ord0, other: Ord0): Ord0 => {
 	return prod;
 };
 
+export const ordinalPow = (left: Ord0, right: Ord0): Ord0 => {
+	if (!(left instanceof Conway) && !(right instanceof Conway)) {
+		return realIntegerPow(left, right);
+	}
+	return ordinalPow0(ensure(left), right);
+};
+
 const finiteOrdinalDiv = (value: Real, other: Real) =>
 	realIntegerDiv(value, other);
 
-/**
- * Given this number (must be ordinal) `N` and another ordinal number `D`,
- * find `q, r` such that `r < d` and `D * q + r = N`.
- * @param value The divisor
- * @returns The quotient and remainder as a tuple
- */
-export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
-	if (!(left instanceof Conway) && !(right instanceof Conway)) {
-		const n = realToBigint(left);
-		const d = realToBigint(right);
-		const q = n / d;
-		const r = n - q * d;
-		return [q, r];
-	}
-
-	const num: Ord = ensure(left);
-	const div: Ord = ensure(right);
-
+const ordinalDivRem0 = (num: Ord, div: Ord0): [Ord, Ord] => {
 	if (isZero(div)) {
 		throw new RangeError("division by zero");
 	}
@@ -279,14 +362,14 @@ export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 	if (rv !== null) {
 		const q = finiteOrdinalDiv(num.leadingCoeff, rv);
 		const r = ordinalRightSub(ordinalMult(div, q), num);
-		return [q, r];
+		return [ensure(q), ensure(r)];
 	}
 
 	// div is infinite below
 
 	const v = ensure(div);
-	let quotient: Conway | Real = zero;
-	let remainder: Conway | Real = num;
+	let quotient: Ord = zero;
+	let remainder: Ord = num;
 	// D * ((w^p0).q0 + qRest) + r = (w^P0).C0 + N_Rest
 	// ((w^dp0) D0 + ...) * ((w^p0).q0 + ...) + r = (w^P0) C0 + ...
 	//  --> (w^dp0 D0) * (w^p0 q0) = (w^P0 C0)
@@ -309,12 +392,13 @@ export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 		}
 
 		let dq = mono(cr, de);
-		let toSub = ordinalMult(div, dq);
+		const div1 = ensure(div);
+		let toSub = ordinalMult0(div1, dq);
 		if (compare(remainder, toSub) > 0) {
 			if (realGt(cr, realOne)) {
 				const cr1 = realSub(cr, realOne);
 				const dq1 = mono(cr1, de);
-				const toSub1 = ordinalMult(div, dq1);
+				const toSub1 = ordinalMult0(div1, dq1);
 				if (compare(remainder, toSub1) > 0) {
 					break;
 				}
@@ -324,22 +408,40 @@ export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 				break;
 			}
 		}
-		quotient = ordinalAdd(quotient, dq);
-		remainder = ordinalRightSub(toSub, remainder);
+		quotient = ordinalAdd0(quotient, dq);
+		remainder = ordinalRightSub0(toSub, remainder);
 	}
 
 	return [quotient, remainder];
 };
 
-STATIC_IMPLS.ordinalRightSub = ordinalRightSub;
-STATIC_IMPLS.ordinalDivRem = ordinalDivRem;
+/**
+ * Given this number (must be ordinal) `N` and another ordinal number `D`,
+ * find `q, r` such that `r < d` and `D * q + r = N`.
+ * @param value The divisor
+ * @returns The quotient and remainder as a tuple
+ */
+export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
+	if (!(left instanceof Conway) && !(right instanceof Conway)) {
+		const n = realToBigint(left);
+		const d = realToBigint(right);
+		const q = n / d;
+		const r = n - q * d;
+		return [q, r];
+	}
+
+	return ordinalDivRem0(ensure(left), ensure(right));
+};
+
 INSTANCE_IMPLS.ordinalDivRem = (x, y) => {
 	const [a, b] = ordinalDivRem(x, y);
 	return [ensure(a), ensure(b)];
 };
 
-INSTANCE_IMPLS.ordinalPow = (x, y) => ensure(ordinalPow(x, y));
+INSTANCE_IMPLS.ordinalPow = ordinalPow0;
 INSTANCE_IMPLS.ordinalRightSub = ordinalRightSub0;
+INSTANCE_IMPLS.ordinalAdd = ordinalAdd0;
+INSTANCE_IMPLS.ordinalMult = ordinalMult0;
 
 export const isLimit = (x: Real | Conway): x is Conway =>
 	x instanceof Conway && !isZero(x) && isZero(x.realPart);
