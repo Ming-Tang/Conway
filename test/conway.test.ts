@@ -20,18 +20,19 @@ import {
 	arbFinite,
 } from "./generators";
 import {
+	compare,
+	eq,
 	gt,
 	isAboveReals,
 	isNegative,
 	isPositive,
+	isZero,
 	le,
 	lt,
 	ne,
 } from "../op/comparison";
-import { mono, mono1, one } from "../op";
-import { neg } from "../op/arith";
-
-// fc.configureGlobal({ numRuns: 200000, verbose: false });
+import { mono, mono1, one, zero, fromReal as real, unit, ensure } from "../op";
+import { add, mult, neg, sub } from "../op/arith";
 
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);
@@ -57,7 +58,7 @@ const ensureSimplified = (x: Conway) => {
 		}
 
 		for (const [p, c] of x) {
-			if (Conway.isZero(c)) {
+			if (isZero(c)) {
 				return false;
 			}
 
@@ -72,59 +73,61 @@ const ensureSimplified = (x: Conway) => {
 	return f(x, true);
 };
 
+const { inverseUnit, expUnit, logUnit } = Conway;
+
 describe("Conway", () => {
 	describe("constants", () => {
 		it("zero = itself", () => {
-			expect(Conway.zero.eq(Conway.mono(0, 0))).toBe(true);
-			expect(Conway.mono(0n, 0n).eq(Conway.mono(0, 0))).toBe(true);
+			expect(zero.eq(mono(0, 0))).toBe(true);
+			expect(mono(0n, 0n).eq(mono(0, 0))).toBe(true);
 		});
 
 		it("0 + 0 = 0", () => {
-			expect(Conway.zero.add(Conway.zero).eq(Conway.zero)).toBe(true);
-			expect(Conway.zero.add(Conway.real(0)).eq(Conway.zero)).toBe(true);
-			expect(Conway.zero.add(Conway.real(0n)).eq(Conway.zero)).toBe(true);
-			expect(Conway.zero.add(Conway.zero).eq(Conway.real(0n))).toBe(true);
-			expect(Conway.zero.add(Conway.zero).eq(Conway.real(0))).toBe(true);
+			expect(zero.add(zero).eq(zero)).toBe(true);
+			expect(zero.add(real(0)).eq(zero)).toBe(true);
+			expect(zero.add(real(0n)).eq(zero)).toBe(true);
+			expect(zero.add(zero).eq(real(0n))).toBe(true);
+			expect(zero.add(zero).eq(real(0))).toBe(true);
 		});
 
 		it("1 + 0 = 1", () => {
-			expect(Conway.one.add(Conway.zero).eq(Conway.one)).toBe(true);
-			expect(Conway.zero.add(Conway.one).eq(Conway.one)).toBe(true);
+			expect(one.add(zero).eq(one)).toBe(true);
+			expect(zero.add(one).eq(one)).toBe(true);
 		});
 
 		it("1 * 0 = 0", () => {
-			expect(Conway.one.mult(Conway.zero).eq(Conway.zero)).toBe(true);
-			expect(Conway.zero.mult(Conway.one).eq(Conway.zero)).toBe(true);
+			expect(one.mult(zero).eq(zero)).toBe(true);
+			expect(zero.mult(one).eq(zero)).toBe(true);
 		});
 
 		it("1 * 1 = 1", () => {
-			expect(Conway.one.mult(Conway.zero).eq(Conway.zero)).toBe(true);
-			expect(Conway.one.mult(Conway.one).eq(Conway.one)).toBe(true);
+			expect(one.mult(zero).eq(zero)).toBe(true);
+			expect(one.mult(one).eq(one)).toBe(true);
 		});
 
 		it("0 * w = 0", () => {
-			expect(Conway.unit.mult(Conway.zero).eq(Conway.zero)).toBe(true);
-			expect(Conway.zero.mult(Conway.unit).eq(Conway.zero)).toBe(true);
+			expect(unit.mult(zero).eq(zero)).toBe(true);
+			expect(zero.mult(unit).eq(zero)).toBe(true);
 		});
 
 		it("1 * w = w", () => {
-			expect(Conway.unit.mult(Conway.one).eq(Conway.unit)).toBe(true);
-			expect(Conway.one.mult(Conway.unit).eq(Conway.unit)).toBe(true);
+			expect(unit.mult(one).eq(unit)).toBe(true);
+			expect(one.mult(unit).eq(unit)).toBe(true);
 		});
 
 		it("0 and 1 have real value", () => {
-			expect(Conway.zero.realValue).toBe(0n);
-			expect(Conway.one.realValue).toBe(1n);
+			expect(zero.realValue).toBe(0n);
+			expect(one.realValue).toBe(1n);
 		});
 
 		it("w has no real value", () => {
-			expect(Conway.unit.realValue).toBeNull();
+			expect(unit.realValue).toBeNull();
 		});
 
 		it("0, 1, w are simplified", () => {
-			expect(ensureSimplified(Conway.zero)).toBe(true);
-			expect(ensureSimplified(Conway.one)).toBe(true);
-			expect(ensureSimplified(Conway.unit)).toBe(true);
+			expect(ensureSimplified(zero)).toBe(true);
+			expect(ensureSimplified(one)).toBe(true);
+			expect(ensureSimplified(unit)).toBe(true);
 		});
 
 		it("gt", () => {
@@ -134,19 +137,19 @@ describe("Conway", () => {
 			expect(gt(0, 2)).toBe(false);
 			expect(gt(2, 1)).toBe(true);
 			expect(gt(1, 2)).toBe(false);
-			expect(gt(Conway.zero, Conway.zero)).toBe(false);
-			expect(gt(Conway.one, Conway.zero)).toBe(true);
-			expect(gt(Conway.zero, Conway.one)).toBe(false);
-			expect(gt(Conway.unit, Conway.one)).toBe(true);
-			expect(gt(Conway.one, Conway.unit)).toBe(false);
+			expect(gt(zero, zero)).toBe(false);
+			expect(gt(one, zero)).toBe(true);
+			expect(gt(zero, one)).toBe(false);
+			expect(gt(unit, one)).toBe(true);
+			expect(gt(one, unit)).toBe(false);
 		});
 	});
 
 	describe("zeros", () => {
 		it("should be true for zero monomials", () => {
-			expect(Conway.zero.isZero).toBe(true);
-			expect(Conway.mono(0n, 0n).isZero).toBe(true);
-			expect(Conway.mono(0, 0).isZero).toBe(true);
+			expect(zero.isZero).toBe(true);
+			expect(mono(0n, 0n).isZero).toBe(true);
+			expect(mono(0, 0).isZero).toBe(true);
 			expect(new Conway([[0n, 0n]]).isZero).toBe(true);
 			expect(
 				new Conway([
@@ -157,9 +160,9 @@ describe("Conway", () => {
 		});
 
 		it("should have zero length", () => {
-			expect(Conway.zero).toHaveLength(0);
-			expect(Conway.mono(0n, 0n)).toHaveLength(0);
-			expect(Conway.mono(0, 0)).toHaveLength(0);
+			expect(zero).toHaveLength(0);
+			expect(mono(0n, 0n)).toHaveLength(0);
+			expect(mono(0, 0)).toHaveLength(0);
 			expect(new Conway([[0n, 0n]])).toHaveLength(0);
 			expect(
 				new Conway([
@@ -172,79 +175,72 @@ describe("Conway", () => {
 
 	describe("specific tests", () => {
 		it("4^4 times 1", () => {
-			const v = Conway.mono(4n, 4n);
-			const v1 = v.mult(Conway.one);
+			const v = mono(4n, 4n);
+			const v1 = v.mult(one);
 			expect(v.eq(v1)).toBe(true);
 			expect(v.compare(v1)).toEqual(0);
 		});
 
 		it("-w^(-w)", () => {
-			const v = Conway.mono(-1n, Conway.mono(-1n, 1n));
-			expect(v.mult(Conway.one).eq(v)).toBe(true);
-			expect(Conway.one.mult(v).eq(v)).toBe(true);
-			expect(Conway.eq(Conway.mult(Conway.one, v), v)).toBe(true);
-			expect(Conway.eq(Conway.mult(v, Conway.one), v)).toBe(true);
+			const v = mono(-1n, mono(-1n, 1n));
+			expect(v.mult(one).eq(v)).toBe(true);
+			expect(one.mult(v).eq(v)).toBe(true);
+			expect(eq(mult(one, v), v)).toBe(true);
+			expect(eq(mult(v, one), v)).toBe(true);
 		});
 	});
 
 	describe("constants (different number types)", () => {
 		it("0 = 0n", () => {
-			expect(Conway.real(0).eq(Conway.real(0n))).toBe(true);
+			expect(real(0).eq(real(0n))).toBe(true);
 		});
 
 		it("1.0 = 1n", () => {
-			expect(Conway.real(1.0).eq(Conway.real(1n))).toBe(true);
+			expect(real(1.0).eq(real(1n))).toBe(true);
 		});
 
 		it("0 < 1", () => {
-			expect(lt(Conway.real(0), Conway.real(1n))).toBe(true);
-			expect(lt(Conway.real(0n), Conway.real(1))).toBe(true);
+			expect(lt(real(0), real(1n))).toBe(true);
+			expect(lt(real(0n), real(1))).toBe(true);
 		});
 	});
 
 	// TODO doesn't work
 	describe.skip("derivative", () => {
 		it("real' = 0", () => {
-			expect(Conway.zero.derivative().eq(Conway.zero)).toBe(true);
-			expect(Conway.one.derivative().eq(Conway.zero)).toBe(true);
-			expect(Conway.real(-4.0).derivative().eq(Conway.zero)).toBe(true);
+			expect(zero.derivative().eq(zero)).toBe(true);
+			expect(one.derivative().eq(zero)).toBe(true);
+			expect(real(-4.0).derivative().eq(zero)).toBe(true);
 		});
 
 		it("w' = 1", () => {
-			expect(Conway.unit.derivative().eq(Conway.one)).toBe(true);
+			expect(unit.derivative().eq(one)).toBe(true);
 		});
 
 		it("(w^2)' = 2w", () => {
-			expect(
-				Conway.unit.mult(Conway.unit).derivative().eq(Conway.unit.mult(2)),
-			).toBe(true);
+			expect(unit.mult(unit).derivative().eq(unit.mult(2))).toBe(true);
 		});
 
 		it("((w+1)^2)' = 2(w+1)", () => {
-			const a = Conway.unit.add(Conway.one);
+			const a = unit.add(one);
 			expect(a.mult(a).derivative().eq(a.mult(2))).toBe(true);
 		});
 
 		it("(w^5)' = 5 w^4", () => {
-			expect(Conway.mono(1, 5).derivative().eq(Conway.mono(5, 4))).toBe(true);
+			expect(mono(1, 5).derivative().eq(mono(5, 4))).toBe(true);
 		});
 
 		it("(w^-3.5)' = -3.5 w^-4.5", () => {
-			expect(
-				Conway.mono(1, -3.5).derivative().eq(Conway.mono(-3.5, -4.5)),
-			).toBe(true);
+			expect(mono(1, -3.5).derivative().eq(mono(-3.5, -4.5))).toBe(true);
 		});
 
 		describe("exponential", () => {
 			for (const { x, expX } of [
-				{ x: Conway.mono(1, Conway.inverseUnit), expX: Conway.unit },
-				{ x: Conway.unit, expX: Conway.expUnit },
+				{ x: mono(1, inverseUnit), expX: unit },
+				{ x: unit, expX: expUnit },
 				{
-					x: Conway.unit.mult(Conway.logUnit),
-					expX: Conway.mono(
-						1,
-						Conway.mono(1, Conway.add(Conway.one, Conway.inverseUnit)),
-					),
+					x: unit.mult(logUnit),
+					expX: mono(1, mono(1, add(one, inverseUnit))),
 				},
 			]) {
 				it(`x=${x}, exp(x)=${expX}`, () => {
@@ -317,29 +313,25 @@ describe("Conway", () => {
 	) => {
 		(skip ? describe.skip : describe)("arithmetic", () => {
 			describe("add", () => {
-				propIdentity(it, arb, Conway.zero, Conway.add, Conway.eq, { numRuns });
-				propCommAssoc(it, arb, Conway.add, Conway.eq, { numRuns });
+				propIdentity(it, arb, zero, add, eq, { numRuns });
+				propCommAssoc(it, arb, add, eq, { numRuns });
 
 				it("static method is equivalent to instance method ", () => {
 					fc.assert(
-						fc.property(arb, arb, (x, y) =>
-							Conway.eq(x.add(y), Conway.add(x, y)),
-						),
+						fc.property(arb, arb, (x, y) => eq(x.add(y), add(x, y))),
 						{ numRuns },
 					);
 				});
 			});
 
 			describe("mult", () => {
-				propIdentity(it, arb, Conway.one, Conway.mult, Conway.eq, { numRuns });
-				propZero(it, arb, Conway.zero, Conway.mult, Conway.eq, { numRuns });
-				propCommAssoc(it, arb, Conway.mult, Conway.eq, { numRuns });
+				propIdentity(it, arb, one, mult, eq, { numRuns });
+				propZero(it, arb, zero, mult, eq, { numRuns });
+				propCommAssoc(it, arb, mult, eq, { numRuns });
 
 				it("static method is equivalent to instance method ", () => {
 					fc.assert(
-						fc.property(arb, arb, (x, y) =>
-							Conway.eq(x.mult(y), Conway.mult(x, y)),
-						),
+						fc.property(arb, arb, (x, y) => eq(x.mult(y), mult(x, y))),
 						{ numRuns },
 					);
 				});
@@ -355,14 +347,14 @@ describe("Conway", () => {
 
 				it("involution", () => {
 					fc.assert(
-						fc.property(arb, (x) => Conway.eq(x, x.neg().neg())),
+						fc.property(arb, (x) => eq(x, x.neg().neg())),
 						{ numRuns },
 					);
 				});
 
 				it("static method is equivalent to instance method ", () => {
 					fc.assert(
-						fc.property(arb, (x) => Conway.eq(x.neg(), neg(x))),
+						fc.property(arb, (x) => eq(x.neg(), neg(x))),
 						{ numRuns },
 					);
 				});
@@ -371,7 +363,7 @@ describe("Conway", () => {
 			describe("sub", () => {
 				it("a - 0 = a", () => {
 					fc.assert(
-						fc.property(arb, (a) => a.sub(Conway.zero).eq(a)),
+						fc.property(arb, (a) => a.sub(zero).eq(a)),
 						{ numRuns },
 					);
 				});
@@ -399,23 +391,21 @@ describe("Conway", () => {
 
 				it("0 - a = -a", () => {
 					fc.assert(
-						fc.property(arb, (a) => Conway.zero.sub(a).eq(a.neg())),
+						fc.property(arb, (a) => zero.sub(a).eq(a.neg())),
 						{ numRuns },
 					);
 				});
 
 				it("static method is equivalent to instance method ", () => {
 					fc.assert(
-						fc.property(arb, arb, (x, y) =>
-							Conway.eq(x.sub(y), Conway.sub(x, y)),
-						),
+						fc.property(arb, arb, (x, y) => eq(x.sub(y), sub(x, y))),
 						{ numRuns },
 					);
 				});
 			});
 
 			describe("distributive", () => {
-				propDist(it, arb, Conway.add, Conway.mult, Conway.eq, { numRuns });
+				propDist(it, arb, add, mult, eq, { numRuns });
 			});
 		});
 	};
@@ -455,32 +445,21 @@ describe("Conway", () => {
 		const d = skip ? describe.skip : describe;
 		d("eq", () => {
 			it("negation of ne", () => {
-				fc.assert(
-					fc.property(arb, arb, (x, y) => Conway.eq(x, y) === !ne(x, y)),
-				);
+				fc.assert(fc.property(arb, arb, (x, y) => eq(x, y) === !ne(x, y)));
 			});
 
 			it("same as compare (self)", () => {
-				fc.assert(
-					fc.property(
-						arb,
-						(x) => Conway.eq(x, x) && Conway.compare(x, x) === 0,
-					),
-				);
+				fc.assert(fc.property(arb, (x) => eq(x, x) && compare(x, x) === 0));
 			});
 
 			it("same as compare (different)", () => {
 				fc.assert(
-					fc.property(
-						arb,
-						arb,
-						(x, y) => Conway.eq(x, y) === (Conway.compare(x, y) === 0),
-					),
+					fc.property(arb, arb, (x, y) => eq(x, y) === (compare(x, y) === 0)),
 				);
 			});
 
 			it("static method is equivalent to instance method ", () => {
-				fc.assert(fc.property(arb, arb, (x, y) => Conway.eq(x, y) === x.eq(y)));
+				fc.assert(fc.property(arb, arb, (x, y) => eq(x, y) === x.eq(y)));
 			});
 		});
 
@@ -529,30 +508,28 @@ describe("Conway", () => {
 	describe("No0 = R", () => {
 		const arb = arbConwayReal(arbFiniteBigint);
 		describe("total order", () => {
-			propTotalOrder(it, arb, Conway.compare, Conway.eq);
+			propTotalOrder(it, arb, compare, eq);
 
 			it("equal real vs. power zero", () => {
 				fc.assert(
 					fc.property(arbRealGeneral, (a) => {
-						return Conway.eq(Conway.real(a), Conway.mono(a, Conway.zero));
+						return eq(real(a), mono(a, zero));
 					}),
 				);
 			});
 
-			it("equal real vs. Conway.real", () => {
+			it("equal real vs. real", () => {
 				fc.assert(
 					fc.property(arbRealGeneral, (a) => {
-						return Conway.eq(Conway.real(a), a);
+						return eq(real(a), a);
 					}),
 				);
 			});
 
-			it("greater than with Conway.real", () => {
+			it("greater than with real", () => {
 				fc.assert(
 					fc.property(arbFiniteBigint, arbFiniteBigint, (a, b) => {
-						return (
-							Conway.compare(Conway.real(a), Conway.real(b)) > 0 === b - a > 0n
-						);
+						return compare(real(a), real(b)) > 0 === b - a > 0n;
 					}),
 				);
 			});
@@ -577,7 +554,7 @@ describe("Conway", () => {
 			it("reals < 0", () => {
 				fc.assert(
 					fc.property(arbFinite, (v) => {
-						Conway.ensure(v).ordHash < 0n === v < 0;
+						ensure(v).ordHash < 0n === v < 0;
 					}),
 				);
 			});
@@ -585,7 +562,7 @@ describe("Conway", () => {
 			it("reals >= 0", () => {
 				fc.assert(
 					fc.property(arbFinite, (v) => {
-						Conway.ensure(v).ordHash >= 0n === v >= 0;
+						ensure(v).ordHash >= 0n === v >= 0;
 					}),
 				);
 			});
@@ -593,7 +570,7 @@ describe("Conway", () => {
 			it("preserves ordering", () => {
 				fc.assert(
 					fc.property(arbFinite, arbFinite, (a, b) => {
-						le(Conway.ensure(a).ordHash, Conway.ensure(b).ordHash) === a <= b;
+						le(ensure(a).ordHash, ensure(b).ordHash) === a <= b;
 					}),
 				);
 			});
@@ -603,7 +580,7 @@ describe("Conway", () => {
 			it("with zero", () => {
 				fc.assert(
 					fc.property(arbFiniteBigint, (a) => {
-						return Conway.eq(Conway.real(a).add(Conway.zero), Conway.real(a));
+						return eq(real(a).add(zero), real(a));
 					}),
 				);
 			});
@@ -611,10 +588,7 @@ describe("Conway", () => {
 			it("bigint", () => {
 				fc.assert(
 					fc.property(arbFiniteBigint, arbFiniteBigint, (a, b) => {
-						return Conway.eq(
-							Conway.real(a).add(Conway.real(b)),
-							Conway.real(a + b),
-						);
+						return eq(real(a).add(real(b)), real(a + b));
 					}),
 				);
 			});
@@ -622,10 +596,7 @@ describe("Conway", () => {
 			it("number", () => {
 				fc.assert(
 					fc.property(arbFinite, arbFinite, (a, b) => {
-						return Conway.eq(
-							Conway.real(a).add(Conway.real(b)),
-							Conway.real(a + b),
-						);
+						return eq(real(a).add(real(b)), real(a + b));
 					}),
 				);
 			});
@@ -635,7 +606,7 @@ describe("Conway", () => {
 			it("by zero", () => {
 				fc.assert(
 					fc.property(arbFinite, (a) => {
-						return Conway.eq(Conway.real(a).mult(Conway.zero), Conway.real(0));
+						return eq(real(a).mult(zero), real(0));
 					}),
 				);
 			});
@@ -643,7 +614,7 @@ describe("Conway", () => {
 			it("by one", () => {
 				fc.assert(
 					fc.property(arbFinite, (a) => {
-						return Conway.eq(Conway.real(a).mult(Conway.one), Conway.real(a));
+						return eq(real(a).mult(one), real(a));
 					}),
 				);
 			});
@@ -651,10 +622,7 @@ describe("Conway", () => {
 			it("bigint", () => {
 				fc.assert(
 					fc.property(arbFiniteBigint, arbFiniteBigint, (a, b) => {
-						return Conway.eq(
-							Conway.real(a).mult(Conway.real(b)),
-							Conway.real(a * b),
-						);
+						return eq(real(a).mult(real(b)), real(a * b));
 					}),
 				);
 			});
@@ -662,10 +630,7 @@ describe("Conway", () => {
 			it("number", () => {
 				fc.assert(
 					fc.property(arbFinite, arbFinite, (a, b) => {
-						return Conway.eq(
-							Conway.real(a).mult(Conway.real(b)),
-							Conway.real(a * b),
-						);
+						return eq(real(a).mult(real(b)), real(a * b));
 					}),
 				);
 			});
@@ -684,7 +649,7 @@ describe("Conway", () => {
 		});
 
 		describe("total order", () => {
-			propTotalOrder(it, arb, Conway.compare, Conway.eq);
+			propTotalOrder(it, arb, compare, eq);
 		});
 
 		eqProps(arb);
@@ -704,7 +669,7 @@ describe("Conway", () => {
 		});
 
 		describe("total order", () => {
-			propTotalOrder(it, arb, Conway.compare, Conway.eq);
+			propTotalOrder(it, arb, compare, eq);
 		});
 
 		eqProps(arb);
@@ -724,7 +689,7 @@ describe("Conway", () => {
 		});
 
 		describe("total order", () => {
-			propTotalOrder(it, arb, Conway.compare, Conway.eq);
+			propTotalOrder(it, arb, compare, eq);
 		});
 
 		eqProps(arb);
@@ -741,23 +706,23 @@ describe("Conway", () => {
 
 			beforeEach(() => {
 				k = 0;
-				a = Conway.zero;
-				b = Conway.zero;
+				a = zero;
+				b = zero;
 				expected = [];
 			});
 
 			// taken from https://mathoverflow.net/a/224694
 			it("1/(w+1)", () => {
-				a = Conway.one;
-				b = Conway.unit.add(Conway.one);
+				a = one;
+				b = unit.add(one);
 				expected = Array(k)
 					.fill(null)
 					.map((_, i) => [BigInt(-i - 1), i % 2 === 0 ? 1n : -1n]);
 			});
 
 			it("1/(w+2)", () => {
-				a = Conway.one;
-				b = Conway.unit.add(Conway.real(2n));
+				a = one;
+				b = unit.add(real(2n));
 				expected = Array(k)
 					.fill(null)
 					.map((_, i) => [
@@ -767,8 +732,8 @@ describe("Conway", () => {
 			});
 
 			it("(2w-1)/(w-1)^2", () => {
-				a = Conway.mono(2, 1).sub(Conway.one);
-				const b1 = Conway.unit.sub(Conway.one);
+				a = mono(2, 1).sub(one);
+				const b1 = unit.sub(one);
 				b = b1.mult(b1);
 				expected = Array(k)
 					.fill(null)
@@ -799,7 +764,7 @@ describe("Conway", () => {
 				}
 
 				const [q] = a.divRemIters(b, k);
-				expect([...Conway.ensure(q)]).toEqual(expected);
+				expect([...ensure(q)]).toEqual(expected);
 			});
 		});
 
@@ -823,7 +788,7 @@ describe("Conway", () => {
 					const lp = a.leadingPower;
 					fc.pre(lp !== null);
 					fc.pre(r instanceof Conway);
-					expect(Conway.isZero(r.get(lp))).toBe(true);
+					expect(isZero(r.get(lp))).toBe(true);
 				}),
 				{ numRuns: 100 },
 			);
@@ -836,7 +801,7 @@ describe("Conway", () => {
 					const k = a.length + b.length;
 					const [q, r] = ab.divRemIters(b, k);
 					expect(r.isZero).toBe(true);
-					expect(Conway.eq(q, a)).toBe(true);
+					expect(eq(q, a)).toBe(true);
 				}),
 				{ numRuns: 100 },
 			);
@@ -854,7 +819,7 @@ describe("Conway", () => {
 						const sub = a.sub(b);
 						const [q, r] = p.divRemIters(sub, k);
 						expect(r.isZero).toBe(true);
-						expect(Conway.eq(q, a.add(b))).toBe(true);
+						expect(eq(q, a.add(b))).toBe(true);
 					},
 				),
 			);
@@ -869,8 +834,8 @@ describe("Conway", () => {
 					fc.integer({ min: 1, max: 5 }),
 					(a, b, k) => {
 						const [q, r] = a.divRemIters(b, k);
-						const addBack = Conway.add(Conway.mult(q, b), r);
-						expect(Conway.eq(addBack, a)).toBe(true);
+						const addBack = add(mult(q, b), r);
+						expect(eq(addBack, a)).toBe(true);
 					},
 				),
 				{ numRuns: 200 },
@@ -880,11 +845,11 @@ describe("Conway", () => {
 
 	describe("order and negativeOrder", () => {
 		it("constants", () => {
-			expect(Conway.zero.order).toBe(0);
-			expect(Conway.one.order).toBe(0);
-			expect(Conway.unit.order).toBe(1);
-			expect(Conway.mono(1n, Conway.unit).order).toBe(2);
-			expect(Conway.mono(1n, Conway.mono(1n, Conway.unit)).order).toBe(3);
+			expect(zero.order).toBe(0);
+			expect(one.order).toBe(0);
+			expect(unit.order).toBe(1);
+			expect(mono(1n, unit).order).toBe(2);
+			expect(mono(1n, mono(1n, unit)).order).toBe(3);
 		});
 		it("order(negative) = 0", () => {
 			fc.assert(
@@ -896,9 +861,7 @@ describe("Conway", () => {
 		});
 
 		it("order(finite) = 0", () => {
-			fc.assert(
-				fc.property(arbFinite.map(Conway.ensure), (x) => x.order === 0),
-			);
+			fc.assert(fc.property(arbFinite.map(ensure), (x) => x.order === 0));
 		});
 
 		it("order(w^(R>0)) = 1", () => {
@@ -929,8 +892,7 @@ describe("Conway", () => {
 			);
 		});
 
-		const tower = (n: number): Conway =>
-			n <= 0 ? Conway.one : mono1(tower(n - 1));
+		const tower = (n: number): Conway => (n <= 0 ? one : mono1(tower(n - 1)));
 		it("x <= T(order(x) + 1) for power tower T(x)", () => {
 			fc.assert(
 				fc.property(arbConway3(arbFinite), (x) => lt(x, tower(x.order + 1))),
@@ -948,7 +910,7 @@ describe("Conway", () => {
 
 		it("for x > 0, if order(x) = 0, then order(-x) = 0", () => {
 			fc.assert(
-				fc.property(arbConway3(arbFinite).filter(Conway.isPositive), (x) => {
+				fc.property(arbConway3(arbFinite).filter(isPositive), (x) => {
 					fc.pre(x.order === 0);
 					return x.neg().order === 0;
 				}),
@@ -968,14 +930,14 @@ describe("Conway", () => {
 		it("isPositiveInfinitesimal --> equals to its infinitesimalPart", () => {
 			fc.property(arbConway3(arbFinite).filter(isPositive), (x) => {
 				fc.pre(x.isPositiveInfinitesimal);
-				return Conway.eq(x, x.infinitesimalPart);
+				return eq(x, x.infinitesimalPart);
 			});
 		});
 
 		it("isNegativeInfinitesimal --> equals to its infinitesimalPart", () => {
 			fc.property(arbConway3(arbFinite).filter(isNegative), (x) => {
 				fc.pre(x.isNegativeInfinitesimal);
-				return Conway.eq(x, x.infinitesimalPart);
+				return eq(x, x.infinitesimalPart);
 			});
 		});
 

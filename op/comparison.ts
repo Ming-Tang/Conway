@@ -27,4 +27,5 @@ export const {
 	isAboveReals,
 	isBelowNegativeReals,
 	eq,
+	compare,
 } = Conway;
