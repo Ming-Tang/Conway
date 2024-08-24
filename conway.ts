@@ -439,7 +439,7 @@ export class Conway {
 			powHash = 1n;
 		} else {
 			for (const [threshold, shift] of Conway.#POW_THRESHOLDS) {
-				if (Conway.gt(e0, threshold, true)) {
+				if (Conway.compare(e0, threshold, true) < 0) {
 					powHash = shift;
 					break;
 				}
@@ -638,7 +638,7 @@ export class Conway {
 			return this.add(other);
 		}
 
-		return this.filterTerms((p1) => Conway.ge(p1, cutoff)).add(other);
+		return this.filterTerms((p1) => Conway.compare(p1, cutoff) <= 0).add(other);
 	}
 
 	private static ordinalMultInfiniteFinite(inf: Ord, i: Real): Ord {
@@ -739,7 +739,7 @@ export class Conway {
 		while (left.length > 0 && right.length > 0) {
 			const [p2, c2] = right.#terms[0];
 			const [p1, c1] = left.#terms[0];
-			if (Conway.ne(p1, p2)) {
+			if (!Conway.eq(p1, p2)) {
 				break;
 			}
 
@@ -1312,26 +1312,6 @@ export class Conway {
 		}
 
 		return Conway.ensure(left).eq(Conway.ensure(right));
-	}
-
-	public static ne(left: Real | Conway, right: Real | Conway) {
-		return !Conway.eq(left, right);
-	}
-
-	public static lt(left: Real | Conway, right: Real | Conway) {
-		return Conway.compare(left, right) > 0;
-	}
-
-	public static gt(left: Real | Conway, right: Real | Conway, _noHash = false) {
-		return Conway.compare(left, right, _noHash) < 0;
-	}
-
-	public static le(left: Real | Conway, right: Real | Conway) {
-		return Conway.compare(left, right) >= 0;
-	}
-
-	public static ge(left: Real | Conway, right: Real | Conway) {
-		return Conway.compare(left, right) <= 0;
 	}
 	// #endregion
 }

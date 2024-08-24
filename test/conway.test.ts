@@ -19,8 +19,17 @@ import {
 	arbRealGeneral,
 	arbFinite,
 } from "./generators";
-import { gt, isAboveReals, isNegative, isPositive } from "../op/comparison";
+import {
+	gt,
+	isAboveReals,
+	isNegative,
+	isPositive,
+	le,
+	lt,
+	ne,
+} from "../op/comparison";
 import { mono, mono1, one } from "../op";
+import { neg } from "../op/arith";
 
 // fc.configureGlobal({ numRuns: 200000, verbose: false });
 
@@ -30,7 +39,7 @@ const ensureIncreasing = (x: Conway) => {
 	for (let i = 0; i < es.length - 1; i++) {
 		const a = es[i];
 		const b = es[i + 1];
-		if (!Conway.gt(a, b)) {
+		if (!gt(a, b)) {
 			return false;
 		}
 	}
@@ -119,17 +128,17 @@ describe("Conway", () => {
 		});
 
 		it("gt", () => {
-			expect(Conway.gt(2, 0)).toBe(true);
-			expect(Conway.gt(2n, 0)).toBe(true);
-			expect(Conway.gt(2, 0n)).toBe(true);
-			expect(Conway.gt(0, 2)).toBe(false);
-			expect(Conway.gt(2, 1)).toBe(true);
-			expect(Conway.gt(1, 2)).toBe(false);
-			expect(Conway.gt(Conway.zero, Conway.zero)).toBe(false);
-			expect(Conway.gt(Conway.one, Conway.zero)).toBe(true);
-			expect(Conway.gt(Conway.zero, Conway.one)).toBe(false);
-			expect(Conway.gt(Conway.unit, Conway.one)).toBe(true);
-			expect(Conway.gt(Conway.one, Conway.unit)).toBe(false);
+			expect(gt(2, 0)).toBe(true);
+			expect(gt(2n, 0)).toBe(true);
+			expect(gt(2, 0n)).toBe(true);
+			expect(gt(0, 2)).toBe(false);
+			expect(gt(2, 1)).toBe(true);
+			expect(gt(1, 2)).toBe(false);
+			expect(gt(Conway.zero, Conway.zero)).toBe(false);
+			expect(gt(Conway.one, Conway.zero)).toBe(true);
+			expect(gt(Conway.zero, Conway.one)).toBe(false);
+			expect(gt(Conway.unit, Conway.one)).toBe(true);
+			expect(gt(Conway.one, Conway.unit)).toBe(false);
 		});
 	});
 
@@ -188,8 +197,8 @@ describe("Conway", () => {
 		});
 
 		it("0 < 1", () => {
-			expect(Conway.lt(Conway.real(0), Conway.real(1n))).toBe(true);
-			expect(Conway.lt(Conway.real(0n), Conway.real(1))).toBe(true);
+			expect(lt(Conway.real(0), Conway.real(1n))).toBe(true);
+			expect(lt(Conway.real(0n), Conway.real(1))).toBe(true);
 		});
 	});
 
@@ -353,7 +362,7 @@ describe("Conway", () => {
 
 				it("static method is equivalent to instance method ", () => {
 					fc.assert(
-						fc.property(arb, (x) => Conway.eq(x.neg(), Conway.neg(x))),
+						fc.property(arb, (x) => Conway.eq(x.neg(), neg(x))),
 						{ numRuns },
 					);
 				});
@@ -447,7 +456,7 @@ describe("Conway", () => {
 		d("eq", () => {
 			it("negation of ne", () => {
 				fc.assert(
-					fc.property(arb, arb, (x, y) => Conway.eq(x, y) === !Conway.ne(x, y)),
+					fc.property(arb, arb, (x, y) => Conway.eq(x, y) === !ne(x, y)),
 				);
 			});
 
@@ -480,7 +489,7 @@ describe("Conway", () => {
 				fc.assert(
 					fc.property(arb, arb, (x, y) => {
 						fc.pre(x.eqHash !== y.eqHash);
-						return Conway.ne(x, y);
+						return ne(x, y);
 					}),
 				);
 			});
@@ -491,7 +500,7 @@ describe("Conway", () => {
 				fc.assert(
 					fc.property(arb, arb, (x, y) => {
 						fc.pre(x.ordHash !== y.ordHash);
-						return Conway.ne(x, y);
+						return ne(x, y);
 					}),
 				);
 			});
@@ -500,7 +509,7 @@ describe("Conway", () => {
 				fc.assert(
 					fc.property(arb, arb, (x, y) => {
 						fc.pre(x.ordHash < y.ordHash);
-						return Conway.lt(x, y);
+						return lt(x, y);
 					}),
 				);
 			});
@@ -551,7 +560,7 @@ describe("Conway", () => {
 			it("greater than", () => {
 				fc.assert(
 					fc.property(arbFinite, arbFinite, (a, b) => {
-						return Conway.gt(a, b) === a > b;
+						return gt(a, b) === a > b;
 					}),
 				);
 			});
@@ -584,8 +593,7 @@ describe("Conway", () => {
 			it("preserves ordering", () => {
 				fc.assert(
 					fc.property(arbFinite, arbFinite, (a, b) => {
-						Conway.le(Conway.ensure(a).ordHash, Conway.ensure(b).ordHash) ===
-							a <= b;
+						le(Conway.ensure(a).ordHash, Conway.ensure(b).ordHash) === a <= b;
 					}),
 				);
 			});
@@ -925,9 +933,7 @@ describe("Conway", () => {
 			n <= 0 ? Conway.one : mono1(tower(n - 1));
 		it("x <= T(order(x) + 1) for power tower T(x)", () => {
 			fc.assert(
-				fc.property(arbConway3(arbFinite), (x) =>
-					Conway.lt(x, tower(x.order + 1)),
-				),
+				fc.property(arbConway3(arbFinite), (x) => lt(x, tower(x.order + 1))),
 			);
 		});
 

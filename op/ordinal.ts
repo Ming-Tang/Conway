@@ -217,7 +217,7 @@ export const ordinalDivRem = (
 	for (const [pUpper, cUpper] of num) {
 		const pd0 = v.leadingPower ?? Conway.zero;
 		const cd0 = v.leadingCoeff ?? Conway.zero;
-		if (Conway.lt(pUpper, pd0)) {
+		if (Conway.compare(pUpper, pd0) > 0) {
 			break;
 		}
 
@@ -229,12 +229,12 @@ export const ordinalDivRem = (
 
 		let dq = Conway.mono(cr, de);
 		let toSub = Conway.ordinalMult(div, dq);
-		if (Conway.lt(remainder, toSub)) {
+		if (Conway.compare(remainder, toSub) > 0) {
 			if (realGt(cr, realOne)) {
 				const cr1 = realSub(cr, realOne);
 				const dq1 = Conway.mono(cr1, de);
 				const toSub1 = Conway.ordinalMult(div, dq1);
-				if (Conway.lt(remainder, toSub1)) {
+				if (Conway.compare(remainder, toSub1) > 0) {
 					break;
 				}
 				dq = dq1;
