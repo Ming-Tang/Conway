@@ -5,7 +5,7 @@ import { concat, fromArray, type Seq } from "../seq";
 import { minusNumber, plusNumber, signExpansionNumber } from "./real";
 import { assertEq } from "../test/propsTest";
 import { sub } from "../op/arith";
-import { succ } from "../op/ordinal";
+import { ordinalEnsure, succ } from "../op/ordinal";
 import { arbDyadic } from "../test/generators";
 
 const toArray = <T>(x: Seq<T>): T[] => {
@@ -16,7 +16,7 @@ const toArray = <T>(x: Seq<T>): T[] => {
 
 	return Array(n.realPart)
 		.fill(0)
-		.map((_, i) => x.index(ensure(i)));
+		.map((_, i) => x.index(ordinalEnsure(i)));
 };
 
 const arbNum = fc.float({ noNaN: true, noDefaultInfinity: true });

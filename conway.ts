@@ -20,12 +20,13 @@ const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
 
 const freeze = <T>(v: T) => Object.freeze(v);
 
-// TODO make this type more strict
-export type Ord = Conway;
+export type BothIsOrd<A, B> = [A, B] extends [true, true] ? true : boolean;
+
+export type Ord = Conway<true>;
 
 export type Ord0 = Real | Ord;
 
-export type Conway0 = Real | Conway;
+export type Conway0<IsOrd extends boolean = boolean> = Real | Conway<IsOrd>;
 
 const notImplemented = () => {
 	throw new Error("Not implemented. Need to import the correct module.");
@@ -62,13 +63,13 @@ export const INSTANCE_IMPLS = {
  * - If the exponent is a real number, then it is not wrapped in `Conway`.
  * - Each coefficient is non-zero.
  */
-export class Conway {
+export class Conway<IsOrd extends boolean = boolean> {
 	#eqHash: number | null = null;
 	#ordHash: bigint | null = null;
 
 	readonly #isOrdinal: boolean;
 
-	readonly #terms: Readonly<[Conway0, Real][]>;
+	readonly #terms: Readonly<[Conway0<IsOrd>, Real][]>;
 
 	/** 0 */
 	public static readonly zero: Conway = new Conway();
@@ -95,14 +96,14 @@ export class Conway {
 	 * @param iter The array or iterable of [exponent, coefficient] pairs.
 	 */
 	public constructor(
-		iter?: [Conway0, Real][] | Iterable<[Conway0, Real]> | null,
+		iter?: [Conway0<IsOrd>, Real][] | Iterable<[Conway0<IsOrd>, Real]> | null,
 		_unchecked = false,
 	) {
 		let terms = Array.isArray(iter) ? [...iter] : iter ? [...iter] : [];
 		if (_unchecked) {
 			this.#terms = freeze(
-				terms.map((x) => freeze<[Conway0, Real]>(x)),
-			) as Readonly<[Conway0, Real][]>;
+				terms.map((x) => freeze<[Conway0<IsOrd>, Real]>(x)),
+			) as Readonly<[Conway0<IsOrd>, Real][]>;
 			this.#isOrdinal = this.#terms.every(
 				([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
 			);
@@ -127,8 +128,8 @@ export class Conway {
 		this.#terms = freeze(
 			newTerms
 				.filter(([_, c]) => !Conway.isZero(c))
-				.map((x) => freeze<[Conway0, Real]>(x)),
-		) as Readonly<[Conway0, Real][]>;
+				.map((x) => freeze<[Conway0<IsOrd>, Real]>(x)),
+		) as Readonly<[Conway0<IsOrd>, Real][]>;
 		this.#isOrdinal = this.#terms.every(
 			([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
 		);
@@ -174,7 +175,9 @@ export class Conway {
 	 * If this surreal number represents a pure real number, return the real number,
 	 * otherwise return the surreal itself.
 	 */
-	public static maybeDowngrade(value: Conway0): Conway0 {
+	public static maybeDowngrade<IsOrd extends boolean = boolean>(
+		value: Conway0<IsOrd>,
+	): Conway0<IsOrd> {
 		if (!(value instanceof Conway)) {
 			return value;
 		}
@@ -293,8 +296,8 @@ export class Conway {
 	/**
 	 * Returns true if and only if this number represents an ordinal number (natural number coefficients and exponents are ordinal).
 	 */
-	public get isOrdinal(): boolean {
-		return this.#isOrdinal;
+	public get isOrdinal(): IsOrd {
+		return this.#isOrdinal as IsOrd;
 	}
 
 	/**
@@ -318,8 +321,8 @@ export class Conway {
 		return this.#terms[0][1];
 	}
 
-	public get infinitePart(): Conway {
-		return this.filterTerms((p) => Conway.isPositive(p));
+	public get infinitePart(): Conway<IsOrd> {
+		return this.filterTerms((p) => Conway.isPositive(p)) as Conway<IsOrd>;
 	}
 
 	public get realPart(): Real {
@@ -333,12 +336,12 @@ export class Conway {
 	/**
 	 * Get the exponent of the leading term (or null if this surreal number is zero.)
 	 */
-	public get leadingPower(): Conway0 | null {
+	public get leadingPower(): Conway0<IsOrd> | null {
 		if (this.#terms.length === 0) {
 			return null;
 		}
 
-		return this.#terms[0][0];
+		return this.#terms[0][0] as Conway<IsOrd>;
 	}
 
 	/**
@@ -518,7 +521,7 @@ export class Conway {
 		return false;
 	}
 
-	public static isOrdinal(value: Conway0): boolean {
+	public static isOrdinal(value: Conway0): value is Ord0 {
 		return (
 			(typeof value === "bigint" && value >= 0n) ||
 			(typeof value === "number" && value >= 0 && Number.isInteger(value)) ||
@@ -581,74 +584,75 @@ export class Conway {
 		);
 	}
 
-	public add(other: Conway0): Conway {
+	public add<O1 extends boolean = boolean, O2 extends boolean = boolean>(
+		this: Conway<O1>,
+		other: Conway0<O2>,
+	): Conway<BothIsOrd<O1, O2>> {
 		if (Conway.isZero(other)) {
-			return this;
+			return this as Conway<never>;
 		}
 
 		if (!(other instanceof Conway)) {
-			const newTerms: [Conway0, Real][] = [];
+			const newTerms: [Conway0<never>, Real][] = [];
 			let added = false;
 			for (const [e1, c1] of this) {
 				if (!added && Conway.isZero(e1)) {
-					newTerms.push([e1, realAdd(c1, other)]);
+					newTerms.push([e1 as Conway0<never>, realAdd(c1, other)]);
 					added = true;
 				} else {
-					newTerms.push([e1, Conway.isZero(e1) ? realAdd(c1, other) : c1]);
+					newTerms.push([
+						e1 as Conway0<never>,
+						Conway.isZero(e1) ? realAdd(c1, other) : c1,
+					]);
 				}
 			}
 			if (!added) {
 				newTerms.push([realZero, other]);
 			}
-			return new Conway(newTerms);
+			return new Conway<never>(newTerms);
 		}
 
-		const terms: [Conway0, Real][] = [];
+		const terms: [Conway0<never>, Real][] = [];
 		for (const [e1, c1] of Conway.ensure(other)) {
-			terms.push([e1, c1]);
+			terms.push([e1 as Conway0<never>, c1]);
 		}
 
 		for (const [e1, c1] of this) {
 			const found = terms.find(([e]) => Conway.eq(e, e1));
 			if (!found) {
-				terms.push([e1, c1]);
+				terms.push([e1 as Conway0<never>, c1]);
 			} else {
 				found[1] = realAdd(found[1], c1);
 			}
 		}
-		return new Conway(terms);
+		return new Conway<never>(terms);
 	}
 
 	public sub(other: Conway0): Conway {
 		return this.add(other instanceof Conway ? other.neg() : realNeg(other));
 	}
 
-	/**
-	 * Performs ordinal number exponentiation. `0^0 = 1` instead of throwing an error.
-	 * Does not check if `this` and `other` are both ordinals.
-	 */
-	public ordinalPow(other: Ord0): Ord0 {
-		return INSTANCE_IMPLS.ordinalPow(this, other);
-	}
-
-	public mult(other: Conway0): Conway {
+	public mult<O1 extends boolean = boolean, O2 extends boolean = boolean>(
+		this: Conway<O1>,
+		other: Conway0<O2>,
+	): Conway<BothIsOrd<O1, O2>> {
 		if (Conway.isZero(other)) {
-			return Conway.zero;
+			return Conway.zero as Conway<never>;
 		}
 
 		if (Conway.isOne(other)) {
-			return this;
+			return this as Conway<never>;
 		}
 
 		if (!(other instanceof Conway)) {
-			const newTerms: [Conway0, Real][] = [];
+			const newTerms: [Conway0<never>, Real][] = [];
 			for (const [e1, c1] of this) {
-				newTerms.push([e1, realMult(c1, other)]);
+				newTerms.push([e1 as Conway0<never>, realMult(c1, other)]);
 			}
-			return new Conway(newTerms);
+			return new Conway<never>(newTerms);
 		}
 
-		const terms: [Conway0, Real][] = [];
+		const terms: [Conway0<never>, Real][] = [];
 
 		for (const [e1, c1] of this) {
 			for (const [e2, c2] of other) {
@@ -656,29 +660,33 @@ export class Conway {
 				const found = terms.find(([e]) => Conway.eq(e, e3));
 				const prod = realMult(c1, c2);
 				if (!found) {
-					terms.push([e3, prod]);
+					terms.push([e3 as Conway0<never>, prod]);
 				} else {
 					found[1] = realAdd(found[1], prod);
 				}
 			}
 		}
-		return new Conway(terms);
+		return new Conway<never>(terms);
 	}
 
-	public ordinalAdd(other: Ord0): Ord {
+	public ordinalAdd(this: Ord, other: Ord0): Ord {
 		return INSTANCE_IMPLS.ordinalAdd(this, other);
 	}
 
-	public ordinalMult(other: Ord0): Ord {
+	public ordinalMult(this: Ord, other: Ord0): Ord {
 		return INSTANCE_IMPLS.ordinalMult(this, other);
 	}
 
-	public ordinalRightSub(right: Ord0): Ord {
+	public ordinalRightSub(this: Ord, right: Ord0): Ord {
 		return INSTANCE_IMPLS.ordinalRightSub(this, right);
 	}
 
 	public ordinalDivRem(this: Ord, right: Ord0): [Ord, Ord] {
 		return INSTANCE_IMPLS.ordinalDivRem(this, right);
+	}
+
+	public ordinalPow(this: Ord, other: Ord0): Ord0 {
+		return INSTANCE_IMPLS.ordinalPow(this, other);
 	}
 
 	/**
@@ -821,7 +829,7 @@ export class Conway {
 	/**
 	 * Determines the birthday of this surreal number.
 	 */
-	public birthday(realBirthday = Conway.realBirthday): Conway0 {
+	public birthday(realBirthday = Conway.realBirthday): Ord0 {
 		let lastP: Conway0 = Conway.zero;
 		return this.ordSumTerms((p, c) => {
 			const bc = realBirthday(c);
@@ -839,19 +847,21 @@ export class Conway {
 				lastP = pPos;
 				const len = Conway.birthday(dp, realBirthday);
 				// +-^(birthday(dp)) SE(coeff)
-				return Conway.unit.ordinalMult(len).ordinalAdd(Conway.sub(bc, 1n));
+				return (Conway.unit as Ord)
+					.ordinalMult(len)
+					.ordinalAdd(Conway.sub(bc, 1n) as Ord);
 			}
 
 			// Infinite part
 			const bp = Conway.ensure(p).birthday(realBirthday);
-			return Conway.mono1(bp).ordinalMult(bc);
-		});
+			return (Conway.mono1(bp) as Ord).ordinalMult(bc);
+		}) as Ord0;
 	}
 
 	public static birthday(
 		value: Conway0,
 		realBirthday = Conway.realBirthday,
-	): Conway0 {
+	): Ord0 {
 		return value instanceof Conway
 			? value.birthday(realBirthday)
 			: realBirthday(value);
@@ -897,8 +907,9 @@ export class Conway {
 		return found ? found[1] : 0;
 	}
 
-	// @ts-ignore Readonly
-	public [Symbol.iterator](): IterableIterator<Readonly<[Conway0, Real]>> {
+	public [Symbol.iterator](): IterableIterator<
+		Readonly<[Conway0<IsOrd>, Real]>
+	> {
 		return this.#terms[Symbol.iterator]();
 	}
 
@@ -906,17 +917,20 @@ export class Conway {
 		return new Conway(this.#terms.filter(([p, c]) => f(p, c)));
 	}
 
-	public ordSumTerms(f: (pow: Conway0, coeff: Real) => Conway0): Conway0 {
+	public ordSumTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Ord0): Ord0 {
 		return this.#terms
 			.map(([p, c]) => f(p, c))
-			.reduce((a, b) => Conway.ensure(a).ordinalAdd(b), Conway.zero);
+			.reduce(
+				(a, b) => (Conway.ensure(a) as Ord).ordinalAdd(b as Ord),
+				Conway.zero as Ord,
+			);
 	}
 
-	public sumTerms(f: (pow: Conway0, coeff: Real) => Conway0): Conway0 {
+	public sumTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Conway0): Conway0 {
 		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.add, Conway.zero);
 	}
 
-	public multTerms(f: (pow: Conway0, coeff: Real) => Conway0): Conway0 {
+	public multTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Conway0): Conway0 {
 		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.mult, Conway.one);
 	}
 

@@ -16,6 +16,7 @@ import { Conway, type Ord } from "../conway";
 import { eq, isZero, lt } from "../op/comparison";
 import { neg } from "../op/arith";
 import type { Seq } from "../seq";
+import { ordinalOne, ordinalZero } from "../op/ordinal";
 
 fc.configureGlobal({ numRuns: 5000 });
 
@@ -117,8 +118,8 @@ describe("signExpansion", () => {
 					arbNum16.filter((x) => !isZero(x)),
 					() => {
 						const se = signExpansion(mono1(-1n));
-						expect(se.index(zero)).toBe(true);
-						expect(se.index(one)).toBe(false);
+						expect(se.index(ordinalZero)).toBe(true);
+						expect(se.index(ordinalOne)).toBe(false);
 					},
 				),
 			);

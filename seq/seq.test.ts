@@ -23,8 +23,17 @@ import {
 	lt,
 	ne,
 } from "../op/comparison";
-import { isLimit, ordinalAdd, ordinalMult, succ } from "../op/ordinal";
-import { ensure, mono1, one, unit, zero } from "../op";
+import {
+	isLimit,
+	ordinalAdd,
+	ordinalMult,
+	succ,
+	ordinalEnsure as ensure,
+	ordinalMono1 as mono1,
+	ordinalZero as zero,
+	ordinalOne as one,
+	ordinalUnit as unit,
+} from "../op/ordinal";
 import { Conway, type Ord } from "../conway";
 import { assertEq } from "../test/propsTest";
 
@@ -402,7 +411,7 @@ describe("prod", () => {
 					arbFiniteBigintOrd,
 					fc.bigInt({ min: 0n, max: 1n }),
 					(i, j) => {
-						const idx = new Conway([
+						const idx = new Conway<true>([
 							[1n, i],
 							[0n, j],
 						]);
@@ -595,10 +604,7 @@ describe("indexByPower", () => {
 		fc.assert(
 			fc.property(
 				arbSeq3,
-				arbOrd3.map((k): [Conway, Conway] => [
-					k,
-					ensure(k.leadingPower ?? zero),
-				]),
+				arbOrd3.map((k): [Ord, Ord] => [k, ensure(k.leadingPower ?? zero)]),
 				(f, [k, i]) => {
 					fc.pre(lt(i, f.length));
 					fc.pre(lt(mono1(i), k) && lt(k, mono1(succ(i))));

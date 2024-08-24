@@ -3,10 +3,14 @@ import { isPositive, isZero, lt } from "../op/comparison";
 import type { Seq } from "./types";
 import { assertEq } from "../test/propsTest";
 import { SeqExpansion, type ExpansionEntryConstructor } from "./expansion";
-import { ensure, one, zero } from "../op";
+import {
+	ordinalMult,
+	ordinalEnsure as ensure,
+	ordinalZero as zero,
+	ordinalOne as one,
+} from "../op/ordinal";
 import { concat, cycleArray, empty, fromArray } from ".";
 import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "../test/generators";
-import { ordinalMult } from "../op/ordinal";
 import type { Ord } from "../conway";
 
 type Value = number;

@@ -1,10 +1,13 @@
 import type { Conway, Ord } from "../conway";
-import { ensure, one, unit } from "../op";
 import { ge, isAboveReals, le } from "../op/comparison";
-import { ordinalDivRem } from "../op/ordinal";
+import {
+	ordinalDivRem,
+	ordinalEnsure as ensure,
+	ordinalOne as one,
+	ordinalUnit as unit,
+} from "../op/ordinal";
 
-// @ts-expect-error
-export const ensureOrd = (x: Conway): x is Ord<Conway> => {
+export const ensureOrd = (x: Conway): x is Ord => {
 	return x.isOrdinal;
 };
 

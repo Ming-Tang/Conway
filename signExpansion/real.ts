@@ -1,6 +1,6 @@
-import type { Conway } from "../conway";
+import type { Ord } from "../conway";
 import type { Real } from "../real";
-import { ensure } from "../op";
+import { ordinalEnsure as ensure } from "../op/ordinal";
 import { isOne, isZero } from "../op/comparison";
 import {
 	concat,
@@ -11,7 +11,7 @@ import {
 	type Seq,
 } from "../seq";
 
-const cycleArray0 = <T>(xs: T[], mult: Conway) => {
+const cycleArray0 = <T>(xs: T[], mult: Ord) => {
 	if (isZero(mult) || xs.length === 0) {
 		return empty as Seq<T>;
 	}

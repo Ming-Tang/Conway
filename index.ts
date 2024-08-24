@@ -1,4 +1,4 @@
-import { Conway, type Conway0 } from "./conway";
+import { Conway, type Conway0, type Ord, type Ord0 } from "./conway";
 import { realToBigint, realToNumber, type Real } from "./real";
 import {
 	birthday,
@@ -10,17 +10,24 @@ import {
 	ensure,
 } from "./op";
 import { isZero } from "./op/comparison";
-import { canon, isLimit, isSucc, noSucc, ordinalAdd } from "./op/ordinal";
+import {
+	canon,
+	isLimit,
+	isSucc,
+	noSucc,
+	ordinalAdd,
+	ordinalEnsure,
+} from "./op/ordinal";
 import { concat, cycleArray, fromArray, type Seq } from "./seq";
 import { signExpansion } from "./signExpansion";
 import type { Sign } from "./signExpansion/real";
 import { signExpansionToString, ordToLaTeX } from "./seq/cnf";
 import { expandOrDefault, summarizeExpansionLaTeX } from "./seq/expansion";
 
-const unSucc = (x: Conway0, n: number): Conway0[] => {
+const unSucc = (x: Ord0, n: number): Ord0[] => {
 	const sp = realToNumber(ensure(x).realPart);
 	const i0 = Math.max(sp - n - 1, 0);
-	const row = [] as Conway0[];
+	const row = [] as Ord0[];
 	const x0 = noSucc(x);
 	for (let i = i0; i < sp; i++) {
 		row.push(ordinalAdd(x0, BigInt(i)));
@@ -28,9 +35,9 @@ const unSucc = (x: Conway0, n: number): Conway0[] => {
 	return row;
 };
 
-const countbackOrd = (ord: Conway0, n: number): Conway0[][] => {
-	const arr: Conway0[][] = [];
-	let x: Conway0 = ord;
+const countbackOrd = (ord: Ord0, n: number): Ord0[][] => {
+	const arr: Ord0[][] = [];
+	let x: Ord0 = ord;
 
 	while (true) {
 		if (isSucc(x)) {
@@ -43,8 +50,8 @@ const countbackOrd = (ord: Conway0, n: number): Conway0[][] => {
 		if (isZero(x)) {
 			break;
 		}
-		const row: Conway0[] = [];
-		x = ensure(x);
+		const row: Ord0[] = [];
+		x = ordinalEnsure(x);
 		let n0 = 1;
 		for (let i = n; i >= n0; i--) {
 			const last = canon(x, i);
@@ -69,7 +76,7 @@ const summarizesignExpansion = (seq: Seq<Sign>, n: number) => {
 	for (const row of cb) {
 		console.log(
 			`f[${row[0]}, ${row[1]}, ...] =`,
-			row.map((i) => (seq.index(ensure(i)) ? "+" : "-")).join(""),
+			row.map((i) => (seq.index(ordinalEnsure(i)) ? "+" : "-")).join(""),
 		);
 	}
 };
@@ -185,10 +192,10 @@ if (false) {
 		mono(2n, unit.add(2n))
 			.add(mono(4n, unit.add(10n)))
 			.add(mono(2n, 1)),
-	];
+	] as Ord[];
 
-	const countback = (ord: Conway0, n: number) => {
-		let x: Conway0 = ord;
+	const countback = (ord: Ord0, n: number) => {
+		let x: Ord0 = ord;
 		while (true) {
 			if (isSucc(x)) {
 				x = noSucc(x);
@@ -217,13 +224,15 @@ if (false) {
 		countback(ord, 5);
 	}
 
-	console.log(unit.add(1).ordinalPow(4n));
-	console.log(mono(4n, 6n).add(1n).ordinalPow(10n));
-	console.log(mono(4n, 6n).add(mono(3n, 3n)).add(1n).ordinalPow(10n));
+	console.log((unit.add(1) as Ord).ordinalPow(4n));
+	console.log((mono(4n, 6n).add(1n) as Ord).ordinalPow(10n));
+	console.log((mono(4n, 6n).add(mono(3n, 3n)).add(1n) as Ord).ordinalPow(10n));
 	console.log(
-		mono(2n, unit).add(mono(4n, 6n)).add(mono(3n, 3n)).add(1n).ordinalPow(10n),
+		(
+			mono(2n, unit).add(mono(4n, 6n)).add(mono(3n, 3n)).add(1n) as Ord
+		).ordinalPow(10n),
 	);
 	console.log(
-		mono(2n, unit).add(mono(4n, 6n)).add(mono(3n, 3n)).ordinalPow(10n),
+		(mono(2n, unit).add(mono(4n, 6n)).add(mono(3n, 3n)) as Ord).ordinalPow(10n),
 	);
 }

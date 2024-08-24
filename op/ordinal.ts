@@ -59,15 +59,15 @@ export const ordinalUnit: Ord = _unit as Ord;
 
 const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
-		return ord.add(other);
+		return ord.add(other) as Ord;
 	}
 
 	const cutoff = other.leadingPower;
 	if (cutoff === null) {
-		return ord.add(other);
+		return ord.add(other) as Ord;
 	}
 
-	return ord.filterTerms((p1) => compare(p1, cutoff) <= 0).add(other);
+	return ord.filterTerms((p1) => compare(p1, cutoff) <= 0).add(other) as Ord;
 };
 
 /**
@@ -85,7 +85,7 @@ export const ordinalAdd = (left: Ord0, right: Ord0): Ord0 => {
 
 const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord => {
 	if (isZero(i)) {
-		return Conway.zero;
+		return zero;
 	}
 	if (isOne(i)) {
 		return inf;
@@ -100,18 +100,18 @@ const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord => {
 		}
 		const pred = i - 1n;
 		const { leadingPower: p0, leadingCoeff: c0 } = inf;
-		return Conway.mono(realMult(c0, pred), p0 ?? Conway.zero).ordinalAdd(inf);
+		return mono(realMult(c0, pred), p0 ?? zero).ordinalAdd(inf);
 	}
 	return ordinalMultInfiniteFinite(inf, realToBigint(i));
 };
 
 const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
-		return ord.mult(other);
+		return ord.mult(other) as Ord;
 	}
 
 	if (ord.isZero || other.isZero) {
-		return Conway.zero;
+		return zero;
 	}
 	if (ord.isOne) {
 		return other;
@@ -133,12 +133,12 @@ const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
 	if (!ord.isAboveReals) {
 		const { infinitePart: inf2 } = other;
 		// i1 nonzero: i1 * (inf2 + i2) = inf2 + i1 * i2
-		return Conway.isZero(i1) ? Conway.zero : inf2.add(realMult(i1, i2));
+		return isZero(i1) ? zero : (inf2.add(realMult(i1, i2)) as Ord);
 	}
-	const p0 = ord.leadingPower ?? Conway.zero;
-	let tot = Conway.zero;
+	const p0 = ord.leadingPower ?? zero;
+	let tot = zero;
 	for (const [p, c] of other) {
-		if (Conway.isZero(p)) {
+		if (isZero(p)) {
 			tot = tot.ordinalAdd(ordinalMultInfiniteFinite(ord, c));
 			continue;
 		}
@@ -209,7 +209,7 @@ export const ordinalRightSub = (left: Ord0, right: Ord0): Ord0 => {
 		return realSub(right, left);
 	}
 
-	const l1 = Conway.ensure(left);
+	const l1 = ensure(left);
 	return ordinalRightSub0(l1, right);
 };
 
@@ -449,16 +449,16 @@ INSTANCE_IMPLS.ordinalRightSub = ordinalRightSub0;
 INSTANCE_IMPLS.ordinalAdd = ordinalAdd0;
 INSTANCE_IMPLS.ordinalMult = ordinalMult0;
 
-export const isLimit = (x: Conway0): x is Conway =>
+export const isLimit = (x: Ord0): x is Ord =>
 	x instanceof Conway && !isZero(x) && isZero(x.realPart);
-export const isSucc = (x: Conway0) =>
+export const isSucc = (x: Ord0) =>
 	x instanceof Conway ? realIsPositive(x.realPart) : realIsPositive(x);
 
-export const noSucc = (x: Conway0) =>
-	x instanceof Conway ? sub(x, x.realPart) : 0n;
+export const noSucc = (x: Ord0) =>
+	(x instanceof Conway ? sub(x, x.realPart) : 0n) as Ord0;
 
-export const succ = (x: Conway0) => add(x, 1n);
-export const pred = (x: Conway0) => sub(x, 1n);
+export const succ = (x: Ord0) => add(x, 1n) as Ord0;
+export const pred = (x: Ord0) => sub(x, 1n) as Ord0;
 
 /**
  * Get the nth element of the canonical sequence of a limit ordinal.
@@ -471,13 +471,13 @@ export const pred = (x: Conway0) => sub(x, 1n);
  * @param limitCoeff The trailing coefficient when the trailing term is a limit ordinal
  * @param n The index (natural number) of the sequence
  */
-export const canon = (x: Conway, n: Real, limitCoeff = 1n): Conway0 => {
+export const canon = (x: Ord, n: Real, limitCoeff = 1n): Ord0 => {
 	if (isZero(x) || !x.isOrdinal || isSucc(x)) {
 		throw new RangeError("Must be a limit ordinal");
 	}
 
 	const idx = x.length - 1;
-	const terms = [...x] as [Conway0, Real][];
+	const terms = [...x] as [Ord0, Real][];
 	const [p, c] = terms[idx];
 	const preTerms = terms.slice(0, idx);
 	if (isOne(c)) {
@@ -485,12 +485,12 @@ export const canon = (x: Conway, n: Real, limitCoeff = 1n): Conway0 => {
 		if (isLimit(p)) {
 			// ... + w^pLim
 			const pow = canon(p, n);
-			return new Conway([...preTerms, [pow, n ? limitCoeff : 0n]]);
+			return new Conway([...preTerms, [pow, n ? limitCoeff : 0n]]) as Ord;
 		}
 
 		// ... + w^(p0 + 1)
 		const p0 = pred(p);
-		return new Conway([...preTerms, [p0, n]]);
+		return new Conway([...preTerms, [p0, n]]) as Ord;
 	}
 
 	const c0 = realSub(c, realOne);
@@ -500,9 +500,9 @@ export const canon = (x: Conway, n: Real, limitCoeff = 1n): Conway0 => {
 			...preTerms,
 			[p, c0],
 			[canon(p, n), n ? limitCoeff : 0n],
-		]);
+		]) as Ord;
 	}
 
 	// ... + w^(p0 + 1) * (c0 + 1)
-	return new Conway([...preTerms, [p, c0], [pred(p), n]]);
+	return new Conway([...preTerms, [p, c0], [pred(p), n]]) as Ord;
 };

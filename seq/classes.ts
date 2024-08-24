@@ -1,5 +1,10 @@
 import type { Ord } from "../conway";
-import { ensure, mono1, unit, zero } from "../op";
+import {
+	ordinalEnsure as ensure,
+	ordinalMono1 as mono1,
+	ordinalUnit as unit,
+	ordinalZero as zero,
+} from "../op/ordinal";
 import { ge, gt, isAboveReals, isOne, isZero } from "../op/comparison";
 import { realToNumber } from "../real";
 import { cnfOrDefault, defaultCnf, simplifyConcat, simplifyCycle } from "./cnf";

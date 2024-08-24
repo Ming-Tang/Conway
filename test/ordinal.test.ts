@@ -1,8 +1,7 @@
 import fc from "fast-check";
-import { Conway, type Ord0 } from "../conway";
+import { Conway, type Ord, type Ord0 } from "../conway";
 import type { Real } from "../real";
 import {
-	arbConway3,
 	arbFiniteBigint,
 	arbFiniteBigintOrd,
 	arbOrd2,
@@ -21,8 +20,14 @@ import {
 	pred,
 	ordinalPow,
 	noSucc,
+	ordinalEnsure as ensure,
+	ordinalMono as mono,
+	ordinalMono1 as mono1,
+	ordinalZero as zero,
+	ordinalOne as one,
+	ordinalUnit as unit,
 } from "../op/ordinal";
-import { ensure, fromReal, isMono, mono, mono1, one, unit, zero } from "../op";
+import { fromReal, isMono } from "../op";
 import {
 	eq,
 	ge,
@@ -102,53 +107,38 @@ describe("ordinals", () => {
 		});
 
 		it("constant (w + finite)", () => {
-			const lhs = unit.add(3n);
-			const large = unit.add(5n);
+			const lhs = unit.add(3n as Ord0);
+			const large = unit.add(5n as Ord0);
 			const d = lhs.ordinalRightSub(large);
 			assertEq(d, 2n);
 		});
 
 		it("ordinalRightSub equal value", () => {
-			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
-					(a) => a.ordinalRightSub(a).isZero,
-				),
-			);
+			fc.assert(fc.property(arbOrd3, (a) => a.ordinalRightSub(a).isZero));
 		});
 
 		it("ordinalRightSub result is ordinal", () => {
 			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
-					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
-					(a, b) => {
-						fc.pre(ge(b, a));
-						return a.ordinalRightSub(b).isOrdinal;
-					},
-				),
+				fc.property(arbOrd3, arbOrd3, (a, b) => {
+					fc.pre(ge(b, a));
+					return a.ordinalRightSub(b).isOrdinal;
+				}),
 			);
 		});
 
 		it("ordinalRightSub result can be added back (with self)", () => {
 			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
-					(a) => {
-						const c = a.ordinalRightSub(a);
-						return a.ordinalAdd(c).eq(a);
-					},
-				),
+				fc.property(arbOrd3, (a) => {
+					const c = a.ordinalRightSub(a);
+					return a.ordinalAdd(c).eq(a);
+				}),
 			);
 		});
 
 		it("ordinalRightSub result can be added back (ordinal plus finite)", () => {
 			const arbOrdPlusFinite = fc
-				.tuple(
-					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
-					arbFiniteBigintOrd,
-				)
-				.map(([x, v]) => x.add(v));
+				.tuple(arbOrd3, arbFiniteBigintOrd)
+				.map(([x, v]) => x.add(v)) as fc.Arbitrary<Ord>;
 			fc.assert(
 				fc.property(arbOrdPlusFinite, arbOrdPlusFinite, (a, b) => {
 					fc.pre(gt(b, a));
@@ -160,15 +150,11 @@ describe("ordinals", () => {
 
 		it("ordinalRightSub result can be added back", () => {
 			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
-					arbConway3(arbFiniteBigintOrd).filter((x) => x.isOrdinal),
-					(a, b) => {
-						fc.pre(gt(b, a));
-						const c = a.ordinalRightSub(b);
-						return a.ordinalAdd(c).eq(b);
-					},
-				),
+				fc.property(arbOrd3, arbOrd3, (a, b) => {
+					fc.pre(gt(b, a));
+					const c = a.ordinalRightSub(b);
+					return a.ordinalAdd(c).eq(b);
+				}),
 			);
 		});
 
@@ -191,8 +177,8 @@ describe("ordinals", () => {
 
 		it("constants (absorbing)", () => {
 			assertEq(ordinalMult(2n, unit), unit);
-			assertEq(ordinalMult(3n, unit.add(1n)), unit.add(3n));
-			assertEq(ordinalMult(unit.add(3n), 5n), unit.mult(5n).add(3n));
+			assertEq(ordinalMult(3n, unit.add(1n as Ord0)), unit.add(3n));
+			assertEq(ordinalMult(unit.add(3n as Ord0), 5n), unit.mult(5n).add(3n));
 		});
 
 		it("constants (assoc)", () => {
@@ -201,12 +187,12 @@ describe("ordinals", () => {
 			assertEq(ordinalMult(unit, ordinalMult(2n, unit)), unit.mult(unit));
 			// w.(2.(w + 1)) = w.(w + 2) = w^2 + w.2
 			assertEq(
-				ordinalMult(unit, ordinalMult(2n, unit.add(1n))),
+				ordinalMult(unit, ordinalMult(2n, unit.add(1n as Ord0))),
 				unit.mult(unit).add(unit.mult(2n)),
 			);
 			// (w.2).(w + 1) = (w.2).w + (w.2).1 = w^2 + w.2
 			assertEq(
-				unit.mult(2n).ordinalMult(unit.add(1n)),
+				unit.mult(2n as Ord0).ordinalMult(unit.add(1n as Ord0)),
 				unit.mult(unit).add(unit.mult(2n)),
 			);
 		});
@@ -215,7 +201,7 @@ describe("ordinals", () => {
 			// (w + 1)(w + 1) = (w+1).w + (w+1).1
 			// = w^2 + w + 1
 			assertEq(
-				unit.add(1n).ordinalMult(unit.add(1n)),
+				unit.add(1n as Ord0).ordinalMult(unit.add(1n as Ord0)),
 				unit.mult(unit).add(unit).add(1n),
 			);
 		});
@@ -253,7 +239,7 @@ describe("ordinals", () => {
 		it("finite * w = w", () => {
 			fc.assert(
 				fc.property(fc.integer({ min: 1 }), (x) =>
-					assertEq(ordinalMult(fromReal(x), unit), unit),
+					assertEq(ordinalMult(fromReal(x) as Ord, unit), unit),
 				),
 			);
 		});
@@ -291,7 +277,7 @@ describe("ordinals", () => {
 						arbFinite,
 						arbOrd3.map((x) => x.infinitePart),
 						(n, a) => {
-							return assertEq(ordinalMult(fromReal(n), a), a);
+							return assertEq(ordinalMult(fromReal(n) as Ord, a), a);
 						},
 					),
 				);
@@ -358,7 +344,7 @@ describe("ordinals", () => {
 						sum = ordinalAdd(sum, a);
 					}
 
-					return assertEq(ordinalMult(a, fromReal(n)), sum);
+					return assertEq(ordinalMult(a, fromReal(n) as Ord), sum);
 				}),
 			);
 		});
@@ -386,11 +372,17 @@ describe("ordinals", () => {
 				// = [2^(w.w^4)]^6 . 2^3
 				// = [w^(w^4)]^6 . 8
 				// = w^[(w^4).6] . 8
-				assertEq(ordinalPow(2n, mono(6n, 5n).add(3n)), mono(8n, mono(6n, 4n)));
+				assertEq(
+					ordinalPow(2n, mono(6n, 5n).add(3n as Ord0)),
+					mono(8n, mono(6n, 4n)),
+				);
 			});
 
 			it("infinite^infinite", () => {
-				assertEq(ordinalPow(unit, unit.add(1n)), mono1(unit.add(1n)));
+				assertEq(
+					ordinalPow(unit, unit.add(1n as Ord0)),
+					mono1(unit.add(1n as Ord0)),
+				);
 			});
 		});
 
@@ -459,7 +451,7 @@ describe("ordinals", () => {
 			return max;
 		};
 
-		const arbs: [string, fc.Arbitrary<Conway>][] = [
+		const arbs: [string, fc.Arbitrary<Ord>][] = [
 			["finite", arbFiniteBigint.filter(isPositive).map(ensure)],
 			[
 				"infinite",
@@ -471,9 +463,9 @@ describe("ordinals", () => {
 		];
 		const combs: [
 			string,
-			fc.Arbitrary<Conway>,
-			fc.Arbitrary<Conway>,
-			fc.Arbitrary<Conway>,
+			fc.Arbitrary<Ord>,
+			fc.Arbitrary<Ord>,
+			fc.Arbitrary<Ord>,
 		][] = [];
 		for (const [name1, arb1] of arbs) {
 			for (const [name2, arb2] of arbs) {
@@ -588,7 +580,7 @@ describe("ordinals", () => {
 		};
 
 		it("constant: w.2 / (w + 1)", () => {
-			propDivRem(unit.mult(2n), unit.add(1n));
+			propDivRem(unit.mult(2n as Ord0), unit.add(1n as Ord0));
 		});
 
 		it("divide by 1", () => {
@@ -622,7 +614,10 @@ describe("ordinals", () => {
 					arbFiniteBigintOrd.filter(isPositive),
 					(n, d) => {
 						const [q1, r1] = ordinalDivRem(n, d);
-						const [q2, r2] = ordinalDivRem(unit.mult(n), unit.mult(d));
+						const [q2, r2] = ordinalDivRem(
+							unit.mult(n as Ord0),
+							unit.mult(d as Ord0),
+						);
 						assertEq(q1, q2);
 						assertEq(unit.mult(r1), r2);
 					},
@@ -662,7 +657,7 @@ describe("ordinals", () => {
 		it("(w^k + 1) / w^k", () => {
 			fc.assert(
 				fc.property(arbFiniteBigintOrd.filter(isPositive), (k) =>
-					propDivRem(mono1(k).add(1n), mono1(k)),
+					propDivRem(mono1(k).add(1n as Ord0), mono1(k)),
 				),
 			);
 		});
@@ -733,8 +728,8 @@ describe("ordinals", () => {
 		describe("constants", () => {
 			assertEq(canon(mono1(3n), 7n), mono(7n, 2n));
 			assertEq(
-				canon(mono(7n, unit.add(2n)), 5),
-				mono(6n, unit.add(2n)).add(mono(5n, unit.add(1n))),
+				canon(mono(7n, unit.add(2n as Ord0)), 5),
+				mono(6n, unit.add(2n as Ord0)).add(mono(5n, unit.add(1n as Ord0))),
 			);
 		});
 
@@ -763,7 +758,7 @@ describe("ordinals", () => {
 		it("sequence has same finite difference for w^(p + 1)", () => {
 			fc.assert(
 				fc.property(
-					arbOrd3.map((x) => mono1(x.add(1n))),
+					arbOrd3.map((x) => mono1(x.add(1n as Ord0))),
 					arbN,
 					arbN,
 					(x, n, m) =>
@@ -795,7 +790,7 @@ describe("ordinals", () => {
 			it("canon(w^(x + 1), n) = w^x n", () => {
 				fc.assert(
 					fc.property(arbOrd3, arbN, (x, n) =>
-						assertEq(canon(mono1(x.add(1n)), n), mono1(x).mult(n)),
+						assertEq(canon(mono1(x.add(1n as Ord0)), n), mono1(x).mult(n)),
 					),
 				);
 			});
@@ -812,8 +807,8 @@ describe("ordinals", () => {
 				fc.assert(
 					fc.property(arbOrd3, arbFiniteBigintOrd, arbN, (x, k, n) =>
 						assertEq(
-							canon(mono(k + 1n, x.add(1n)), n),
-							mono(k, x.add(1n)).ordinalAdd(mono(n, x)),
+							canon(mono(k + 1n, x.add(1n as Ord0)), n),
+							mono(k, x.add(1n as Ord0)).ordinalAdd(mono(n, x)),
 						),
 					),
 				);

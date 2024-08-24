@@ -1,5 +1,5 @@
-import { Conway, type Conway0 } from "../conway";
-import { unit, zero } from "../op";
+import { Conway } from "../conway";
+import { ordinalUnit as unit, ordinalZero as zero } from "../op/ordinal";
 import { neg, sub } from "../op/arith";
 import { isNegative, isOne, isZero } from "../op/comparison";
 import { realAbs, realIsPositive, type Real } from "../real";
@@ -27,7 +27,7 @@ const concat1 = <T>(a: Seq<T>, b: Seq<T>): Seq<T> => {
 
 const flipSign = (x: Sign): Sign => !x;
 
-const signExpansionLow = (power: Conway0, coeff: Real): Seq<Sign> => {
+const signExpansionLow = (power: Real | Conway, coeff: Real): Seq<Sign> => {
 	const pos = realIsPositive(coeff);
 	const sePower = signExpansion(power);
 	const rep = repeatEach(sePower, unit);
@@ -48,7 +48,7 @@ const signExpansionLow = (power: Conway0, coeff: Real): Seq<Sign> => {
 };
 
 export const signExpansion = (
-	value: Conway0,
+	value: Real | Conway,
 	real = signExpansionReal,
 ): Seq<Sign> => {
 	if (isZero(value)) {
@@ -60,7 +60,7 @@ export const signExpansion = (
 	}
 
 	let se = empty as Seq<Sign>;
-	let lastP: Conway0 = zero;
+	let lastP: Real | Conway = zero;
 	for (const [p, c] of value) {
 		if (isZero(p)) {
 			// real

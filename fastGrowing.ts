@@ -1,4 +1,4 @@
-import { Conway, type Conway0 } from "./conway";
+import { Conway, type Conway0, type Ord0 } from "./conway";
 import { realToBigint, realZero, type Real } from "./real";
 import { unit } from "./op";
 import { eq, isOne, isZero } from "./op/comparison";
@@ -10,7 +10,7 @@ import { canon, isLimit, pred } from "./op/ordinal";
  * @param n The natural number in `bigint`
  * @returns The result in `bigint`
  */
-export const wainer = (ord: Conway0, n: bigint): bigint => {
+export const wainer = (ord: Ord0, n: bigint): bigint => {
 	if (isZero(ord)) {
 		return n + 1n;
 	}
@@ -32,7 +32,7 @@ export const wainer = (ord: Conway0, n: bigint): bigint => {
  * @param n The natural number in `bigint`
  * @returns The result in `bigint`
  */
-export const hardy = (ord: Conway0, n: bigint): bigint => {
+export const hardy = (ord: Ord0, n: bigint): bigint => {
 	// console.log('hardy', ord, n);
 	if (isZero(ord)) {
 		return n;
@@ -61,7 +61,7 @@ export const hardy = (ord: Conway0, n: bigint): bigint => {
  * @param n The natural number in `bigint`
  * @returns The result in `bigint`
  */
-export const slow = (ord: Conway0, n: bigint): bigint => {
+export const slow = (ord: Ord0, n: bigint): bigint => {
 	// See https://en.wikipedia.org/wiki/Slow-growing_hierarchy
 	if (isZero(ord)) {
 		return 0n;

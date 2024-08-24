@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { Conway } from "../conway";
+import { Conway, type Ord } from "../conway";
 import type { Real } from "../real";
 import { fromReal } from "../op";
 
@@ -103,13 +103,13 @@ export const arbConwayReal = (
 
 export const arbOrd1 = arbConway1(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,
-);
+) as fc.Arbitrary<Ord>;
 export const arbOrd2 = arbConway2(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,
-);
+) as fc.Arbitrary<Ord>;
 export const arbOrd3 = arbConway3(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,
-);
+) as fc.Arbitrary<Ord>;
 
 export const arbDyadic = (n: number) =>
 	fc.integer({ min: -(1 << n), max: 1 << n }).map((x) => x / (1.0 * (1 << n)));
