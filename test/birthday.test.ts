@@ -4,6 +4,7 @@ import { birthday, ensure, mono, mono1, zero } from "../op";
 import { eq, ge, gt, isZero } from "../op/comparison";
 import { isOrdinal, ordinalAdd } from "../op/ordinal";
 import { add } from "../op/arith";
+import type { Conway } from "../conway";
 
 describe("birthday", () => {
 	describe("birthday of real numbers", () => {
@@ -179,7 +180,7 @@ describe("birthday", () => {
 		it("birthday is increasing with respect to number of terms", () => {
 			fc.assert(
 				fc.property(arbConway3(arbFiniteBigint), (x) => {
-					let partialSum = zero;
+					let partialSum: Conway = zero;
 					const partialBirthdays = [];
 					for (const [p, c] of x) {
 						partialSum = partialSum.add(mono(c, p));

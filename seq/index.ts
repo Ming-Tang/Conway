@@ -122,10 +122,8 @@ export const map = <A, B>(f: Seq<A>, func: (value: A) => B): Seq<B> =>
  * ```
  * @param length Length of the sequence, must be a finite ordinal or `unit`
  */
-export const mapNatural = <T>(
-	func: (value: bigint) => T,
-	length = unit as Ord,
-) => new MapNatural<T>(func, length);
+export const mapNatural = <T>(func: (value: bigint) => T, length = unit) =>
+	new MapNatural<T>(func, length);
 
 /**
  * Given a transfinite sequence `f`, construct a transfinite sequence that indexes `f`

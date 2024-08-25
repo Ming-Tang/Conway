@@ -15,7 +15,7 @@ const expLow = (x: Conway0, terms = null as number | null) => {
 		throw new RangeError("terms is null");
 	}
 
-	let sum = zero;
+	let sum: Conway = zero;
 	let f = 1.0;
 	let xPow: Conway0 = one;
 	for (let i = 0; i < terms; i++) {
@@ -37,7 +37,7 @@ export const log1pLow = (x: Conway0, terms = null as number | null) => {
 		throw new RangeError("terms is null");
 	}
 
-	let sum = zero;
+	let sum: Conway = zero;
 	let f = 1.0;
 	let xPow = x;
 	for (let i = 1; i <= terms; i++) {

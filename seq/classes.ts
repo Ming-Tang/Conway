@@ -100,7 +100,7 @@ export class MapNatural<T> implements Seq<T> {
 
 	constructor(
 		readonly func: (value: bigint) => T,
-		readonly length = unit as Ord,
+		readonly length = unit,
 	) {
 		if (gt(length, unit)) {
 			throw new RangeError("Length must be either finite or w");
@@ -404,7 +404,7 @@ export class SeqMap<A, B> implements Seq<B> {
 const indexByPowerPrefix = <T>(
 	seq: Seq<T>,
 	terms: number,
-	initIndex = zero as Ord,
+	initIndex = zero,
 ) => {
 	const concat: ExpansionEntryConstructor<T>[] = [];
 	let index = initIndex;
@@ -412,7 +412,7 @@ const indexByPowerPrefix = <T>(
 		if (ge(index, seq.length)) {
 			break;
 		}
-		const dLen = mono1(i);
+		const dLen: Ord = mono1(i);
 		concat.push([[seq.index(index)], dLen]);
 		index = index.add(dLen);
 	}

@@ -254,7 +254,7 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 		return new SeqExpansion([[[value], length]]);
 	}
 
-	static mono<T>(f: SeqExpansion<T> | T[], reps = one as Ord): SeqExpansion<T> {
+	static mono<T>(f: SeqExpansion<T> | T[], reps = one): SeqExpansion<T> {
 		return new SeqExpansion([[f, reps]]);
 	}
 

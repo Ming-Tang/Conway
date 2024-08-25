@@ -32,7 +32,9 @@ import {
 	ne,
 } from "../op/comparison";
 import { mono, mono1, one, zero, fromReal as real, unit, ensure } from "../op";
-import { add, mult, neg, sub } from "../op/arith";
+import { add as _add, mult as _mult, neg, sub } from "../op/arith";
+const add = _add as (a: Conway0, b: Conway0) => Conway0;
+const mult = _mult as (a: Conway0, b: Conway0) => Conway0;
 
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);

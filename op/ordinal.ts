@@ -30,9 +30,9 @@ const {
 	mono: _mono,
 	mono1: _mono1,
 	ensure: _ensure,
-	zero: _zero,
-	one: _one,
-	unit: _unit,
+	zero,
+	one,
+	unit,
 } = Conway;
 
 // TODO assert ordinal function
@@ -49,22 +49,20 @@ const ensure = _ensure as (x: Ord0) => Ord;
 // TODO type check arguments
 export const ordinalEnsure = ensure;
 
-const zero = _zero as Ord;
 export const ordinalZero: Ord = zero;
 
-const one = _one as Ord;
 export const ordinalOne: Ord = one;
 
-export const ordinalUnit: Ord = _unit as Ord;
+export const ordinalUnit: Ord = unit;
 
 const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
-		return ord.add(other) as Ord;
+		return ord.add(other);
 	}
 
 	const cutoff = other.leadingPower;
 	if (cutoff === null) {
-		return ord.add(other) as Ord;
+		return ord.add(other);
 	}
 
 	return ord.filterTerms((p1) => compare(p1, cutoff) <= 0).add(other) as Ord;
@@ -454,10 +452,10 @@ export const isLimit = (x: Ord0): x is Ord =>
 export const isSucc = (x: Ord0) =>
 	x instanceof Conway ? realIsPositive(x.realPart) : realIsPositive(x);
 
-export const noSucc = (x: Ord0) =>
+export const noSucc = (x: Ord0): Ord0 =>
 	(x instanceof Conway ? sub(x, x.realPart) : 0n) as Ord0;
 
-export const succ = (x: Ord0) => add(x, 1n) as Ord0;
+export const succ = (x: Ord0): Ord0 => add(x, 1n);
 export const pred = (x: Ord0) => sub(x, 1n) as Ord0;
 
 /**

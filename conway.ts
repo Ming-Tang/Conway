@@ -28,6 +28,34 @@ export type Ord0 = Real | Ord;
 
 export type Conway0<IsOrd extends boolean = boolean> = Real | Conway<IsOrd>;
 
+export type InferIsOrdNumber<T extends number | bigint> = T extends
+	| 0n
+	| 0
+	| 1n
+	| 1
+	| 2n
+	| 2
+	| 3n
+	| 3
+	| 4n
+	| 4
+	? true
+	: `${T}` extends `-${string}` | `${string}.${string}`
+		? boolean
+		: number extends T
+			? boolean
+			: bigint extends T
+				? boolean
+				: true;
+
+export type InferIsOrd<T extends Conway0> = T extends Ord0
+	? true
+	: T extends number | bigint
+		? InferIsOrdNumber<T>
+		: T extends { isOrdinal: true }
+			? true
+			: boolean;
+
 const notImplemented = () => {
 	throw new Error("Not implemented. Need to import the correct module.");
 };
@@ -72,11 +100,11 @@ export class Conway<IsOrd extends boolean = boolean> {
 	readonly #terms: Readonly<[Conway0<IsOrd>, Real][]>;
 
 	/** 0 */
-	public static readonly zero: Conway = new Conway();
+	public static readonly zero: Ord = new Conway();
 	/** 1 */
-	public static readonly one: Conway = new Conway([[0n, 1n]]);
+	public static readonly one: Ord = new Conway([[0n, 1n]]);
 	/** omega */
-	public static readonly unit: Conway = new Conway([[1n, 1n]]);
+	public static readonly unit: Ord = new Conway([[1n, 1n]]);
 	/** omega^-1 */
 	public static readonly inverseUnit: Conway = new Conway([[-1n, 1n]]);
 	/** log(omega) = omega^(1/omega) */
@@ -156,19 +184,22 @@ export class Conway<IsOrd extends boolean = boolean> {
 	 * @param value The coefficient in number or bigint.
 	 * @param power The exponent, which is a number, bigint or `Conway`.
 	 */
-	public static mono(value: Real, power: Conway0): Conway {
+	public static mono<R extends Real, P extends Conway0>(
+		value: R,
+		power: P,
+	): Conway<BothIsOrd<InferIsOrd<R>, InferIsOrd<P>>> {
 		if (realIsZero(value)) {
 			return Conway.zero;
 		}
-		return new Conway([[Conway.maybeDowngrade(power), value]], true);
+		return new Conway([[Conway.maybeDowngrade(power), value]], true) as never;
 	}
 
-	public static mono1(power: Conway0): Conway {
-		return new Conway([[Conway.maybeDowngrade(power), realOne]], true);
+	public static mono1<P extends Conway0>(power: P): Conway<InferIsOrd<P>> {
+		return new Conway([[Conway.maybeDowngrade(power), realOne]], true) as never;
 	}
 
-	public static ensure(value: Conway0) {
-		return value instanceof Conway ? value : Conway.real(value);
+	public static ensure<V extends Conway0>(value: V): V & Conway<boolean> {
+		return value instanceof Conway ? value : (Conway.real(value) as never);
 	}
 
 	/**
@@ -584,12 +615,11 @@ export class Conway<IsOrd extends boolean = boolean> {
 		);
 	}
 
-	public add<O1 extends boolean = boolean, O2 extends boolean = boolean>(
-		this: Conway<O1>,
-		other: Conway0<O2>,
-	): Conway<BothIsOrd<O1, O2>> {
+	public add<B extends Conway0 = Conway0>(
+		other: B,
+	): Conway<BothIsOrd<IsOrd, InferIsOrd<B>>> {
 		if (Conway.isZero(other)) {
-			return this as Conway<never>;
+			return this as never;
 		}
 
 		if (!(other instanceof Conway)) {
@@ -632,16 +662,15 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return this.add(other instanceof Conway ? other.neg() : realNeg(other));
 	}
 
-	public mult<O1 extends boolean = boolean, O2 extends boolean = boolean>(
-		this: Conway<O1>,
-		other: Conway0<O2>,
-	): Conway<BothIsOrd<O1, O2>> {
+	public mult<A extends Conway0>(
+		other: A,
+	): Conway<BothIsOrd<IsOrd, InferIsOrd<A>>> {
 		if (Conway.isZero(other)) {
 			return Conway.zero as Conway<never>;
 		}
 
 		if (Conway.isOne(other)) {
-			return this as Conway<never>;
+			return this as never;
 		}
 
 		if (!(other instanceof Conway)) {
@@ -754,13 +783,16 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return value instanceof Conway ? value.neg() : realNeg(value);
 	}
 
-	public static add(left: Conway0, right: Conway0): Conway0 {
+	public static add<A extends Conway0 = Conway0, B extends Conway0 = Conway0>(
+		left: A,
+		right: B,
+	): Conway0<BothIsOrd<InferIsOrd<A>, InferIsOrd<B>>> {
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
 			return realAdd(left, right);
 		}
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
-		return l1.add(r1);
+		return l1.add(r1) as Conway<never>;
 	}
 
 	public static sub(left: Conway0, right: Conway0): Conway0 {
@@ -772,7 +804,10 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return l1.sub(r1);
 	}
 
-	public static mult(left: Conway0, right: Conway0): Conway0 {
+	public static mult<A extends Conway0 = Conway0, B extends Conway0 = Conway0>(
+		left: A,
+		right: B,
+	): Conway0<BothIsOrd<InferIsOrd<A>, InferIsOrd<B>>> {
 		if (typeof left === "bigint" && typeof right === "bigint") {
 			return left * right;
 		}
@@ -781,7 +816,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 		}
 		const l1 = Conway.ensure(left);
 		const r1 = Conway.ensure(right);
-		return l1.mult(r1);
+		return l1.mult(r1) as Conway<never>;
 	}
 
 	// #endregion
@@ -797,7 +832,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 			return Conway.one;
 		}
 
-		let sum = Conway.zero;
+		let sum: Conway = Conway.zero;
 		for (const [e, c] of this.#terms) {
 			if (Conway.isZero(e)) {
 				continue;
@@ -847,14 +882,14 @@ export class Conway<IsOrd extends boolean = boolean> {
 				lastP = pPos;
 				const len = Conway.birthday(dp, realBirthday);
 				// +-^(birthday(dp)) SE(coeff)
-				return (Conway.unit as Ord)
+				return Conway.unit
 					.ordinalMult(len)
 					.ordinalAdd(Conway.sub(bc, 1n) as Ord);
 			}
 
 			// Infinite part
 			const bp = Conway.ensure(p).birthday(realBirthday);
-			return (Conway.mono1(bp) as Ord).ordinalMult(bc);
+			return Conway.mono1(bp).ordinalMult(bc);
 		}) as Ord0;
 	}
 
@@ -992,7 +1027,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 			} else if (e instanceof Conway) {
 				m = `${variable}^[${e.toString()}]`;
 			} else {
-				m = `${variable}^[${e.toString()}]`;
+				m = `${variable}^[${e}]`;
 			}
 
 			if (realIsNegative(c)) {
