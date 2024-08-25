@@ -24,7 +24,7 @@ import {
 	ordinalMono as mono,
 	ordinalMono1 as mono1,
 } from "../op/ordinal";
-import { fromReal, isMono, one, unit, zero } from "../op";
+import { fromReal, isMono, one, unit, zero, ensure as conwayEnsure } from "../op";
 import {
 	eq,
 	ge,
@@ -701,13 +701,13 @@ describe("ordinals", () => {
 
 		it("non-negative integers (number) are ordinals", () => {
 			fc.assert(
-				fc.property(fc.integer(), (i) => ensure(i).isOrdinal === i >= 0),
+				fc.property(fc.integer(), (i) => conwayEnsure(i).isOrdinal === i >= 0),
 			);
 		});
 
 		it("non-negative bigints are ordinals", () => {
 			fc.assert(
-				fc.property(fc.bigInt(), (i) => ensure(i).isOrdinal === i >= 0),
+				fc.property(fc.bigInt(), (i) => conwayEnsure(i).isOrdinal === i >= 0),
 			);
 		});
 	});

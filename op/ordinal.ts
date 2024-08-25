@@ -32,22 +32,32 @@ const {
 	ensure: _ensure,
 	zero,
 	one,
-	unit,
 } = Conway;
 
-// TODO assert ordinal function
+export function assertOrd(x: Conway0): asserts x is Ord0 {
+	if (!isOrdinal(x)) {
+		throw new RangeError("must be an ordinal number");
+	}
+}
 
 const mono1 = _mono1 as (p: Ord0) => Ord;
-// TODO type check arguments
-export const ordinalMono1 = mono1;
+export const ordinalMono1 = (p: Ord0): Ord => {
+	assertOrd(p);
+	return mono1(p);
+};
 
 const mono = _mono as (c: Ord0, p: Ord0) => Ord;
-// TODO type check arguments
-export const ordinalMono = mono;
+export const ordinalMono = (c: Ord0, p: Ord0): Ord => {
+	assertOrd(c);
+	assertOrd(p);
+	return mono(c, p);
+};
 
 const ensure = _ensure as (x: Ord0) => Ord;
-// TODO type check arguments
-export const ordinalEnsure = ensure;
+export const ordinalEnsure = (v: Ord0): Ord => {
+	assertOrd(v);
+	return ensure(v);
+};
 
 const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
