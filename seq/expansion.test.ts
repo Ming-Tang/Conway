@@ -6,12 +6,11 @@ import { SeqExpansion, type ExpansionEntryConstructor } from "./expansion";
 import {
 	ordinalMult,
 	ordinalEnsure as ensure,
-	ordinalZero as zero,
-	ordinalOne as one,
 } from "../op/ordinal";
 import { concat, cycleArray, empty, fromArray } from ".";
 import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "../test/generators";
 import type { Ord } from "../conway";
+import { one, zero } from "../op";
 
 type Value = number;
 const arbValue: fc.Arbitrary<Value> = fc.integer({ min: 0, max: 1000 });

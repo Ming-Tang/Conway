@@ -23,11 +23,8 @@ import {
 	ordinalEnsure as ensure,
 	ordinalMono as mono,
 	ordinalMono1 as mono1,
-	ordinalZero as zero,
-	ordinalOne as one,
-	ordinalUnit as unit,
 } from "../op/ordinal";
-import { fromReal, isMono } from "../op";
+import { fromReal, isMono, one, unit, zero } from "../op";
 import {
 	eq,
 	ge,

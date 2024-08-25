@@ -49,12 +49,6 @@ const ensure = _ensure as (x: Ord0) => Ord;
 // TODO type check arguments
 export const ordinalEnsure = ensure;
 
-export const ordinalZero: Ord = zero;
-
-export const ordinalOne: Ord = one;
-
-export const ordinalUnit: Ord = unit;
-
 const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
 		return ord.add(other);

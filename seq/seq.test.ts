@@ -30,12 +30,10 @@ import {
 	succ,
 	ordinalEnsure as ensure,
 	ordinalMono1 as mono1,
-	ordinalZero as zero,
-	ordinalOne as one,
-	ordinalUnit as unit,
 } from "../op/ordinal";
 import { Conway, type Ord } from "../conway";
 import { assertEq } from "../test/propsTest";
+import { unit, zero, one } from "../op";
 
 // fc.configureGlobal({ numRuns: 2000, verbose: false });
 

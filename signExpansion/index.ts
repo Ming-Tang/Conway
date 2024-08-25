@@ -1,5 +1,5 @@
 import { Conway } from "../conway";
-import { ordinalUnit as unit, ordinalZero as zero } from "../op/ordinal";
+import { zero, unit } from "../op";
 import { neg, sub } from "../op/arith";
 import { isNegative, isOne, isZero } from "../op/comparison";
 import { realAbs, realIsPositive, type Real } from "../real";

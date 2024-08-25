@@ -1,9 +1,5 @@
 import type { Ord } from "../conway";
-import {
-	ordinalOne as one,
-	ordinalUnit as unit,
-	ordinalZero as zero,
-} from "../op/ordinal";
+import { unit, one, zero } from "../op";
 import { isZero } from "../op/comparison";
 import {
 	FromArray,

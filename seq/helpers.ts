@@ -1,10 +1,9 @@
 import type { Conway, Ord } from "../conway";
+import { one, unit } from "../op";
 import { ge, isAboveReals, le } from "../op/comparison";
 import {
 	ordinalDivRem,
 	ordinalEnsure as ensure,
-	ordinalOne as one,
-	ordinalUnit as unit,
 } from "../op/ordinal";
 
 export const ensureOrd = (x: Conway): x is Ord => {
