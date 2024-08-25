@@ -24,76 +24,159 @@ The real coefficients can be `number` or `bigint`.
 The upper limit of this representation is epsilon_0 (`e0 = w^e0`) and the lower
 limit is its negation.
 
-The upper limit of the birthday is the ordinal epsilon_0.
+The upper limit of the birthday is the ordinal $\epsilon_0$.
 
-### Ordinal number: `Conway`
+### Ordinal number: `Ord`
 
 The `Conway` class is re-used for representing ordinal numbers in Cantor normal form.
 
 The `isOrdinal` property determines if a particular value is an ordinal number,
 and there are ordinal arithmetic operations as well.
 
+#### Type-safe tracking of `isOrdinal`
+
+The first type parameter of `Conway` keeps track of a value is definitely an ordinal
+number of not. `Conway<true>` indicates the values of the type are definitely
+ordinal numbers, while `Conway` or `Conway<boolean>` does not care if the values
+are ordinal numbers or not.
+
+The type alias `Ord` is defined to be `Conway`, while `Ord0 = Real | Ord`. Most
+functions that reference to ordinal numbers use these type aliases.
+
+Some functions overload based on the `isOrdinal` property of the arguments to
+determine if the return type is ordinal or not.
+
+These functions are: `mono, mono1, ensure, add, mult`
+
+```typescript
+// positive bigints are inferred to be Ord0
+mult(one, mono1(4n)) // mult(Ord0, Ord0): Ord0
+add(one, 3n) // add(Ord0, Ord0): Ord0
+```
+
 ### Transfinite sequence: `Seq`
 
 A transfinite sequence is a sequence indexed by an ordinal number.
+The index cannot be unwrapped in `Seq`-related APIs.
 
 The `length` property determines the order type of the sequence.
 
 ```typescript
-type Ord = Conway & { isOrdinal: true };
-
 interface Seq<T> {
     length: Ord;
     index(index: Ord): T;
 }
 ```
 
-Example of transfinite sequences:
+#### Constant sequences: `isConstant`
+
+If all elements of a `Seq<T>` equals to the first element, the implementations
+of `Seq<T>` can set the field `isConstant = true`. Some sequence functions will
+take `isConstant` into account simplified the sequences generated.
+
+If the `Seq<T>` has length zero or one, `isConstant` should be `true`.
+
+#### Examples of transfinite sequences
 
 ```typescript
-import {...} from "seq";
+import { ... } from "conway/seq";
 
 // order type w, [1, 2, 3, 1, 2, 3, 1, 2, 3, ...]
 cycleArray([1, 2, 3]);
 
 // order type w + 2, [ 2, 3, 4, 2, 3, 4, ... | 0, 1 ]
 const c2 = concat(cycleArray([2, 3, 4]), fromArray([0, 1]));
-
 c2.index(unit.add(1)); // c2[w + 1] = 1
+
+// Natural numbers reordered with odd numbers before even numbers
+// order type w.2, [ 0, 2, 4, 6, ... | 1, 3, 5, 7, ... ]
+concat(mapNatural((i) => i * 2), mapNatural((i) => i * 2 + 1));
 ```
 
 ## API Design
 
+### Real numbers
+
+Real numbers (type alias `Real`) are represented as JavaScript
+`number` or `bigint`.
+
+### Unwrapped vs. wrapped
+
+Many surreal and ordinal operations take either a real number or
+a `Conway` as an input or output, allowing the caller to avoid
+wrapping finite values using `fromReal` or `ensure` and the function
+can return an unwrapped real number if possible.
+
+The type alias `Conway0` and `Ord0` correspond to either a value in
+either wrapped or unwrapped form.
+
+The exponents in the array of tuple representations of Conway/Cantor
+normal forms area always unwrapped reals if possible.
+
+The `maybeDowngrade` function takes a `Conway` and returns an
+unwrapped `Real` if possible, otherwise the argument itself is
+returned.
+
+```typescript
+type Conway = ...;
+type Conway0 = Conway | Real;
+
+type Ord = ...;
+type Ord0 = Ord | Real;
+```
+
+### Module export
+
+```typescript
+import { ... } from "conway/op";
+
+// sub(a: Conway0, b: Conway0): Conway0
+mult(sub(num1, num2))
+
+sub(3, 2) // => 1 : Real
+```
+
 ### Class method
 
-```typescript
-// num1 : Conway
-num1.add(num2).mult(num3)
-```
+When a module containing the operation is imported, it can be used as a class
+method of `Conway` as well.
 
-`num1` must be `Conway` and if `num1` could be a real number, `ensure` is required
-to wrap it.
-
-### Module exports
+The class methods can take unwrapped values as arguments, but they will never
+return unwrapped values.
 
 ```typescript
-import { ... } from "...";
-// num1 : Conway0
-mult(add(num1, num2))
-```
+// num1, num2 : Conway
+// num.sub : (b: Conway0): Conway
+num1.sub(num2)
 
-Similar to static method
+fromReal(3).sub(1) // => fromReal(2) : Conway
+fromReal(3).sub(fromReal(1)) // => fromReal(2) : Conway
+```
 
 ## Creation
 
 ```typescript
-import { ... } from "op"
+import { ... } from "conway/op"
+
 zero // 0
 one // 1
 unit // w (omega)
 real(r) // real number value
-mono(coeff, exponent) // coeff * w^exponent
-new Conway([[p1, c1], [p2, c2], [p3, c3]]); // from a list of (power, coeff)
+mono(coeff, exponent) // w^exponent . coeff
+mono1(exponent) // w^exponent
+new Conway([[p1, c1], [p2, c2], [p3, c3]]); // from a list of [power, coeff] tuples
+```
+
+`zero`, `one` and `unit` are typed as `Ord` and this can cause type errors for an
+mutable variable intended not to be ordinals. In that case, specify the type
+for the variable explicitly.
+
+```typescript
+let sum: Conway = zero;
+for (...) {
+    const d: Conway = ...;
+    sum = add(sum, d);
+}
 ```
 
 ## Operations
