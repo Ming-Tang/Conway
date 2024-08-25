@@ -3,10 +3,7 @@ import { isPositive, isZero, lt } from "../op/comparison";
 import type { Seq } from "./types";
 import { assertEq } from "../test/propsTest";
 import { SeqExpansion, type ExpansionEntryConstructor } from "./expansion";
-import {
-	ordinalMult,
-	ordinalEnsure as ensure,
-} from "../op/ordinal";
+import { ordinalMult, ordinalEnsure as ensure } from "../op/ordinal";
 import { concat, cycleArray, empty, fromArray } from ".";
 import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "../test/generators";
 import type { Ord } from "../conway";

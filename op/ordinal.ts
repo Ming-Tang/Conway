@@ -61,7 +61,7 @@ export const ordinalEnsure = (v: Ord0): Ord => {
 
 const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
-		return ord.add(other);
+		return ord.add(other as Ord0);
 	}
 
 	const cutoff = other.leadingPower;

@@ -24,7 +24,14 @@ import {
 	ordinalMono as mono,
 	ordinalMono1 as mono1,
 } from "../op/ordinal";
-import { fromReal, isMono, one, unit, zero, ensure as conwayEnsure } from "../op";
+import {
+	fromReal,
+	isMono,
+	one,
+	unit,
+	zero,
+	ensure as conwayEnsure,
+} from "../op";
 import {
 	eq,
 	ge,

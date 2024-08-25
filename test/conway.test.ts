@@ -1,5 +1,11 @@
 import fc from "fast-check";
-import { Conway, type Conway0 } from "../conway";
+import {
+	Conway,
+	type Conway0,
+	type InferIsOrd,
+	type Ord,
+	type Ord0,
+} from "../conway";
 import type { Real } from "../real";
 import {
 	propCommAssoc,
@@ -31,10 +37,17 @@ import {
 	lt,
 	ne,
 } from "../op/comparison";
-import { mono, mono1, one, zero, fromReal as real, unit, ensure } from "../op";
-import { add as _add, mult as _mult, neg, sub } from "../op/arith";
-const add = _add as (a: Conway0, b: Conway0) => Conway0;
-const mult = _mult as (a: Conway0, b: Conway0) => Conway0;
+import {
+	mono,
+	mono1,
+	one,
+	zero,
+	fromReal as real,
+	unit,
+	ensure,
+	maybeDowngrade,
+} from "../op";
+import { add, mult, neg, sub } from "../op/arith";
 
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);
@@ -315,8 +328,8 @@ describe("Conway", () => {
 	) => {
 		(skip ? describe.skip : describe)("arithmetic", () => {
 			describe("add", () => {
-				propIdentity(it, arb, zero, add, eq, { numRuns });
-				propCommAssoc(it, arb, add, eq, { numRuns });
+				propIdentity<Conway0>(it, arb, zero, add, eq, { numRuns });
+				propCommAssoc<Conway0>(it, arb, add, eq, { numRuns });
 
 				it("static method is equivalent to instance method ", () => {
 					fc.assert(
@@ -327,9 +340,9 @@ describe("Conway", () => {
 			});
 
 			describe("mult", () => {
-				propIdentity(it, arb, one, mult, eq, { numRuns });
-				propZero(it, arb, zero, mult, eq, { numRuns });
-				propCommAssoc(it, arb, mult, eq, { numRuns });
+				propIdentity<Conway0>(it, arb, one, mult, eq, { numRuns });
+				propZero<Conway0>(it, arb, zero, mult, eq, { numRuns });
+				propCommAssoc<Conway0>(it, arb, mult, eq, { numRuns });
 
 				it("static method is equivalent to instance method ", () => {
 					fc.assert(
@@ -407,7 +420,7 @@ describe("Conway", () => {
 			});
 
 			describe("distributive", () => {
-				propDist(it, arb, add, mult, eq, { numRuns });
+				propDist<Conway0>(it, arb, add, mult, eq, { numRuns });
 			});
 		});
 	};
@@ -951,3 +964,40 @@ describe("Conway", () => {
 		});
 	});
 });
+
+// Should type check
+function testOrdinalInference() {
+	const constantsOrd: [Ord, Ord, Ord] = [zero, one, unit];
+	const zeroIsOrd: InferIsOrd<0> = true;
+	const negOneIsNotOrd: InferIsOrd<-1> = false;
+	const mono1NonOrd: Conway = mono1(2.5);
+	// @ts-expect-error Cannot cast Conway to Ord
+	const mono1NonOrdError: Ord = mono1(2.5);
+
+	const mono1Ord: Ord = mono1(unit);
+	const monoOrd: Ord = mono(1n, unit);
+	const ensureOrd: Ord = ensure(mono1Ord);
+	const maybeDowngradeOrd0: Ord0 = maybeDowngrade(mono1Ord);
+	const addOrdLiteral: Ord0 = add(unit, 3n);
+	const addOrd1: Ord0 = add(unit, monoOrd);
+	// @ts-expect-error Not an ordinal
+	const addNonOrdLiteral: Ord0 = add(unit, -3n);
+	const multOrdLiteral: Ord0 = mult(unit, 3n);
+	const multOrd1: Ord0 = mult(unit, monoOrd);
+	console.log({
+		constantsOrd,
+		zeroIsOrd,
+		negOneIsNotOrd,
+		mono1NonOrd,
+		mono1NonOrdError,
+		monoOrd,
+		mono1Ord,
+		ensureOrd,
+		maybeDowngradeOrd0,
+		addOrdLiteral,
+		addOrd1,
+		addNonOrdLiteral,
+		multOrdLiteral,
+		multOrd1,
+	});
+}

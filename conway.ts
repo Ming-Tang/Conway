@@ -48,7 +48,7 @@ export type InferIsOrdNumber<T extends number | bigint> = T extends
 				? boolean
 				: true;
 
-export type InferIsOrd<T extends Conway0> = T extends Ord0
+export type InferIsOrd<T extends Conway0> = Ord0 extends T
 	? true
 	: T extends number | bigint
 		? InferIsOrdNumber<T>
