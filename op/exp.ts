@@ -5,6 +5,24 @@ import { sub, mult, add } from "./arith";
 import { eq, isZero } from "./comparison";
 
 /**
+ * `g : No[>0] -> No`
+ * `g(x) = { index(x), g(L(x)) | h(R(x)) }`
+ * `x ~ w^index(x)`
+ */
+const g = (x: Conway0): Conway0 => {
+	return x;
+};
+
+/**
+ * `h : No -> No[>0]`
+ * `h(x) = { 0, h(L(x)) | h(R(x)), w^x/2^k }`
+ * `h` is the inverse of `g`.
+ */
+const h = (x: Conway0): Conway0 => {
+	return x;
+};
+
+/**
  * exp(w^x)
  */
 const expLow = (x: Conway0, terms = null as number | null) => {
@@ -54,7 +72,7 @@ export const log1pLow = (x: Conway0, terms = null as number | null) => {
  *
  * h(x) = x due to x being smaller than epsilon numbers.
  */
-const logInf = (x: Conway0) => ensure(x).sumTerms((p, c) => mult(mono1(p), c));
+const logInf = (x: Conway0) => ensure(x).sumTerms((p, c) => mult(mono1(h(p)), c));
 
 /**
  * Given a surreal number, factor it into `(r w^inf) * (1 + low)`.
@@ -99,7 +117,7 @@ export const exp = (x: Conway0, terms: number | null = null): Conway0 => {
 	// = prod_i w^(w^p_i . c_i)
 	const inf = xp.multTerms((p, c) =>
 		// g(x) = x for below epsilon numbers
-		mono1(mono(c, p)),
+		mono1(mono(c, g(p))),
 	);
 	const r = Math.exp(Number(xr));
 	const low = isZero(xm) ? one : expLow(xm, terms);
