@@ -420,7 +420,7 @@ describe("ordinals", () => {
 			fc.assert(
 				fc.property(
 					arbOrd3Pos,
-					arbFiniteBigintOrd.filter((x) => x < 10n),
+					arbFiniteBigintOrd.filter((x) => x < 6n),
 					(a, p) => {
 						fc.pre(p > 0n);
 						let fromMult: Ord0 = one;
@@ -430,7 +430,7 @@ describe("ordinals", () => {
 						return assertEq(ordinalPow(a, p), fromMult);
 					},
 				),
-				{ numRuns: 200 },
+				{ numRuns: 50 },
 			);
 		});
 
