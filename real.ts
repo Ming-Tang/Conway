@@ -70,6 +70,8 @@ export const realLe = (left: Real, right: Real): boolean => left <= right;
 export const realAbs = <R extends Real = Real>(value: R): R =>
 	realIsNegative(value) ? realNeg(value) : value;
 
+export const realFloorToBigint = (value: Real): bigint =>
+	typeof value === "bigint" ? value : BigInt(Math.floor(value));
 export const realToBigint = (value: Real): bigint => BigInt(value);
 export const realToNumber = (value: Real): number => Number(value);
 

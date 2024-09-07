@@ -72,7 +72,8 @@ export const log1pLow = (x: Conway0, terms = null as number | null) => {
  *
  * h(x) = x due to x being smaller than epsilon numbers.
  */
-const logInf = (x: Conway0) => ensure(x).sumTerms((p, c) => mult(mono1(h(p)), c));
+const logInf = (x: Conway0) =>
+	ensure(x).sumTerms((p, c) => mult(mono1(h(p)), c));
 
 /**
  * Given a surreal number, factor it into `(r w^inf) * (1 + low)`.
