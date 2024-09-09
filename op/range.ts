@@ -2,6 +2,7 @@ import { ensure, mono, one, zero } from ".";
 import { Conway, type Conway0, type Ord0 } from "../conway";
 import {
 	realAbs,
+	realEq,
 	realFloorToBigint,
 	realIsNegative,
 	realIsPositive,
@@ -19,6 +20,7 @@ import { neg } from "./arith";
 import {
 	eq,
 	ge,
+	gt,
 	isAboveReals,
 	isNegative,
 	isPositive,
@@ -29,9 +31,14 @@ import { isOrdinal, succ } from "./ordinal";
 /**
  * Given a surreal number, get the ordinal number equals to its
  * leading prefix of pluses in its sign expansion.
+ *
+ * If `x` is negative, return zero.
+ * If `x` is an ordinal number, return itself.
+ * If `signExpansion(x) = +^k & - & ...`, then
+ * `roundToOrd(x) = k`
  */
 export const roundToOrd = (x: Conway0): Ord0 => {
-	if (!isPositive(x)) {
+	if (isNegative(x) || isZero(x)) {
 		return zero;
 	}
 
@@ -44,13 +51,20 @@ export const roundToOrd = (x: Conway0): Ord0 => {
 	}
 
 	let sum: Conway = zero;
+	let lastReal = realZero;
 	for (const [p, c] of x) {
 		if (isNegative(c)) {
 			break;
 		}
 
+		if (isZero(p)) {
+			lastReal = c;
+		}
+
 		if (isNegative(p)) {
-			sum = sum.add(one);
+			// ... & ++- & ...,
+			// first + for the real and second + for the beginning of infintesimal
+			sum = isPositive(c) && isOrdinal(lastReal) ? sum.add(one) : sum;
 			break;
 		}
 
@@ -89,7 +103,8 @@ export const right = (x: Conway0): Ord0 => {
 		return zero;
 	}
 
-	return succ(roundToOrd(x));
+	const x1 = roundToOrd(x);
+	return gt(x1, x) ? x1 : succ(x1);
 };
 
 export const lcaReal = (a: Real, b: Real) => {

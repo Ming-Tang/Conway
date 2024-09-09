@@ -1,18 +1,28 @@
 import fc from "fast-check";
-import { zero, one, birthday } from "../op";
+import { zero, one, birthday, ensure } from "../op";
 import { right, roundToOrd } from "../op/range";
 import { assertEq } from "./propsTest";
 import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
-import { isOrdinal, succ } from "../op/ordinal";
+import { isOrdinal, pred, succ } from "../op/ordinal";
 import { signExpansion } from "../signExpansion";
-import { ge, gt, isPositive, le, ne } from "../op/comparison";
+import {
+	ge,
+	gt,
+	isNegative,
+	isPositive,
+	isZero,
+	le,
+	ne,
+} from "../op/comparison";
 import { add } from "../op/arith";
+import { ensureOrd } from "../seq/helpers";
+import type { Ord } from "../conway";
 
 describe("roundToOrd", () => {
 	it("roundToOrd(x) = x for ordinals", () => {
 		fc.assert(
 			fc.property(arbOrd3, (x) => {
-				assertEq(roundToOrd(x), x);
+				assertEq(roundToOrd(x), x, "roundToOrd(x)", "x");
 			}),
 		);
 	});
@@ -61,6 +71,32 @@ describe("roundToOrd", () => {
 			}),
 		);
 	});
+
+	it("roundToOrd(o + low) = succ(o) for ordinal number o and positive infinitesimal low", () => {
+		fc.assert(
+			fc.property(
+				arbOrd3,
+				arbConway3(arbFiniteBigint)
+					.map((x) => x.infinitesimalPart)
+					.filter(isPositive),
+				(x, l) =>
+					assertEq(roundToOrd(add(x, l)), succ(x), "roundToOrd(o + low)", "o"),
+			),
+		);
+	});
+
+	it("roundToOrd(o - low) = o for ordinal number o and positive infinitesimal low", () => {
+		fc.assert(
+			fc.property(
+				arbOrd3,
+				arbConway3(arbFiniteBigint)
+					.map((x) => x.infinitesimalPart)
+					.filter(isNegative),
+				(x, l) =>
+					assertEq(roundToOrd(add(x, l)), x, "roundToOrd(o - low)", "o"),
+			),
+		);
+	});
 });
 
 describe("right(x) = {x|}", () => {
@@ -92,14 +128,52 @@ describe("right(x) = {x|}", () => {
 		);
 	});
 
+	it("{o + low|} = succ(o) for ordinal number o and positive infinitesimal low", () => {
+		fc.assert(
+			fc.property(
+				arbOrd3,
+				arbConway3(arbFiniteBigint)
+					.map((x) => x.infinitesimalPart)
+					.filter(isPositive),
+				(x, l) => assertEq(right(add(x, l)), succ(x), "right", "succ"),
+			),
+		);
+	});
+
+	it("{o - low|} = o for ordinal number o and positive infinitesimal low", () => {
+		fc.assert(
+			fc.property(
+				arbOrd3,
+				arbConway3(arbFiniteBigint)
+					.map((x) => x.infinitesimalPart)
+					.filter(isNegative),
+				(x, l) => assertEq(right(add(x, l)), x, "right", "succ"),
+			),
+		);
+	});
+
 	it("signExpansion(right(x)) is all plus", () => {
 		fc.assert(
 			fc.property(arbConway3(arbFiniteBigint), (x) => {
 				const v = signExpansion(right(x));
 				expect(v.isConstant).toBe(true);
-				// console.log(right(x), v);
-				// throw new Error();
 			}),
+		);
+	});
+
+	it("if right(x) = k, then signExpansion(right(x)) has prefix of +^k & - & ... for non-ordinal x", () => {
+		fc.assert(
+			fc.property(
+				arbConway3(arbFiniteBigint).filter((x) => !isZero(x) && !isOrdinal(x)),
+				(x) => {
+					const rx = ensure(right(x)) as Ord;
+					fc.pre(isPositive(rx));
+					const se = signExpansion(x);
+					// console.log(({ x, rx, se }));
+					expect(se.index(zero)).toBe(true);
+					expect(se.index(rx)).toBe(false);
+				},
+			),
 		);
 	});
 
