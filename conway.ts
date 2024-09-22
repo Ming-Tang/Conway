@@ -961,8 +961,12 @@ export class Conway<IsOrd extends boolean = boolean> {
 			);
 	}
 
-	public sumTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Conway0): Conway0 {
-		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.add, Conway.zero);
+	public sumTerms(
+		f: (pow: Conway0<IsOrd>, coeff: Real, index: number) => Conway0,
+	): Conway0 {
+		return this.#terms
+			.map(([p, c], i) => f(p, c, i))
+			.reduce(Conway.add, Conway.zero);
 	}
 
 	public multTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Conway0): Conway0 {
