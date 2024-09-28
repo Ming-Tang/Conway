@@ -1,60 +1,53 @@
 import fc from "fast-check";
 import { birthday, ensure, realBirthday } from "../op";
-import { isAboveReals } from "../op/comparison";
-import { concat, fromArray, type Seq } from "../seq";
-import { minusNumber, plusNumber, signExpansionNumber } from "./real";
+import { concat, fromArray } from "../seq";
+import { minusReal, plusReal, signExpansionReal } from "./real";
 import { assertEq } from "../test/propsTest";
 import { sub } from "../op/arith";
-import { ordinalEnsure, succ } from "../op/ordinal";
-import { arbDyadic } from "../test/generators";
+import { succ } from "../op/ordinal";
+import { arbRealGeneral } from "../test/generators";
+import { realEq, realGt, realLt, realNeg } from "../real";
+import { seqToArray as toArray } from "../test/generators";
 
-const toArray = <T>(x: Seq<T>): T[] => {
-	const n = x.length;
-	if (isAboveReals(n)) {
-		throw new RangeError(`toArray: must have finite length: ${n}`);
-	}
+fc.configureGlobal({ numRuns: 1000, verbose: false });
 
-	return Array(n.realPart)
-		.fill(0)
-		.map((_, i) => x.index(ordinalEnsure(i)));
-};
+const arbReal = arbRealGeneral;
 
-const arbNum = fc.float({ noNaN: true, noDefaultInfinity: true });
-const arbNum16 = arbDyadic(16);
-
-describe("signExpansionNumber", () => {
+describe("signExpansionReal", () => {
 	it("constants", () => {
-		expect(toArray(signExpansionNumber(0))).toEqual([]);
-		expect(toArray(signExpansionNumber(1))).toEqual([true]);
-		expect(toArray(signExpansionNumber(-1))).toEqual([false]);
-		expect(toArray(signExpansionNumber(0.5))).toEqual([true, false]);
-		expect(toArray(signExpansionNumber(0.75))).toEqual([true, false, true]);
-		expect(toArray(signExpansionNumber(-0.5))).toEqual([false, true]);
-		expect(toArray(signExpansionNumber(-0.75))).toEqual([false, true, false]);
+		expect(toArray(signExpansionReal(0))).toEqual([]);
+		expect(toArray(signExpansionReal(1))).toEqual([true]);
+		expect(toArray(signExpansionReal(-1))).toEqual([false]);
+		expect(toArray(signExpansionReal(0.5))).toEqual([true, false]);
+		expect(toArray(signExpansionReal(0.75))).toEqual([true, false, true]);
+		expect(toArray(signExpansionReal(-0.5))).toEqual([false, true]);
+		expect(toArray(signExpansionReal(-0.75))).toEqual([false, true, false]);
+		expect(toArray(signExpansionReal(2))).toEqual([true, true]);
+		expect(toArray(signExpansionReal(-2))).toEqual([false, false]);
+		expect(toArray(signExpansionReal(3))).toEqual([true, true, true]);
+		expect(toArray(signExpansionReal(-3))).toEqual([false, false, false]);
 	});
 
 	it("length equals surreal birthday for integers", () => {
 		fc.assert(
 			fc.property(fc.integer(), (x) =>
-				assertEq(signExpansionNumber(x).length, birthday(x)),
+				assertEq(signExpansionReal(x).length, birthday(x)),
 			),
 		);
 	});
 
 	it("length equals surreal birthday for fractions (n/2^16)", () => {
 		fc.assert(
-			fc.property(arbNum16, (x) =>
-				assertEq(signExpansionNumber(x).length, birthday(x)),
+			fc.property(arbReal, (x) =>
+				assertEq(signExpansionReal(x).length, birthday(x)),
 			),
 		);
 	});
 
 	it("length is within 1 as surreal birthday for fractions", () => {
 		fc.assert(
-			fc.property(arbNum, (x) => {
-				const diff = ensure(
-					sub(signExpansionNumber(x).length, realBirthday(x)),
-				);
+			fc.property(arbReal, (x) => {
+				const diff = ensure(sub(signExpansionReal(x).length, realBirthday(x)));
 				return Math.abs(Number(diff.realPart)) < 2;
 			}),
 		);
@@ -62,9 +55,9 @@ describe("signExpansionNumber", () => {
 
 	it("negation symmetry", () => {
 		fc.assert(
-			fc.property(arbNum16, (x) => {
-				const s1 = toArray(signExpansionNumber(x));
-				const s2 = toArray(signExpansionNumber(-x));
+			fc.property(arbReal, (x) => {
+				const s1 = toArray(signExpansionReal(x));
+				const s2 = toArray(signExpansionReal(-x));
 				expect(s1.map((s) => !s)).toEqual(s2);
 			}),
 		);
@@ -73,25 +66,27 @@ describe("signExpansionNumber", () => {
 
 describe("plus/minus", () => {
 	it("constants (plus)", () => {
-		expect(plusNumber(1)).toBe(2);
-		expect(plusNumber(-1)).toBe(-0.5);
-		expect(plusNumber(-0.5)).toBe(-0.25);
-		expect(plusNumber(0.75)).toBe((1 + 0.75) / 2);
+		expect(plusReal(1)).toBe(2);
+		expect(plusReal(2)).toBe(3);
+		expect(plusReal(-1)).toBe(-0.5);
+		expect(plusReal(-0.5)).toBe(-0.25);
+		expect(plusReal(0.75)).toBe((1 + 0.75) / 2);
 	});
 
 	it("constants (minus)", () => {
-		expect(minusNumber(-1)).toBe(-2);
-		expect(minusNumber(1)).toBe(0.5);
-		expect(minusNumber(0.5)).toBe(0.25);
-		expect(minusNumber(0.75)).toBe((0.5 + 0.75) / 2);
+		expect(minusReal(-1)).toBe(-2);
+		expect(minusReal(-2)).toBe(-3);
+		expect(minusReal(1)).toBe(0.5);
+		expect(minusReal(0.5)).toBe(0.25);
+		expect(minusReal(0.75)).toBe((0.5 + 0.75) / 2);
 	});
 
 	it("|signExpansion(plus(n))| = |signExpansion(n)| + 1", () => {
 		fc.assert(
-			fc.property(arbNum16, (n) =>
+			fc.property(arbReal, (n) =>
 				assertEq(
-					signExpansionNumber(plusNumber(n)).length,
-					succ(signExpansionNumber(n).length),
+					signExpansionReal(plusReal(n)).length,
+					succ(signExpansionReal(n).length),
 				),
 			),
 		);
@@ -99,10 +94,10 @@ describe("plus/minus", () => {
 
 	it("|signExpansion(minus(n))| = |signExpansion(n)| + 1", () => {
 		fc.assert(
-			fc.property(arbNum16, (n) =>
+			fc.property(arbReal, (n) =>
 				assertEq(
-					signExpansionNumber(minusNumber(n)).length,
-					succ(signExpansionNumber(n).length),
+					signExpansionReal(minusReal(n)).length,
+					succ(signExpansionReal(n).length),
 				),
 			),
 		);
@@ -110,19 +105,21 @@ describe("plus/minus", () => {
 
 	it("signExpansion(plus(n)) = signExpansion(n) & (+)", () => {
 		fc.assert(
-			fc.property(arbNum16, (n) =>
-				expect(toArray(signExpansionNumber(plusNumber(n)))).toEqual(
-					toArray(concat(signExpansionNumber(n), fromArray([true]))),
-				),
-			),
+			fc.property(arbReal, (n) => {
+				// console.log({ n, n1: plusReal(n)});
+				// console.log({ n: toArray(signExpansionReal(n)), n1: toArray(signExpansionReal(plusReal(n))) });
+				return expect(toArray(signExpansionReal(plusReal(n)))).toEqual(
+					toArray(concat(signExpansionReal(n), fromArray([true]))),
+				);
+			}),
 		);
 	});
 
 	it("signExpansion(minus(n)) = signExpansion(n) & (-)", () => {
 		fc.assert(
-			fc.property(arbNum16, (n) =>
-				expect(toArray(signExpansionNumber(minusNumber(n)))).toEqual(
-					toArray(concat(signExpansionNumber(n), fromArray([false]))),
+			fc.property(arbReal, (n) =>
+				expect(toArray(signExpansionReal(minusReal(n)))).toEqual(
+					toArray(concat(signExpansionReal(n), fromArray([false]))),
 				),
 			),
 		);
@@ -132,7 +129,7 @@ describe("plus/minus", () => {
 		fc.assert(
 			fc.property(
 				fc.integer({ min: 0, max: 1000 }),
-				(n) => plusNumber(n) === n + 1,
+				(n) => plusReal(n) === n + 1,
 			),
 		);
 	});
@@ -141,7 +138,7 @@ describe("plus/minus", () => {
 		fc.assert(
 			fc.property(
 				fc.integer({ min: 0, max: 1000 }).map((n) => -n),
-				(n) => minusNumber(n) === n - 1,
+				(n) => minusReal(n) === n - 1,
 			),
 		);
 	});
@@ -150,20 +147,16 @@ describe("plus/minus", () => {
 		fc.assert(
 			fc.property(
 				fc.float({ noInteger: false, noNaN: true, noDefaultInfinity: true }),
-				(n) => expect(plusNumber(n)).toBe(-minusNumber(-n)),
+				(n) => realEq(plusReal(n), realNeg(minusReal(-n))),
 			),
 		);
 	});
 
 	it("plus(n) > n", () => {
-		fc.assert(
-			fc.property(arbNum16, (n) => expect(plusNumber(n)).toBeGreaterThan(n)),
-		);
+		fc.assert(fc.property(arbReal, (n) => realGt(plusReal(n), n)));
 	});
 
 	it("minus(n) < n", () => {
-		fc.assert(
-			fc.property(arbNum16, (n) => expect(minusNumber(n)).toBeLessThan(n)),
-		);
+		fc.assert(fc.property(arbReal, (n) => realLt(minusReal(n), n)));
 	});
 });

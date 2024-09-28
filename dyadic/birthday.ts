@@ -43,6 +43,9 @@ export const plus = (p: Dyadic): Dyadic => {
 
 export const minus = (p: Dyadic): Dyadic => neg(plus(neg(p)));
 
+export const withSign = (p: Dyadic, sign: boolean) =>
+	sign ? plus(p) : minus(p);
+
 /**
  * Given a Dyadic within `(0, 1]`,
  * return the sign expansion as a `Generator` of booleans without

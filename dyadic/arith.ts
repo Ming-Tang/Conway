@@ -1,5 +1,4 @@
 import { dyadicEq, dyadicFromNumber } from ".";
-import { toMixed } from "./birthday";
 import { Dyadic } from "./class";
 
 export const zero = Dyadic.ZERO;

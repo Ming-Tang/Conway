@@ -10,6 +10,17 @@ import {
 	maybeSimplifyConst,
 	type Seq,
 } from "../seq";
+import {
+	Dyadic,
+	dyadicAbs,
+	dyadicFromNumber,
+	dyadicIsSafeNumber,
+	dyadicMinus,
+	dyadicNeg,
+	dyadicPlus,
+	dyadicSignExpansionFrac,
+	dyadicToMixed,
+} from "../dyadic";
 
 const cycleArray0 = <T>(xs: T[], mult: Ord) => {
 	if (isZero(mult) || xs.length === 0) {
@@ -46,41 +57,37 @@ export const fracSignExpansion = (
 	return [mid, half];
 };
 
-export const plusNumber = (r: number): number => {
-	if (r >= 0 && Number.isInteger(r)) {
-		return r + 1;
+export const dyadicOrNumber = (d: Dyadic): Real =>
+	dyadicIsSafeNumber(d) ? d.quotient : d.isInteger ? d.bigintQuotient : d;
+
+const plusNumber = (r: number): Real =>
+	dyadicOrNumber(dyadicPlus(dyadicFromNumber(r)));
+
+const minusNumber = (r: number): Real =>
+	dyadicOrNumber(dyadicMinus(dyadicFromNumber(r)));
+
+export const plusReal = (r: Real): Real => {
+	if (r instanceof Dyadic) {
+		return dyadicPlus(r);
 	}
 
-	const isPositive = r > 0;
-	const pos = isPositive ? r : -r;
-	const half =
-		Number.isInteger(r) && r < 0
-			? 0.5
-			: fracSignExpansion(pos - Math.floor(pos))[1];
-	// console.log({ r, init: pos - Math.floor(pos), pos, half });
-	return r + half;
-};
-
-export const minusNumber = (r: number): number => -plusNumber(-r);
-
-export const plus = (r: Real): Real => {
 	if (typeof r === "bigint" && r >= 0n) {
 		return r + 1n;
 	}
 	return plusNumber(Number(r));
 };
 
-export const minus = (r: Real): Real => {
+export const minusReal = (r: Real): Real => {
+	if (r instanceof Dyadic) {
+		return dyadicMinus(r);
+	}
 	if (typeof r === "bigint" && r <= 0n) {
 		return r - 1n;
 	}
 	return minusNumber(Number(r));
 };
 
-export const signExpansionNumber = (
-	r: number,
-	omitInitial = false,
-): Seq<Sign> => {
+const signExpansionNumber = (r: number, omitInitial = false): Seq<Sign> => {
 	if (r === 0) {
 		return empty as Seq<Sign>;
 	}
@@ -89,25 +96,32 @@ export const signExpansionNumber = (
 		throw new RangeError(`Not a finite number: ${r}`);
 	}
 
-	const isPositive = r > 0;
-	const integerPart = r < 0 ? Math.floor(-r) : Math.floor(r);
-	const fracPart = r < 0 ? -r - integerPart : r - integerPart;
-	const integerSigns = cycleArray0(
-		[isPositive],
-		ensure(omitInitial && integerPart ? integerPart - 1 : integerPart),
-	);
-	if (fracPart === 0) {
-		return integerSigns;
+	return signExpansionDyadic(dyadicFromNumber(r), omitInitial);
+};
+
+export const signExpansionDyadic = (
+	d: Dyadic,
+	omitInitial = false,
+): Seq<Sign> => {
+	if (d.isZero) {
+		return empty as Seq<Sign>;
 	}
 
-	const fracSigns: Sign[] = [];
-	fracSignExpansion(fracPart, (s) => fracSigns.push(s === isPositive));
+	const isPositive = d.isPositive;
+	const abs = dyadicAbs(d);
+	if (abs.isInteger) {
+		const ip = abs.bigintQuotient;
+		return cycleArray0([isPositive], ensure(omitInitial ? ip - 1n : ip));
+	}
+
+	const [integerPart, fracPart] = dyadicToMixed(abs);
+	const fracSigns: Sign[] = [...dyadicSignExpansionFrac(fracPart)];
 	return concat(
 		cycleArray0(
 			[isPositive],
-			ensure(omitInitial ? integerPart : integerPart + 1),
+			ensure(omitInitial ? integerPart : integerPart + 1n),
 		),
-		fromArray(fracSigns),
+		fromArray(isPositive ? fracSigns : fracSigns.map((x) => !x)),
 	);
 };
 
@@ -121,10 +135,12 @@ export const signExpansionBigint = (
 	if (r > 0) {
 		return cycleArray0([true], ensure(omitInitial && r ? r - 1n : r));
 	}
-	return cycleArray0([false], ensure(omitInitial && r ? r + 1n : -r));
+	return cycleArray0([false], ensure(omitInitial && r ? -r + 1n : -r));
 };
 
 export const signExpansionReal = (r: Real, omitInitial = false): Seq<Sign> =>
-	typeof r === "bigint"
-		? signExpansionBigint(r, omitInitial)
-		: signExpansionNumber(r, omitInitial);
+	r instanceof Dyadic
+		? signExpansionDyadic(r, omitInitial)
+		: typeof r === "bigint"
+			? signExpansionBigint(r, omitInitial)
+			: signExpansionNumber(r, omitInitial);

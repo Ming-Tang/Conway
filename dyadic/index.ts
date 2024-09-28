@@ -15,6 +15,7 @@ export {
 	toMixed as dyadicToMixed,
 	plus as dyadicPlus,
 	minus as dyadicMinus,
+	withSign as dyadicWithSign,
 	lca as dyadicLca,
 	signExpansionFrac as dyadicSignExpansionFrac,
 } from "./birthday";

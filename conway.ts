@@ -1,3 +1,4 @@
+import { Dyadic, dyadicCompare } from "./dyadic";
 import {
 	realAdd,
 	realBirthday,
@@ -12,6 +13,7 @@ import {
 	realSign,
 	realSub,
 	realToBigint,
+	realToJson,
 	realZero,
 	type Real,
 } from "./real";
@@ -510,17 +512,22 @@ export class Conway<IsOrd extends boolean = boolean> {
 	// #endregion
 	// #region Properties (static)
 
-	// TODO also ensures is ordinal
 	public static isZero(value: Conway0): boolean {
 		return (
-			value === 0 || value === 0n || (value instanceof Conway && value.isZero)
+			(value instanceof Dyadic && value.isZero) ||
+			value === 0 ||
+			value === 0n ||
+			(value instanceof Conway && value.isZero)
 		);
 	}
 
 	// TODO also ensures is ordinal
 	public static isOne(value: Conway0): boolean {
 		return (
-			value === 1 || value === 1n || (value instanceof Conway && value.isOne)
+			(value instanceof Dyadic && value.isOne) ||
+			value === 1 ||
+			value === 1n ||
+			(value instanceof Conway && value.isOne)
 		);
 	}
 
@@ -553,6 +560,10 @@ export class Conway<IsOrd extends boolean = boolean> {
 	}
 
 	public static isOrdinal(value: Conway0): value is Ord0 {
+		if (value instanceof Dyadic) {
+			return value.isInteger && !value.isNegative;
+		}
+
 		return (
 			(typeof value === "bigint" && value >= 0n) ||
 			(typeof value === "number" && value >= 0 && Number.isInteger(value)) ||
@@ -779,7 +790,8 @@ export class Conway<IsOrd extends boolean = boolean> {
 	// #endregion
 	// #region Arithmetic (static)
 
-	public static neg(value: Conway0): Conway0 {
+	public static neg<T extends Conway0 = Conway0>(value: T): T {
+		// @ts-ignore Preserves input type
 		return value instanceof Conway ? value.neg() : realNeg(value);
 	}
 
@@ -986,7 +998,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	}
 
 	public toJson(preserveBigint = false): {
-		t: { e: unknown; c: string | Real }[];
+		t: { e: unknown; c: string | unknown }[];
 		oh: string;
 		eh: number;
 	} {
@@ -997,12 +1009,8 @@ export class Conway<IsOrd extends boolean = boolean> {
 				e:
 					e instanceof Conway
 						? e.toJson(preserveBigint)
-						: preserveBigint
-							? c
-							: typeof e === "bigint"
-								? `${e}n`
-								: e,
-				c: preserveBigint ? c : typeof c === "bigint" ? `${c}n` : c,
+						: realToJson(e, preserveBigint),
+				c: realToJson(c, preserveBigint),
 			})),
 		};
 	}
@@ -1182,6 +1190,14 @@ export class Conway<IsOrd extends boolean = boolean> {
 		if (left === right) {
 			return 0;
 		}
+		if (
+			(left instanceof Dyadic || right instanceof Dyadic) &&
+			!(left instanceof Conway) &&
+			!(right instanceof Conway)
+		) {
+			return realCompare(left, right);
+		}
+
 		if (typeof left === "bigint" && typeof right === "bigint") {
 			const d = right - left;
 			return d === 0n ? 0 : d > 0n ? 1 : -1;

@@ -79,8 +79,8 @@ export class Dyadic {
 		return Number(this.numerator) / Number(1n << this.power);
 	}
 
-	public toString() {
-		return `[Dyadic numerator=${this.numerator}, power=${this.power}, quotient=${this.quotient}]`;
+	public toString(radix?: number) {
+		return this.quotient.toString(radix);
 	}
 
 	public [Symbol.toPrimitive](hint: string) {
