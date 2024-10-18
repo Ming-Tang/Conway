@@ -4,6 +4,7 @@ import {
 	realBirthday,
 	realCompare,
 	realEq,
+	realEqHash,
 	realIsNegative,
 	realIsOne,
 	realIsPositive,
@@ -15,7 +16,6 @@ import {
 	realSub,
 	realToBigint,
 	realToJson,
-	realToString,
 	realZero,
 	type Real,
 } from "./real";
@@ -595,45 +595,11 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return value instanceof Conway ? value.realValue : value;
 	}
 
-	static #EQ_HASH_CACHE = new Map<Real, number>([]);
-
-	private static realEqHash(value: Real): number {
-		if (realIsZero(value)) {
-			return 0;
-		}
-
-		const found = Conway.#EQ_HASH_CACHE.get(value);
-		if (typeof found === "number") {
-			return found;
-		}
-
-		const s = realToString(value) as string;
-		const MASK = 0xffff_ffff;
-		const MULT = 31;
-		let h = 0;
-		for (let i = 0; i < s.length; i++) {
-			h = MULT * h + s.charCodeAt(i);
-			h = h & MASK;
-		}
-
-		if (typeof value === "bigint" && value > -256n && value < 256n) {
-			Conway.#EQ_HASH_CACHE.set(value, h);
-		} else if (
-			typeof value === "number" &&
-			Number.isInteger(value) &&
-			value > -256 &&
-			value < 256
-		) {
-			Conway.#EQ_HASH_CACHE.set(value, h);
-		}
-		return h;
-	}
-
 	public static eqHash(value: Conway0): number {
 		if (value instanceof Conway) {
 			return value.eqHash;
 		}
-		return Conway.realEqHash(value);
+		return realEqHash(value);
 	}
 
 	// #endregion

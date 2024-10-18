@@ -16,7 +16,6 @@ import {
 	dyadicFromNumber,
 	dyadicIsSafeNumber,
 	dyadicMinus,
-	dyadicNeg,
 	dyadicPlus,
 	dyadicSignExpansionFrac,
 	dyadicToMixed,

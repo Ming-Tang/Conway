@@ -84,12 +84,17 @@ export class Dyadic {
 	}
 
 	public toString(radix?: number) {
-		return this.quotient.toString(radix);
+		return (this.isInteger ? this.bigintQuotient : this.quotient).toString(
+			radix,
+		);
 	}
 
 	public [Symbol.toPrimitive](hint: string) {
 		if (hint === "string") {
 			return this.toString();
+		}
+		if (hint === "bigint") {
+			return this.bigintQuotient.toString();
 		}
 		return this.quotient;
 	}

@@ -289,3 +289,36 @@ export const realToString = (value: Real) => {
 	}
 	return `${value}`;
 };
+
+const EQ_HASH_CACHE = new Map<Real, number>([]);
+export const realEqHash = (value: Real): number => {
+	if (realIsZero(value)) {
+		return 0;
+	}
+
+	const found = EQ_HASH_CACHE.get(value);
+	if (typeof found === "number") {
+		return found;
+	}
+
+	const s = realToString(value) as string;
+	const MASK = 0xffff_ffff;
+	const MULT = 31;
+	let h = 0;
+	for (let i = 0; i < s.length; i++) {
+		h = MULT * h + s.charCodeAt(i);
+		h = h & MASK;
+	}
+
+	if (typeof value === "bigint" && value > -256n && value < 256n) {
+		EQ_HASH_CACHE.set(value, h);
+	} else if (
+		typeof value === "number" &&
+		Number.isInteger(value) &&
+		value > -256 &&
+		value < 256
+	) {
+		EQ_HASH_CACHE.set(value, h);
+	}
+	return h;
+};

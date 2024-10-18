@@ -49,6 +49,23 @@ describe("constructor", () => {
 	});
 });
 
+describe("fromBigint", () => {
+	it("equal to bigintQuotient", () => {
+		fc.assert(
+			fc.property(fc.bigInt(), (n) => dyadicFromBigint(n).bigintQuotient === n),
+		);
+	});
+
+	it("equal in toString forms", () => {
+		fc.assert(
+			fc.property(
+				fc.bigInt(),
+				(n) => dyadicFromBigint(n).toString() === n.toString(),
+			),
+		);
+	});
+});
+
 describe("fromNumber", () => {
 	it("equal to quotient", () => {
 		fc.assert(

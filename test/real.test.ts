@@ -2,6 +2,7 @@ import fc from "fast-check";
 import {
 	realCompare,
 	realEq,
+	realEqHash,
 	realGe,
 	realGt,
 	realIsZero,
@@ -9,14 +10,33 @@ import {
 	realLt,
 	realNe,
 	realToString,
+	type Real,
 } from "../real";
 import { arbRealGeneral } from "./generators";
 import { propTotalOrder } from "./propsTest";
-import { Dyadic, dyadicOne, dyadicZero } from "../dyadic";
+import {
+	Dyadic,
+	dyadicFromBigint,
+	dyadicFromNumber,
+	dyadicOne,
+	dyadicZero,
+} from "../dyadic";
 
 const arbReal = arbRealGeneral;
 const arbZero = fc.constantFrom(dyadicZero, 0n, +0, -0, 0);
 const arbOne = fc.constantFrom(dyadicOne, 1n, +1, +1.0);
+
+const arbEqRealPair = fc.oneof(
+	arbReal.map((x) => [x, x] as [Real, Real]),
+	fc.tuple(arbZero, arbZero),
+	fc.tuple(arbOne, arbOne),
+	fc.integer().map((n) => [n, BigInt(n)] as [Real, Real]),
+	fc.bigInt().map((n) => [n, dyadicFromBigint(n)] as [Real, Real]),
+	fc
+		.float({ noNaN: true, noInteger: false, min: -1e7, max: 1e7 })
+		.filter((x) => Number.isFinite(x) && +dyadicFromNumber(x) === x)
+		.map((x) => [x, dyadicFromNumber(x)] as [Real, Real]),
+);
 
 describe("real ordering", () => {
 	describe("total order", () => {
@@ -102,10 +122,70 @@ describe("real ordering", () => {
 	});
 });
 
+describe("arbEqRealPair", () => {
+	it("both values are equal", () => {
+		fc.assert(fc.property(arbEqRealPair, ([a, b]) => realEq(a, b)));
+	});
+
+	it("both values have same toString", () => {
+		fc.assert(
+			fc.property(
+				arbEqRealPair,
+				([a, b]) => realToString(a) === realToString(b),
+			),
+		);
+	});
+});
+
 describe("realToString", () => {
 	it("dyadic vs bigint", () => {
 		expect(realToString(1n)).toBe(realToString(Dyadic.ONE));
 		expect(realToString(-1n)).toBe(realToString(Dyadic.NEG_ONE));
 		expect(realToString(-1.0)).toBe(realToString(Dyadic.NEG_ONE));
+	});
+});
+
+describe("realEqHash", () => {
+	it("equal value implies same eqHash", () => {
+		fc.assert(
+			fc.property(
+				arbReal,
+				arbReal,
+				(a, b) => !realEq(a, b) || realEqHash(a) === realEqHash(b),
+			),
+		);
+	});
+
+	it("different eqHash implies not equals", () => {
+		fc.assert(
+			fc.property(arbReal, arbReal, (a, b) => {
+				fc.pre(realEqHash(a) !== realEqHash(b));
+				return realNe(a, b);
+			}),
+		);
+	});
+
+	it("equal toString implies same eqHash", () => {
+		fc.assert(
+			fc.property(
+				arbReal,
+				arbReal,
+				(a, b) =>
+					realToString(a) !== realToString(b) ||
+					realEqHash(a) === realEqHash(b),
+			),
+		);
+	});
+
+	it("realEqHash(number) = realEqHash(bigint) of same value", () => {
+		fc.assert(
+			fc.property(fc.integer(), (n) => realEqHash(n) === realEqHash(BigInt(n))),
+		);
+	});
+
+	it("arbEqRealPair have same hash", () => {
+		fc.assert(
+			fc.property(arbEqRealPair, ([a, b]) => realEqHash(a) === realEqHash(b)),
+		);
 	});
 });
