@@ -285,7 +285,7 @@ export const realToJson = (
 
 export const realToString = (value: Real) => {
 	if (value instanceof Dyadic) {
-		return value.toString()
+		return value.toString();
 	}
 	return `${value}`;
-}
+};

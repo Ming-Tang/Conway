@@ -7,13 +7,18 @@ import {
 	dyadicLca,
 } from "../dyadic";
 import {
+	realAbs,
 	realCeilingToBigint,
 	realEq,
 	realFloorToBigint,
 	realIsNegative,
+	realIsPositive,
 	realIsZero,
+	realLe,
 	realNeg,
+	realNegOne,
 	realOne,
+	realToBigint,
 	realZero,
 	type Real,
 } from "../real";

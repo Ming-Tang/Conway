@@ -1,7 +1,23 @@
 import fc from "fast-check";
 import { Conway, type Ord } from "../conway";
-import type { Real } from "../real";
+import { realToNumber, type Real } from "../real";
 import { fromReal } from "../op";
+import { Dyadic, dyadicWithSign, dyadicZero } from "../dyadic";
+import { signExpansionDyadic } from "../signExpansion/real";
+import { isAboveReals } from "../op/comparison";
+import { ordinalEnsure } from "../op/ordinal";
+import type { Seq } from "../seq";
+
+export const seqToArray = <T>(x: Seq<T>): T[] => {
+	const n = x.length;
+	if (isAboveReals(n)) {
+		throw new RangeError(`toArray: must have finite length: ${n}`);
+	}
+
+	return Array(realToNumber(n.realPart))
+		.fill(0)
+		.map((_, i) => x.index(ordinalEnsure(i)));
+};
 
 export const arbFinite = fc.float({
 	min: -1e3,

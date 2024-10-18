@@ -1,19 +1,11 @@
 import fc from "fast-check";
-import { zero, one, birthday, ensure, mono1, mono, unit, termAt } from "../op";
-import { lca, plus, prefixDecompose, right, roundToOrd } from "../op/range";
+import { zero, one, birthday, ensure, mono1, mono } from "../op";
+import { right, roundToOrd } from "../op/range";
 import { assertEq } from "./propsTest";
-import {
-	arbConway1,
-	arbConway3,
-	arbDyadic,
-	arbFiniteBigint,
-	arbOrd3,
-	arbRealGeneral,
-} from "./generators";
+import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
 import { isOrdinal, succ } from "../op/ordinal";
 import { signExpansion } from "../signExpansion";
 import {
-	eq,
 	ge,
 	gt,
 	isNegative,
@@ -23,10 +15,8 @@ import {
 	lt,
 	ne,
 } from "../op/comparison";
-import { add, neg } from "../op/arith";
-import type { Conway, Conway0, Ord } from "../conway";
-import { realPlus } from "../signExpansion/real";
-import { realAdd, realOne, realZero } from "../real";
+import { add } from "../op/arith";
+import type { Ord } from "../conway";
 
 fc.configureGlobal({ numRuns: 1000, verbose: true });
 
