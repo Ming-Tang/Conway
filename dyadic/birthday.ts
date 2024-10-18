@@ -1,5 +1,5 @@
 import { abs, add, fromBigint, half, neg, one, sub, zero } from "./arith";
-import { Dyadic } from "./class";
+import { type Dyadic, dyadicNew } from "./class";
 import { eq, ge, gt, lt, ne } from "./comp";
 
 export const toMixed = (p: Dyadic): [bigint, Dyadic] => {
@@ -35,10 +35,10 @@ export const plus = (p: Dyadic): Dyadic => {
 	}
 
 	if (p.isNegative || !p.isInteger) {
-		return new Dyadic((p.numerator << 1n) + 1n, p.power + 1n);
+		return dyadicNew((p.numerator << 1n) + 1n, p.power + 1n);
 	}
 
-	return new Dyadic(p.numerator + (1n << p.power), p.power);
+	return dyadicNew(p.numerator + (1n << p.power), p.power);
 };
 
 export const minus = (p: Dyadic): Dyadic => neg(plus(neg(p)));

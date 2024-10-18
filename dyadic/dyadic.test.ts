@@ -1,6 +1,7 @@
 import fc from "fast-check";
 import {
 	Dyadic,
+	dyadicEq,
 	dyadicFromBigint,
 	dyadicFromNumber,
 	dyadicMult,
@@ -23,6 +24,7 @@ import {
 } from "./birthday";
 import { abs, add, half, isSafeNumber, neg, negOne, one, zero } from "./arith";
 import { compare, eq, ge, le, lt, gt } from "./comp";
+import { dyadicNew } from "./class";
 
 fc.configureGlobal({ numRuns: 2000, verbose: false });
 
@@ -30,7 +32,7 @@ const arbBigint = fc.bigInt({ min: -1n << 32n, max: 1n << 32n });
 
 const arbDyadic = fc
 	.tuple(arbBigint, fc.bigInt({ min: -(1n << 8n), max: 1n << 8n }))
-	.map(([x, y]) => new Dyadic(x, y));
+	.map(([x, y]) => dyadicNew(x, y));
 
 const arbNumber = fc.float({
 	noDefaultInfinity: true,
@@ -41,7 +43,7 @@ const arbNumber = fc.float({
 
 describe("constructor", () => {
 	it("if numerator is zero, power is zero", () => {
-		fc.assert(fc.property(fc.bigInt(), (x) => new Dyadic(0n, x).power === 0n));
+		fc.assert(fc.property(fc.bigInt(), (x) => dyadicNew(0n, x).power === 0n));
 	});
 
 	it("power is never negative", () => {
@@ -72,6 +74,30 @@ describe("fromNumber", () => {
 			fc.property(arbNumber, (x) => {
 				expect(dyadicFromNumber(x).quotient).toBeCloseTo(x);
 			}),
+		);
+	});
+
+	it("equivalence: dyadicEq(dyadicNew(p, q), dyadicNew(p << r, q + r))", () => {
+		fc.assert(
+			fc.property(
+				fc.bigInt(),
+				fc.bigInt({ min: 0n, max: 512n }),
+				fc.bigInt({ min: 0n, max: 16n }),
+				(p, q, r) => dyadicEq(dyadicNew(p, q), dyadicNew(p << r, q + r)),
+			),
+		);
+	});
+});
+
+describe("dyadicNew interning", () => {
+	it("dyadicNew returns interned value within range (-128, 128), (0, 8)", () => {
+		fc.assert(
+			fc.property(
+				fc.bigInt({ min: -128n, max: 128n }),
+				fc.bigInt({ min: 0n, max: 8n }),
+				// biome-ignore lint/suspicious/noSelfCompare: ensure reference equality
+				(p, q) => dyadicNew(p, q) === dyadicNew(p, q),
+			),
 		);
 	});
 });
@@ -166,7 +192,7 @@ describe("birthday", () => {
 		fc.assert(
 			fc.property(
 				arbBigint.filter((n) => n >= 0n),
-				(n) => expect(birthday(new Dyadic(1n, n))).toBe(n + 1n),
+				(n) => expect(birthday(dyadicNew(1n, n))).toBe(n + 1n),
 			),
 		);
 	});
@@ -176,7 +202,7 @@ describe("birthday", () => {
 			fc.property(
 				arbBigint.filter((n) => n > 0n),
 				(n) =>
-					birthday(new Dyadic(1n, n + 1n)) === birthday(new Dyadic(1n, n)) + 1n,
+					birthday(dyadicNew(1n, n + 1n)) === birthday(dyadicNew(1n, n)) + 1n,
 			),
 		);
 	});
@@ -216,7 +242,7 @@ describe("plus", () => {
 	it("constants", () => {
 		expect(plus(zero)).toEqual(one);
 		expect(plus(one)).toEqual(dyadicFromBigint(2n));
-		expect(plus(half)).toEqual(new Dyadic(3n, 2n));
+		expect(plus(half)).toEqual(dyadicNew(3n, 2n));
 		expect(plus(negOne)).toEqual(neg(half));
 	});
 
@@ -281,9 +307,9 @@ describe("lca", () => {
 
 	it("constants (fractions 1)", () => {
 		// 0.5 = [+-], 1.5 = [++-], lca(0.5, 1.5) = 1
-		expect(lca(new Dyadic(1n, 2n), new Dyadic(3n, 1n))).toEqual(one);
+		expect(lca(dyadicNew(1n, 2n), dyadicNew(3n, 1n))).toEqual(one);
 		// lca(1.5, 2) = 2
-		expect(lca(new Dyadic(3n, 1n), dyadicFromBigint(2n))).toEqual(
+		expect(lca(dyadicNew(3n, 1n), dyadicFromBigint(2n))).toEqual(
 			dyadicFromBigint(2n),
 		);
 		// lca(0.5, 2) = 1
@@ -294,11 +320,11 @@ describe("lca", () => {
 
 	it("constants (fractions 2)", () => {
 		// lca(0.25, 0.75) = 0.5
-		expect(lca(new Dyadic(1n, 2n), new Dyadic(3n, 2n))).toEqual(half);
+		expect(lca(dyadicNew(1n, 2n), dyadicNew(3n, 2n))).toEqual(half);
 		// lca(0.25, 1) = 1
-		expect(lca(new Dyadic(1n, 2n), dyadicFromBigint(1n))).toEqual(one);
+		expect(lca(dyadicNew(1n, 2n), dyadicFromBigint(1n))).toEqual(one);
 		// lca(0.25, 2) = 1
-		expect(lca(new Dyadic(1n, 2n), dyadicFromBigint(2n))).toEqual(one);
+		expect(lca(dyadicNew(1n, 2n), dyadicFromBigint(2n))).toEqual(one);
 	});
 
 	it("a <= lca(a, b) <= b", () => {
@@ -390,7 +416,7 @@ describe("isSafeNumber", () => {
 			fc.bigInt({ min: -(1n << 64n), max: 1n << 64n }),
 			fc.bigInt({ min: -32n, max: 32n }),
 		)
-		.map(([x, y]) => new Dyadic(x, y));
+		.map(([x, y]) => dyadicNew(x, y));
 
 	it("isSafeNumber(x) implies fromNumber(x.quotient) = x", () => {
 		fc.assert(

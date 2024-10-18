@@ -1,5 +1,5 @@
 import { dyadicEq, dyadicFromNumber } from ".";
-import { Dyadic } from "./class";
+import { Dyadic, dyadicNew } from "./class";
 
 export const zero = Dyadic.ZERO;
 export const one = Dyadic.ONE;
@@ -10,7 +10,7 @@ export const isOne = (a: Dyadic) => a.isOne;
 export const isPositive = (a: Dyadic) => a.isPositive;
 export const isNegative = (a: Dyadic) => a.isNegative;
 
-export const fromBigint = (a: bigint): Dyadic => new Dyadic(a);
+export const fromBigint = (a: bigint): Dyadic => dyadicNew(a);
 
 export const fromNumber = (a: number): Dyadic => {
 	if (!Number.isFinite(a)) {
@@ -24,13 +24,13 @@ export const fromNumber = (a: number): Dyadic => {
 		pow += 1n;
 	}
 
-	return new Dyadic(BigInt(Math.floor(value)), pow);
+	return dyadicNew(BigInt(Math.floor(value)), pow);
 };
 
 export const sign = (value: Dyadic): -1 | 0 | 1 =>
 	value.isZero ? 0 : value.isPositive ? 1 : -1;
 
-export const neg = (a: Dyadic) => new Dyadic(-a.numerator, a.power);
+export const neg = (a: Dyadic) => dyadicNew(-a.numerator, a.power);
 
 export const abs = (a: Dyadic) => (a.isNegative ? neg(a) : a);
 
@@ -48,7 +48,7 @@ export const add = (p: Dyadic, q: Dyadic, mult = 1n) => {
 	const { numerator: c, power: d } = q;
 
 	const [min, max] = b < d ? [b, d] : [d, b];
-	return new Dyadic((a << (d - min)) + mult * (c << (b - min)), max);
+	return dyadicNew((a << (d - min)) + mult * (c << (b - min)), max);
 };
 
 /**
@@ -65,7 +65,7 @@ export const mult = (p: Dyadic, q: Dyadic) => {
 	}
 	const { numerator: a, power: b } = p;
 	const { numerator: c, power: d } = q;
-	return new Dyadic(a * c, b + d);
+	return dyadicNew(a * c, b + d);
 };
 
 const EPSILON = fromNumber(Number.EPSILON);

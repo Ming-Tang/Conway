@@ -1,7 +1,7 @@
 import type { Dyadic } from "./class";
 
 export const eq = (a: Dyadic, b: Dyadic) =>
-	a === b || a.numerator << b.power === b.numerator << a.power;
+	a === b || (a.numerator === b.numerator && a.power === b.power);
 export const ne = (a: Dyadic, b: Dyadic) =>
 	a === b ? false : a.numerator << b.power !== b.numerator << a.power;
 export const gt = (a: Dyadic, b: Dyadic) =>
