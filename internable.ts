@@ -61,7 +61,7 @@ const tableFind = <T, Hash>(
 export const makeInternable = <T, Args extends unknown[], Hash>(
 	intern: MakeInternableArgs<T, Args, Hash>,
 ): MakeInternableReturn<T, Args, Hash> => {
-	const { shouldIntern, create, eqHash, eq } = intern;
+	const { shouldIntern, create } = intern;
 	const table = new Map<Hash, T[]>();
 	return Object.freeze({
 		table,

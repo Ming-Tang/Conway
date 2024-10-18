@@ -90,11 +90,11 @@ describe("fromNumber", () => {
 });
 
 describe("dyadicNew interning", () => {
-	it("dyadicNew returns interned value within range (-128, 128), (0, 8)", () => {
+	it("dyadicNew returns interned value within range (-128, 128), (0, 4)", () => {
 		fc.assert(
 			fc.property(
 				fc.bigInt({ min: -128n, max: 128n }),
-				fc.bigInt({ min: 0n, max: 8n }),
+				fc.bigInt({ min: 0n, max: 4n }),
 				// biome-ignore lint/suspicious/noSelfCompare: ensure reference equality
 				(p, q) => dyadicNew(p, q) === dyadicNew(p, q),
 			),

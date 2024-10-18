@@ -1,7 +1,8 @@
 import { makeInternable } from "../internable";
 
+// Range of parameters to be interned
 const P_RANGE = 128n;
-const Q_RANGE = 8n;
+const Q_RANGE = 4n;
 
 /**
  * A rational number with a power of 2 as the denominator.
@@ -18,11 +19,14 @@ export class Dyadic {
 	private static INTERN = makeInternable<
 		Dyadic,
 		[bigint, bigint | undefined],
-		string
+		bigint
 	>({
 		shouldIntern: (p, q = 0n) =>
 			p <= P_RANGE && p >= -P_RANGE && q <= Q_RANGE && q >= -Q_RANGE,
-		eqHash: (d: Dyadic) => d.toString(),
+		eqHash: (d: Dyadic) => {
+			// Different from the eqHash for real numbers
+			return (d.numerator << Q_RANGE) >> d.power;
+		},
 		eq: (a: Dyadic, b: Dyadic) => {
 			return a === b || (a.numerator === b.numerator && a.power === b.power);
 		},
