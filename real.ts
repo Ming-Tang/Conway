@@ -119,7 +119,7 @@ export const realIntegerPow = (left: Real, right: Real): Real => {
 	return Number(left) ** Number(right);
 };
 
-export const realCompare = (left: Real, right: Real): number => {
+export const realCompare = (left: Real, right: Real): -1 | 0 | 1 => {
 	if (left === right) {
 		return 0;
 	}
@@ -282,3 +282,10 @@ export const realToJson = (
 
 	return `${value}`;
 };
+
+export const realToString = (value: Real) => {
+	if (value instanceof Dyadic) {
+		return value.toString()
+	}
+	return `${value}`;
+}

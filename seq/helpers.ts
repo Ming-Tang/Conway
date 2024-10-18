@@ -2,6 +2,7 @@ import type { Conway, Ord } from "../conway";
 import { one, unit } from "../op";
 import { ge, isAboveReals, le } from "../op/comparison";
 import { ordinalDivRem, ordinalEnsure as ensure } from "../op/ordinal";
+import { realIsNegative } from "../real";
 
 export const ensureOrd = (x: Conway): x is Ord => {
 	return x.isOrdinal;
@@ -29,7 +30,7 @@ export const ensureFinite = (x: Ord): number => {
 	const rv = x.realValue;
 	if (
 		rv === null ||
-		rv < 0 ||
+		realIsNegative(rv) ||
 		(typeof x === "number" && !Number.isInteger(x))
 	) {
 		throw new RangeError(

@@ -10,13 +10,30 @@ export const arbFinite = fc.float({
 	noDefaultInfinity: true,
 });
 
-export const arbFiniteBigint = fc.bigInt({ min: -100n, max: 100n });
-export const arbFiniteBigintOrd = fc.bigInt({ min: 0n, max: 100n });
+export const arbFiniteBigint = fc.bigInt({ min: -128n, max: 128n });
+export const arbFiniteBigintOrd = fc.bigInt({ min: 0n, max: 128n });
 
-export const arbRealGeneral = fc.oneof(
-	arbFinite,
-	arbFiniteBigint,
-	fc.integer({ min: -1000, max: 1000 }),
+export const arbDyadic = (maxBirthday = 16): fc.Arbitrary<Dyadic> =>
+	fc
+		.array(fc.boolean(), {
+			minLength: 0,
+			maxLength: maxBirthday,
+		})
+		.map(
+			(xs) => xs.reduce(dyadicWithSign, dyadicZero),
+			(x) => {
+				if (x instanceof Dyadic) {
+					return seqToArray(signExpansionDyadic(x));
+				}
+				throw new Error("unsupported");
+			},
+		);
+
+export const arbRealGeneral: fc.Arbitrary<Real> = fc.oneof(
+	arbFinite as fc.Arbitrary<Real>,
+	arbFiniteBigint as fc.Arbitrary<Real>,
+	fc.integer({ min: -128, max: 128 }) as fc.Arbitrary<Real>,
+	arbDyadic(16) as fc.Arbitrary<Real>,
 );
 
 export const defaultArrayConstraints: fc.ArrayConstraints = {
@@ -110,6 +127,3 @@ export const arbOrd2 = arbConway2(arbFiniteBigintOrd).filter(
 export const arbOrd3 = arbConway3(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,
 ) as fc.Arbitrary<Ord>;
-
-export const arbDyadic = (n: number) =>
-	fc.integer({ min: -(1 << n), max: 1 << n }).map((x) => x / (1.0 * (1 << n)));

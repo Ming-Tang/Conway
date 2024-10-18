@@ -55,6 +55,10 @@ export class Dyadic {
 		return this.numerator === 1n && this.power === 0n;
 	}
 
+	public get isNegOne() {
+		return this.numerator === -1n && this.power === 0n;
+	}
+
 	public get isPositive() {
 		return this.numerator > 0n;
 	}

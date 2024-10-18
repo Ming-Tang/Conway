@@ -1,32 +1,39 @@
-import { ensure, mono, one, zero } from ".";
+import { birthday, ensure, mono, mono1, one, termAt, zero } from ".";
 import { Conway, type Conway0, type Ord0 } from "../conway";
 import {
-	realAbs,
+	Dyadic,
+	dyadicFromBigint,
+	dyadicFromNumber,
+	dyadicLca,
+} from "../dyadic";
+import {
+	realCeilingToBigint,
 	realEq,
 	realFloorToBigint,
 	realIsNegative,
-	realIsPositive,
 	realIsZero,
-	realLe,
-	realMult,
 	realNeg,
-	realNegOne,
 	realOne,
-	realToBigint,
 	realZero,
 	type Real,
 } from "../real";
-import { neg } from "./arith";
+import { realMinus, realPlus } from "../signExpansion/real";
+import { add, neg, sub } from "./arith";
 import {
 	eq,
-	ge,
 	gt,
-	isAboveReals,
 	isNegative,
 	isPositive,
 	isZero,
+	le,
+	lt,
+	ne,
+	sign,
 } from "./comparison";
 import { isOrdinal, succ } from "./ordinal";
+
+const roundToOrdReal = (x: Real): Real =>
+	realIsNegative(x) ? realZero : realCeilingToBigint(x);
 
 /**
  * Given a surreal number, get the ordinal number equals to its
@@ -47,7 +54,7 @@ export const roundToOrd = (x: Conway0): Ord0 => {
 	}
 
 	if (!(x instanceof Conway)) {
-		return realFloorToBigint(x);
+		return roundToOrdReal(x);
 	}
 
 	let sum: Conway = zero;
@@ -57,7 +64,8 @@ export const roundToOrd = (x: Conway0): Ord0 => {
 			break;
 		}
 
-		if (isZero(p)) {
+		const isReal = isZero(p);
+		if (isReal) {
 			lastReal = c;
 		}
 
@@ -74,11 +82,11 @@ export const roundToOrd = (x: Conway0): Ord0 => {
 				continue;
 			}
 
-			sum = sum.add(mono(realFloorToBigint(c), p));
+			sum = sum.add(mono(roundToOrdReal(c), p));
 			break;
 		}
 
-		sum = sum.add(mono(realFloorToBigint(c), roundToOrd(p)));
+		sum = sum.add(mono(roundToOrdReal(c), roundToOrd(p)));
 	}
 	return sum as Ord0;
 };

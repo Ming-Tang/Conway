@@ -36,7 +36,7 @@ const {
 
 export function assertOrd(x: Conway0): asserts x is Ord0 {
 	if (!isOrdinal(x)) {
-		throw new RangeError("must be an ordinal number");
+		throw new RangeError(`must be an ordinal number: ${x}`);
 	}
 }
 

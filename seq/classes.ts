@@ -1,7 +1,7 @@
 import type { Ord } from "../conway";
 import { ordinalEnsure as ensure, ordinalMono1 as mono1 } from "../op/ordinal";
 import { ge, gt, isAboveReals, isOne, isZero } from "../op/comparison";
-import { realToNumber } from "../real";
+import { realToBigint, realToNumber } from "../real";
 import { cnfOrDefault, defaultCnf, simplifyConcat, simplifyCycle } from "./cnf";
 import {
 	defaultExpansion,
@@ -106,7 +106,7 @@ export class MapNatural<T> implements Seq<T> {
 
 	index(i: Ord): T {
 		assertLength(i, this.length);
-		return this.func(BigInt(i.realPart));
+		return this.func(realToBigint(i.realPart));
 	}
 }
 

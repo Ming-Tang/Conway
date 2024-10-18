@@ -8,14 +8,13 @@ import type { Conway } from "../conway";
 
 describe("birthday", () => {
 	describe("birthday of real numbers", () => {
-		it("bigint", () => {
-			expect(birthday(0)).toBe(0);
-			expect(birthday(0)).toBe(0);
-			expect(birthday(1)).toBe(1);
-			expect(birthday(-1)).toBe(1);
-			expect(birthday(2)).toBe(2);
-			expect(birthday(-2)).toBe(2);
-			expect(birthday(123)).toBe(123);
+		it("number", () => {
+			expect(birthday(0)).toBe(0n);
+			expect(birthday(1)).toBe(1n);
+			expect(birthday(-1)).toBe(1n);
+			expect(birthday(2)).toBe(2n);
+			expect(birthday(-2)).toBe(2n);
+			expect(birthday(123)).toBe(123n);
 		});
 
 		it("bigint", () => {
@@ -28,10 +27,10 @@ describe("birthday", () => {
 		});
 
 		it("fractions", () => {
-			expect(birthday(0.5)).toBe(2);
-			expect(birthday(-0.5)).toBe(2);
-			expect(birthday(0.25)).toBe(3);
-			expect(birthday(0.75)).toBe(3);
+			expect(birthday(0.5)).toBe(2n);
+			expect(birthday(-0.5)).toBe(2n);
+			expect(birthday(0.25)).toBe(3n);
+			expect(birthday(0.75)).toBe(3n);
 		});
 
 		it("non-negative", () => {
@@ -52,7 +51,7 @@ describe("birthday", () => {
 						noNaN: true,
 						noDefaultInfinity: true,
 					}),
-					(x) => birthday(x / 2) === add(1, birthday(x)),
+					(x) => birthday(x / 2) === add(1n, birthday(x)),
 				),
 			);
 		});

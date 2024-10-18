@@ -3,6 +3,7 @@ import { Conway, type Conway0 } from "../conway";
 export const {
 	isZero,
 	isOne,
+	isNegOne,
 	isPositive,
 	isNegative,
 	isAboveReals,
@@ -10,6 +11,8 @@ export const {
 	eq,
 	compare,
 } = Conway;
+
+export const sign = (x: Conway0) => (isZero(x) ? 0 : isPositive(x) ? 1 : -1);
 
 export const ne = (left: Conway0, right: Conway0) => !eq(left, right);
 

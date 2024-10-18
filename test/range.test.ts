@@ -1,24 +1,48 @@
 import fc from "fast-check";
-import { zero, one, birthday, ensure } from "../op";
-import { right, roundToOrd } from "../op/range";
+import { zero, one, birthday, ensure, mono1, mono, unit, termAt } from "../op";
+import { lca, plus, prefixDecompose, right, roundToOrd } from "../op/range";
 import { assertEq } from "./propsTest";
-import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
-import { isOrdinal, pred, succ } from "../op/ordinal";
+import {
+	arbConway1,
+	arbConway3,
+	arbDyadic,
+	arbFiniteBigint,
+	arbOrd3,
+	arbRealGeneral,
+} from "./generators";
+import { isOrdinal, succ } from "../op/ordinal";
 import { signExpansion } from "../signExpansion";
 import {
+	eq,
 	ge,
 	gt,
 	isNegative,
 	isPositive,
 	isZero,
 	le,
+	lt,
 	ne,
 } from "../op/comparison";
-import { add } from "../op/arith";
-import { ensureOrd } from "../seq/helpers";
-import type { Ord } from "../conway";
+import { add, neg } from "../op/arith";
+import type { Conway, Conway0, Ord } from "../conway";
+import { realPlus } from "../signExpansion/real";
+import { realAdd, realOne, realZero } from "../real";
+
+fc.configureGlobal({ numRuns: 1000, verbose: true });
 
 describe("roundToOrd", () => {
+	it("constants", () => {
+		assertEq(roundToOrd(0n), 0n);
+		assertEq(roundToOrd(-1n), 0n);
+		assertEq(roundToOrd(-1.5), 0n);
+		assertEq(roundToOrd(1n), 1n);
+		assertEq(roundToOrd(5.5), 6n);
+		assertEq(roundToOrd(0.25), 1n);
+		assertEq(roundToOrd(mono1(-1)), 1n);
+		assertEq(roundToOrd(add(0.25, mono(0.015625, -0.0625))), 1n);
+		assertEq(roundToOrd(add(2.1, mono1(-1))), 3n);
+	});
+
 	it("roundToOrd(x) = x for ordinals", () => {
 		fc.assert(
 			fc.property(arbOrd3, (x) => {
@@ -68,6 +92,18 @@ describe("roundToOrd", () => {
 			fc.property(arbConway3(arbFiniteBigint), (x) => {
 				const v = signExpansion(roundToOrd(x));
 				expect(v.isConstant).toBe(true);
+				expect(isZero(v.length) || v.index(zero)).toBe(true);
+			}),
+		);
+	});
+
+	it("signExpansion(x)[birthday(roundToOrd(x))] is minus ", () => {
+		fc.assert(
+			fc.property(arbConway3(arbFiniteBigint), (x) => {
+				const b: Ord = ensure(birthday(roundToOrd(x))) as Ord;
+				const se = signExpansion(x);
+				fc.pre(lt(b, se.length));
+				expect(se.index(b)).toBe(false);
 			}),
 		);
 	});

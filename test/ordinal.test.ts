@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { Conway, type Ord, type Ord0 } from "../conway";
-import type { Real } from "../real";
+import { realToBigint, type Real } from "../real";
 import {
 	arbFiniteBigint,
 	arbFiniteBigintOrd,
@@ -454,8 +454,12 @@ describe("ordinals", () => {
 			[
 				"infinite",
 				fc.oneof(
-					arbOrd2.filter(isAboveReals).filter((x) => maxReal(x) < 5),
-					arbOrd3Pos.filter(isAboveReals).filter((x) => maxReal(x) < 4),
+					arbOrd2
+						.filter(isAboveReals)
+						.filter((x) => realToBigint(maxReal(x)) < 5n),
+					arbOrd3Pos
+						.filter(isAboveReals)
+						.filter((x) => realToBigint(maxReal(x)) < 4n),
 				),
 			],
 		];

@@ -3,6 +3,7 @@ import {
 	realAdd,
 	realBirthday,
 	realCompare,
+	realEq,
 	realIsNegative,
 	realIsOne,
 	realIsPositive,
@@ -14,6 +15,7 @@ import {
 	realSub,
 	realToBigint,
 	realToJson,
+	realToString,
 	realZero,
 	type Real,
 } from "./real";
@@ -105,6 +107,8 @@ export class Conway<IsOrd extends boolean = boolean> {
 	public static readonly zero: Ord = new Conway();
 	/** 1 */
 	public static readonly one: Ord = new Conway([[0n, 1n]]);
+	/** -1 */
+	public static readonly negOne: Ord = new Conway([[0n, -1n]]);
 	/** omega */
 	public static readonly unit: Ord = new Conway([[1n, 1n]]);
 	/** omega^-1 */
@@ -246,6 +250,14 @@ export class Conway<IsOrd extends boolean = boolean> {
 			this.#terms.length === 1 &&
 			Conway.isZero(this.#terms[0][0]) &&
 			Conway.isOne(this.#terms[0][1])
+		);
+	}
+
+	public get isNegOne(): boolean {
+		return (
+			this.#terms.length === 1 &&
+			Conway.isZero(this.#terms[0][0]) &&
+			Conway.isNegOne(this.#terms[0][1])
 		);
 	}
 
@@ -521,13 +533,21 @@ export class Conway<IsOrd extends boolean = boolean> {
 		);
 	}
 
-	// TODO also ensures is ordinal
 	public static isOne(value: Conway0): boolean {
 		return (
 			(value instanceof Dyadic && value.isOne) ||
 			value === 1 ||
 			value === 1n ||
 			(value instanceof Conway && value.isOne)
+		);
+	}
+
+	public static isNegOne(value: Conway0): boolean {
+		return (
+			(value instanceof Dyadic && value.isNegOne) ||
+			value === -1 ||
+			value === -1n ||
+			(value instanceof Conway && value.isNegOne)
 		);
 	}
 
@@ -578,7 +598,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	static #EQ_HASH_CACHE = new Map<Real, number>([]);
 
 	private static realEqHash(value: Real): number {
-		if (value === 0 || value === 0n) {
+		if (realIsZero(value)) {
 			return 0;
 		}
 
@@ -587,7 +607,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 			return found;
 		}
 
-		const s = value.toString();
+		const s = realToString(value) as string;
 		const MASK = 0xffff_ffff;
 		const MULT = 31;
 		let h = 0;
@@ -1090,7 +1110,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	// #endregion
 	// #region Ordering and comparison
 
-	public compare(other: Conway, _noHash = false): number {
+	public compare(other: Conway, _noHash = false): -1 | 0 | 1 {
 		if (this === other) {
 			return 0;
 		}
@@ -1165,13 +1185,13 @@ export class Conway<IsOrd extends boolean = boolean> {
 
 		const n = this.length;
 		for (let i = 0; i < n; i++) {
-			const [e1, c1] = this.#terms[i] ?? [0, 0];
-			const [e2, c2] = other.#terms[i] ?? [0, 0];
-			if (!Conway.eq(c1, c2)) {
+			const [p1, c1] = this.#terms[i] ?? [0, 0];
+			const [p2, c2] = other.#terms[i] ?? [0, 0];
+			if (!realEq(c1, c2)) {
 				return false;
 			}
 
-			if (!Conway.eq(e1, e2)) {
+			if (!Conway.eq(p1, p2)) {
 				return false;
 			}
 		}
@@ -1186,27 +1206,12 @@ export class Conway<IsOrd extends boolean = boolean> {
 		left: Conway0,
 		right: Conway0,
 		_noHash = false,
-	): number {
+	): -1 | 0 | 1 {
 		if (left === right) {
 			return 0;
 		}
-		if (
-			(left instanceof Dyadic || right instanceof Dyadic) &&
-			!(left instanceof Conway) &&
-			!(right instanceof Conway)
-		) {
+		if (!(left instanceof Conway) && !(right instanceof Conway)) {
 			return realCompare(left, right);
-		}
-
-		if (typeof left === "bigint" && typeof right === "bigint") {
-			const d = right - left;
-			return d === 0n ? 0 : d > 0n ? 1 : -1;
-		}
-		if (
-			(typeof left === "number" || typeof left === "bigint") &&
-			(typeof right === "number" || typeof right === "bigint")
-		) {
-			return Number(right) - Number(left);
 		}
 
 		const l: Conway = Conway.ensure(left);
@@ -1220,10 +1225,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 		}
 
 		if (!(left instanceof Conway) && !(right instanceof Conway)) {
-			if (typeof left === "bigint" && typeof right === "bigint") {
-				return left === right;
-			}
-			return Number(left) === Number(right);
+			return realEq(left, right);
 		}
 
 		return Conway.ensure(left).eq(Conway.ensure(right));

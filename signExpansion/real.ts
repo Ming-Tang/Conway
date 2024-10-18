@@ -66,7 +66,7 @@ const plusNumber = (r: number): Real =>
 const minusNumber = (r: number): Real =>
 	dyadicOrNumber(dyadicMinus(dyadicFromNumber(r)));
 
-export const plusReal = (r: Real): Real => {
+export const realPlus = (r: Real): Real => {
 	if (r instanceof Dyadic) {
 		return dyadicPlus(r);
 	}
@@ -77,7 +77,7 @@ export const plusReal = (r: Real): Real => {
 	return plusNumber(Number(r));
 };
 
-export const minusReal = (r: Real): Real => {
+export const realMinus = (r: Real): Real => {
 	if (r instanceof Dyadic) {
 		return dyadicMinus(r);
 	}
