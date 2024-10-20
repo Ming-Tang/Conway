@@ -776,7 +776,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	// #endregion
 	// #region Arithmetic (static)
 
-	public static neg<T extends Conway0 = Conway0>(value: T): T {
+	public static neg(value: Conway0): Conway0 {
 		// @ts-ignore Preserves input type
 		return value instanceof Conway ? value.neg() : realNeg(value);
 	}
