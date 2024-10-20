@@ -201,7 +201,7 @@ const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
 };
 
 /**
- * Find the solution `x` such that `this.ordinalAdd(x).eq(other)`.
+ * Find the solution `x` such that `left.ordinalAdd(x).eq(right)`.
  */
 export const ordinalRightSub = (left: Ord0, right: Ord0): Ord0 => {
 	if (!(left instanceof Conway) && !(right instanceof Conway)) {

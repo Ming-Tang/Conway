@@ -1,8 +1,8 @@
-import { Conway } from "../conway";
-import { zero, unit } from "../op";
+import { Conway, type Conway0 } from "../conway";
+import { zero, unit, one } from "../op";
 import { neg, sub } from "../op/arith";
 import { isNegative, isOne, isZero } from "../op/comparison";
-import { realAbs, realIsPositive, type Real } from "../real";
+import { realAbs, realIsPositive, realIsZero, type Real } from "../real";
 import {
 	concat,
 	empty,
@@ -16,7 +16,7 @@ import {
 	repeatEach,
 	isEmpty,
 } from "../seq";
-import { signExpansionReal, type Sign } from "./real";
+import { realMinus, realPlus, signExpansionReal, type Sign } from "./real";
 
 const concat1 = <T>(a: Seq<T>, b: Seq<T>): Seq<T> => {
 	if (isEmpty(a)) {
@@ -90,4 +90,38 @@ export const signExpansion = (
 	}
 
 	return se;
+};
+
+export const conwayPlus = (x: Conway0) => {
+	if (!(x instanceof Conway)) {
+		return realPlus(x);
+	}
+
+	const terms = x.getTerms();
+	const n = terms.length;
+	if (terms.length === 0) {
+		return one;
+	}
+
+	return new Conway([
+		...terms.slice(0, n - 1),
+		[terms[n - 1][0], realPlus(terms[n - 1][1])],
+	]);
+};
+
+export const conwayMinus = (x: Conway0) => {
+	if (!(x instanceof Conway)) {
+		return realMinus(x);
+	}
+
+	const terms = x.getTerms();
+	const n = terms.length;
+	if (terms.length === 0) {
+		return one;
+	}
+
+	return new Conway([
+		...terms.slice(0, n - 1),
+		[terms[n - 1][0], realMinus(terms[n - 1][1])],
+	]);
 };

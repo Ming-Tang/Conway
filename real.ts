@@ -322,3 +322,13 @@ export const realEqHash = (value: Real): number => {
 	}
 	return h;
 };
+
+export const hasRealType = (x: unknown): x is Real => {
+	if (typeof x === "number" || typeof x === "bigint") {
+		return true;
+	}
+	if (x instanceof Dyadic) {
+		return true;
+	}
+	return false;
+};

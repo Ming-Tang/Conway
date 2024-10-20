@@ -4,6 +4,8 @@ import { makeInternable } from "../internable";
 const P_RANGE = 128n;
 const Q_RANGE = 4n;
 
+const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
+
 /**
  * A rational number with a power of 2 as the denominator.
  * The `numerator` is a `bigint` and the denominator is `1n << power`
@@ -127,6 +129,10 @@ export class Dyadic {
 			return this.bigintQuotient.toString();
 		}
 		return this.quotient;
+	}
+
+	public [customInspectSymbol]() {
+		return `Dyadic(${this.toString()})`;
 	}
 }
 

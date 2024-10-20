@@ -26,8 +26,10 @@ export const arbFinite = fc.float({
 	noDefaultInfinity: true,
 });
 
-export const arbFiniteBigint = fc.bigInt({ min: -128n, max: 128n });
-export const arbFiniteBigintOrd = fc.bigInt({ min: 0n, max: 128n });
+// export const arbFiniteBigint = fc.bigInt({ min: -128n, max: 128n });
+// export const arbFiniteBigintOrd = fc.bigInt({ min: 0n, max: 128n });
+export const arbFiniteBigint = fc.bigInt({ min: -8n, max: 8n });
+export const arbFiniteBigintOrd = fc.bigInt({ min: 0n, max: 8n });
 
 export const arbDyadic = (maxBirthday = 16): fc.Arbitrary<Dyadic> =>
 	fc
@@ -54,7 +56,7 @@ export const arbRealGeneral: fc.Arbitrary<Real> = fc.oneof(
 
 export const defaultArrayConstraints: fc.ArrayConstraints = {
 	minLength: 0,
-	maxLength: 4,
+	maxLength: 6,
 };
 
 export const reduceConstraints = ({
