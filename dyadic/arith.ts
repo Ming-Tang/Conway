@@ -41,7 +41,7 @@ export const abs = (a: Dyadic) => (a.isNegative ? neg(a) : a);
  */
 export const add = (p: Dyadic, q: Dyadic, mult = 1n) => {
 	if (p.power === 0n && q.power === 0n) {
-		return fromBigint(p.numerator + q.numerator);
+		return fromBigint(p.numerator + mult * q.numerator);
 	}
 
 	const { numerator: a, power: b } = p;

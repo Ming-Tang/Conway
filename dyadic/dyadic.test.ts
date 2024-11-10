@@ -22,7 +22,17 @@ import {
 	signExpansionFrac,
 	toMixed,
 } from "./birthday";
-import { abs, add, half, isSafeNumber, neg, negOne, one, zero } from "./arith";
+import {
+	abs,
+	add,
+	half,
+	isSafeNumber,
+	neg,
+	negOne,
+	one,
+	sub,
+	zero,
+} from "./arith";
 import { compare, eq, ge, le, lt, gt } from "./comp";
 import { dyadicNew } from "./class";
 
@@ -109,6 +119,31 @@ describe("ordering", () => {
 describe("add", () => {
 	propIdentity(it, arbDyadic, zero, add, eq);
 	propCommAssoc(it, arbDyadic, add, eq);
+});
+
+describe("sub", () => {
+	it("a - 0 = a", () => {
+		fc.assert(
+			fc.property(arbDyadic, (a) => {
+				expect(sub(a, zero)).toEqual(a);
+			}),
+		);
+	});
+	it("0 - a = -a", () => {
+		fc.assert(
+			fc.property(arbDyadic, (a) => {
+				expect(sub(zero, a)).toEqual(neg(a));
+			}),
+		);
+	});
+
+	it("a + (-b) = a - b", () => {
+		fc.assert(
+			fc.property(arbDyadic, arbDyadic, (a, b) => {
+				expect(sub(a, b)).toEqual(add(a, neg(b)));
+			}),
+		);
+	});
 });
 
 describe("mult", () => {
