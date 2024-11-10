@@ -1,19 +1,18 @@
 import fc from "fast-check";
 import {
-	Dyadic,
 	dyadicEq,
 	dyadicFromBigint,
 	dyadicFromNumber,
 	dyadicMult,
 	dyadicToMixed,
-} from ".";
+} from "../dyadic";
 import {
 	propCommAssoc,
 	propDist,
 	propIdentity,
 	propTotalOrder,
 	propZero,
-} from "../test/propsTest";
+} from "./propsTest";
 import {
 	birthday,
 	lca,
@@ -21,7 +20,7 @@ import {
 	plus,
 	signExpansionFrac,
 	toMixed,
-} from "./birthday";
+} from "../dyadic/birthday";
 import {
 	abs,
 	add,
@@ -32,9 +31,9 @@ import {
 	one,
 	sub,
 	zero,
-} from "./arith";
-import { compare, eq, ge, le, lt, gt } from "./comp";
-import { dyadicNew } from "./class";
+} from "../dyadic/arith";
+import { compare, eq, ge, le, lt, gt } from "../dyadic/comp";
+import { dyadicNew } from "../dyadic/class";
 
 fc.configureGlobal({ numRuns: 2000, verbose: false });
 

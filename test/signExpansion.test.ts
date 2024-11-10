@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { signExpansion } from ".";
+import { signExpansion } from "../signExpansion";
 import { birthday, fromReal, mono, mono1, one, unit, zero } from "../op";
 import {
 	arbConway1,
@@ -10,8 +10,8 @@ import {
 	arbOrd1,
 	arbOrd2,
 	arbOrd3,
-} from "../test/generators";
-import { assertEq } from "../test/propsTest";
+} from "./generators";
+import { assertEq } from "./propsTest";
 import { Conway, type Ord } from "../conway";
 import { eq, isZero, lt } from "../op/comparison";
 import { neg } from "../op/arith";

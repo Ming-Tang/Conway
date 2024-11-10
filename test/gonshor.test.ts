@@ -1,7 +1,7 @@
 import fc from "fast-check";
-import "../test/expect.test";
-import { Conway, type Conway0, type Ord, type Ord0 } from "../conway";
-import { ensure, mono, mono1, unit, zero } from "../op";
+import "./expect.test";
+import type { Conway0, Ord, Ord0 } from "../conway";
+import { ensure, mono, mono1, unit } from "../op";
 import {
 	arbConway1,
 	arbConway2,
@@ -9,7 +9,7 @@ import {
 	arbConway4,
 	arbDyadic,
 	arbOrd3,
-} from "../test/generators";
+} from "./generators";
 import {
 	commonPrefix,
 	normalizedSignExpansionLength,
@@ -20,7 +20,7 @@ import {
 	signExpansionReal,
 	SignExpansionSeq,
 	type SignExpansionElement,
-} from "./gonshor";
+} from "../signExpansion/gonshor";
 import { compare, eq, isPositive, isZero, le, lt } from "../op/comparison";
 import { ordinalAdd } from "../op/ordinal";
 import { add, neg } from "../op/arith";
