@@ -1,4 +1,4 @@
-import { Dyadic, dyadicCompare } from "./dyadic";
+import { Dyadic } from "./dyadic";
 import {
 	realAdd,
 	realBirthday,
@@ -71,6 +71,7 @@ export const INSTANCE_IMPLS = {
 	ordinalRightSub: (a: Ord, b: Ord0): Ord => notImplemented(),
 	ordinalDivRem: (a: Ord, b: Ord0): [Ord, Ord] => notImplemented(),
 	ordinalPow: (a: Ord, b: Ord0): Ord => notImplemented(),
+	birthday: (a: Conway): Ord0 => notImplemented(),
 };
 
 /**
@@ -862,42 +863,12 @@ export class Conway<IsOrd extends boolean = boolean> {
 	/**
 	 * Determines the birthday of this surreal number.
 	 */
-	public birthday(realBirthday = Conway.realBirthday): Ord0 {
-		let lastP: Conway0 = Conway.zero;
-		return this.ordSumTerms((p, c) => {
-			const bc = realBirthday(c);
-			if (Conway.isZero(p)) {
-				// Real part
-				return bc;
-			}
-			if (Conway.isNegative(p)) {
-				// Infinitesimal part:
-				// birthday(c0 p^-p0 + c1 p^-p1 + c2 p^-p2 + ...)
-				// = bLow(c0, p0) + bLow(c1, p1 - p0) + bLow(c2, p2 - p1) + ...
-				// bLow(c, p) = w.birthday(p) + (birthday(c) - 1)
-				const pPos = Conway.neg(p);
-				const dp = Conway.sub(pPos, lastP);
-				lastP = pPos;
-				const len = Conway.birthday(dp, realBirthday);
-				// +-^(birthday(dp)) SE(coeff)
-				return Conway.unit
-					.ordinalMult(len)
-					.ordinalAdd(Conway.sub(bc, 1n) as Ord);
-			}
-
-			// Infinite part
-			const bp = Conway.ensure(p).birthday(realBirthday);
-			return Conway.mono1(bp).ordinalMult(bc);
-		}) as Ord0;
+	public birthday(): Ord0 {
+		return INSTANCE_IMPLS.birthday(this);
 	}
 
-	public static birthday(
-		value: Conway0,
-		realBirthday = Conway.realBirthday,
-	): Ord0 {
-		return value instanceof Conway
-			? value.birthday(realBirthday)
-			: realBirthday(value);
+	public static birthday(value: Conway0): Ord0 {
+		return value instanceof Conway ? value.birthday() : realBirthday(value);
 	}
 
 	/**

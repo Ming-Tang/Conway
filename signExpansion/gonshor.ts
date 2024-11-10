@@ -1,4 +1,10 @@
-import { Conway, type Conway0, type Ord, type Ord0 } from "../conway";
+import {
+	Conway,
+	INSTANCE_IMPLS,
+	type Conway0,
+	type Ord,
+	type Ord0,
+} from "../conway";
 import { ensure, mono, mono1, zero } from "../op";
 import { add, neg } from "../op/arith";
 import { eq, ge, gt, isNegative, isZero, lt } from "../op/comparison";
@@ -354,7 +360,7 @@ export const signExpansionOmit = function* (
 	}
 };
 
-const DEBUG = false;
+const DEBUG = true;
 
 /**
  * Get the sign expansion of `w^p` in the middle of a Conway normal form
@@ -380,16 +386,8 @@ export const signExpansionMono1 = function* (
 			finalValue: plusValue,
 			...debug0,
 		};
-		return 1n;
+		return 0n;
 	}
-
-	yield {
-		sign: true,
-		length: 1n,
-		initValue: 0n,
-		finalValue: plusValue,
-		...debug0,
-	};
 
 	let nPlus: Ord0 = 0n;
 	let index = 1n;
@@ -398,9 +396,31 @@ export const signExpansionMono1 = function* (
 	// [Gonshor] Corollary 5.1
 	for (const entry of se) {
 		const { sign, length: n, initValue: pi, finalValue: pNext } = entry;
+		if (index === 1n) {
+			if (isZero(n)) {
+				yield {
+					sign: true,
+					length: 1n,
+					initValue: 0n,
+					finalValue: mono1(pNext),
+					...debug0,
+				};
+				index++;
+				continue;
+			}
+
+			yield {
+				sign: true,
+				length: 1n,
+				initValue: 0n,
+				finalValue: plusValue,
+				...debug0,
+			};
+		}
+
 		const initValue = index === 1n ? plusValue : mono1(pi);
 		const finalValue = mono1(pNext);
-		const debug = DEBUG ? { $mono1: { ...$mono1, index } } : {};
+		const debug = DEBUG ? { $mono1: { ...$mono1, index, $entry: entry } } : {};
 		if (sign) {
 			nPlus = ordinalAdd(nPlus, n);
 			yield {
@@ -421,7 +441,7 @@ export const signExpansionMono1 = function* (
 		}
 		index++;
 	}
-	return ordinalAdd(1n, nPlus);
+	return nPlus;
 };
 
 export const signExpansion = function* (
@@ -517,6 +537,7 @@ export const signExpansion = function* (
 				...(DEBUG
 					? {
 							$term: {
+								nPlus,
 								index: i,
 								base,
 								part: ["real", idx],
@@ -527,4 +548,12 @@ export const signExpansion = function* (
 			idx++;
 		}
 	}
+};
+
+INSTANCE_IMPLS.birthday = (x: Conway) => {
+	let sum: Ord0 = 0n;
+	for (const { length } of signExpansion(x)) {
+		sum = ordinalAdd(sum, length);
+	}
+	return sum;
 };

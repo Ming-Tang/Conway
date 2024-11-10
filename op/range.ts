@@ -22,6 +22,7 @@ import {
 	realZero,
 	type Real,
 } from "../real";
+import { signExpansion } from "../signExpansion/gonshor";
 import { realMinus, realPlus } from "../signExpansion/real";
 import { add, neg, sub } from "./arith";
 import {
@@ -35,7 +36,7 @@ import {
 	ne,
 	sign,
 } from "./comparison";
-import { isOrdinal, succ } from "./ordinal";
+import { isOrdinal, ordinalAdd, succ } from "./ordinal";
 
 const roundToOrdReal = (x: Real): Real =>
 	realIsNegative(x) ? realZero : realCeilingToBigint(x);
@@ -62,38 +63,14 @@ export const roundToOrd = (x: Conway0): Ord0 => {
 		return roundToOrdReal(x);
 	}
 
-	let sum: Conway = zero;
-	let lastReal = realZero;
-	for (const [p, c] of x) {
-		if (isNegative(c)) {
+	let sum = 0n as Ord0;
+	for (const { sign, length } of signExpansion(x)) {
+		if (!sign) {
 			break;
 		}
-
-		const isReal = isZero(p);
-		if (isReal) {
-			lastReal = c;
-		}
-
-		if (isNegative(p)) {
-			// ... & ++- & ...,
-			// first + for the real and second + for the beginning of infintesimal
-			sum = isPositive(c) && isOrdinal(lastReal) ? sum.add(one) : sum;
-			break;
-		}
-
-		if (isOrdinal(p)) {
-			if (isOrdinal(c)) {
-				sum = sum.add(mono(c, p));
-				continue;
-			}
-
-			sum = sum.add(mono(roundToOrdReal(c), p));
-			break;
-		}
-
-		sum = sum.add(mono(roundToOrdReal(c), roundToOrd(p)));
+		sum = ordinalAdd(sum, length);
 	}
-	return sum as Ord0;
+	return sum;
 };
 
 export const rightReal = (x: Real): Real => {

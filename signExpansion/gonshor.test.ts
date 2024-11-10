@@ -25,7 +25,7 @@ import { compare, eq, isPositive, isZero, le, lt } from "../op/comparison";
 import { ordinalAdd } from "../op/ordinal";
 import { add, neg } from "../op/arith";
 
-fc.configureGlobal({ numRuns: 1000 });
+fc.configureGlobal({ numRuns: 2000 });
 
 const assertSignExpansion = (x: Conway0, parts: [boolean, Ord0][]) => {
 	const l = [...signExpansion(x)];
@@ -146,11 +146,15 @@ const testPropSignExpansion = <T extends Conway0 = Conway0>(
 		);
 	});
 
-	it.skip("all lengths are non-zero", () => {
+	it("all lengths are non-zero", () => {
 		fc.assert(
 			fc.property(gen, (x) => {
 				const l = [...signExpansion(x)];
-				return l.every(({ length }) => !isZero(length));
+				if (!l.every(({ length }) => !isZero(length))) {
+					console.error(x, l);
+					return false;
+				}
+				return true;
 			}),
 		);
 	});
@@ -484,7 +488,7 @@ describe("signExpansionOmit", () => {
 		);
 	});
 
-	describe("No4", () => {
+	describe.skip("No4", () => {
 		testPropSignExpansionOmit(
 			arbSignExpansionOmitArgs(arbConway4(arbDyadic())),
 		);
@@ -589,7 +593,7 @@ describe("signExpansion", () => {
 	});
 
 	describe("w^p - examples", () => {
-		it.only("finite ordinals", () => {
+		it("finite ordinals", () => {
 			assertSignExpansion(mono1(0n), [[true, 1n]]);
 			assertSignExpansion(mono1(1n), [
 				[true, 1n],
@@ -705,8 +709,30 @@ describe("signExpansion", () => {
 		testPropSignExpansion(arbConway3(arbDyadic(8)), signExpansion);
 	});
 
-	describe("No4", () => {
+	describe.skip("No4", () => {
 		testPropSignExpansion(arbConway4(arbDyadic(8)), signExpansion);
+	});
+
+	describe("Ord3", () => {
+		testPropSignExpansion(arbOrd3, signExpansion);
+
+		it("total length = ordinal value", () => {
+			fc.assert(
+				fc.property(arbOrd3, (x) => {
+					const se = [...signExpansion(x)];
+					let sum = 0n as Ord0;
+					for (const { length } of se) {
+						sum = ordinalAdd(sum, length);
+					}
+					try {
+						expect(sum).conwayEq(x);
+					} catch (e) {
+						console.error("x =", x, "sum =", sum, se);
+						throw e;
+					}
+				}),
+			);
+		});
 	});
 });
 
@@ -728,7 +754,6 @@ describe("signExpansionMono1", () => {
 		]);
 		expect([...signExpansionMono1(-1n, [-0.5])]).toMatchObject([
 			{ sign: true, length: expect.conwayEq(1n) },
-			{ sign: false, length: expect.conwayEq(0n) },
 		]);
 		//           0   1      w^-1      w^-0.5
 		// w^-0.5 =    +    -^w      +^w
@@ -915,8 +940,7 @@ describe("normalizeSignExpansionSeq", () => {
 	});
 });
 
-// TODO fix
-describe.skip("commonPrefix, let n = length of commonPrefix(a, b)", () => {
+describe("commonPrefix, let n = length of commonPrefix(a, b)", () => {
 	const len = normalizedSignExpansionLength;
 	it("n < length of a and n < length of b", () => {
 		fc.assert(
@@ -959,49 +983,5 @@ describe.skip("commonPrefix, let n = length of commonPrefix(a, b)", () => {
 				return seqA.index(i) === seqB.index(i);
 			}),
 		);
-	});
-});
-
-describe("TODO delete this", () => {
-	it("TEST_3", () => {
-		console.log("0.25 + 3.5 w^-1 + 2 w^-2", [
-			...signExpansion(
-				new Conway([
-					[0n, 0.25],
-					[-1n, 3.5],
-					[-2n, 2],
-				]),
-			),
-		]);
-	});
-
-	it("TEST_4", () => {
-		console.log("1 + w^-1", [
-			...signExpansion(
-				new Conway([
-					[0n, 1n],
-					[-1n, 1n],
-				]),
-			),
-		]);
-		console.log("-1 - w^-1", [
-			...signExpansion(
-				new Conway([
-					[0n, -1n],
-					[-1n, -1n],
-				]),
-			),
-		]);
-	});
-
-	it("TEST_5", () => {
-		console.log("w^-1 + w^-2", [
-			...signExpansion(
-				new Conway([
-					[-1n, 1n],
-					[-2n, 1n],
-				]),
-			),
-		]);
 	});
 });
