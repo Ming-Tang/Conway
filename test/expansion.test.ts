@@ -1,11 +1,11 @@
 import fc from "fast-check";
-import "../test/expect.test";
+import "./expect.test";
 import { isPositive, isZero, lt } from "../op/comparison";
-import type { Seq } from "./types";
-import { SeqExpansion, type ExpansionEntryConstructor } from "./expansion";
+import type { Seq } from "../seq/types";
+import { SeqExpansion, type ExpansionEntryConstructor } from "../seq/expansion";
 import { ordinalMult, ordinalEnsure as ensure } from "../op/ordinal";
-import { concat, cycleArray, empty, fromArray } from ".";
-import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "../test/generators";
+import { concat, cycleArray, empty, fromArray } from "../seq";
+import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "./generators";
 import type { Ord } from "../conway";
 import { one, zero } from "../op";
 
