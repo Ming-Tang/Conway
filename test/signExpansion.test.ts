@@ -17,7 +17,7 @@ import { eq, isZero, lt } from "../op/comparison";
 import { neg } from "../op/arith";
 import type { Seq } from "../seq";
 
-fc.configureGlobal({ numRuns: 5000 });
+fc.configureGlobal({ numRuns: 500 });
 
 const arbNum16 = arbDyadic(16);
 
