@@ -2,7 +2,6 @@ import fc from "fast-check";
 import { birthday, ensure, realBirthday } from "../op";
 import { concat, fromArray } from "../seq";
 import { realMinus, realPlus, signExpansionReal } from "./real";
-import { assertEq } from "../test/propsTest";
 import { sub } from "../op/arith";
 import { succ } from "../op/ordinal";
 import { arbRealGeneral } from "../test/generators";
@@ -30,17 +29,17 @@ describe("signExpansionReal", () => {
 
 	it("length equals surreal birthday for integers", () => {
 		fc.assert(
-			fc.property(fc.integer(), (x) =>
-				assertEq(signExpansionReal(x).length, birthday(x)),
-			),
+			fc.property(fc.integer(), (x) => {
+				expect(signExpansionReal(x).length).conwayEq(birthday(x));
+			}),
 		);
 	});
 
 	it("length equals surreal birthday for fractions (n/2^16)", () => {
 		fc.assert(
-			fc.property(arbReal, (x) =>
-				assertEq(signExpansionReal(x).length, birthday(x)),
-			),
+			fc.property(arbReal, (x) => {
+				expect(signExpansionReal(x).length).conwayEq(birthday(x));
+			}),
 		);
 	});
 
@@ -83,32 +82,28 @@ describe("plus/minus", () => {
 
 	it("|signExpansion(plus(n))| = |signExpansion(n)| + 1", () => {
 		fc.assert(
-			fc.property(arbReal, (n) =>
-				assertEq(
-					signExpansionReal(realPlus(n)).length,
+			fc.property(arbReal, (n) => {
+				expect(signExpansionReal(realPlus(n)).length).conwayEq(
 					succ(signExpansionReal(n).length),
-				),
-			),
+				);
+			}),
 		);
 	});
 
 	it("|signExpansion(minus(n))| = |signExpansion(n)| + 1", () => {
 		fc.assert(
-			fc.property(arbReal, (n) =>
-				assertEq(
-					signExpansionReal(realMinus(n)).length,
+			fc.property(arbReal, (n) => {
+				expect(signExpansionReal(realMinus(n)).length).conwayEq(
 					succ(signExpansionReal(n).length),
-				),
-			),
+				);
+			}),
 		);
 	});
 
 	it("signExpansion(plus(n)) = signExpansion(n) & (+)", () => {
 		fc.assert(
 			fc.property(arbReal, (n) => {
-				// console.log({ n, n1: plusReal(n)});
-				// console.log({ n: toArray(signExpansionReal(n)), n1: toArray(signExpansionReal(plusReal(n))) });
-				return expect(toArray(signExpansionReal(realPlus(n)))).toEqual(
+				expect(toArray(signExpansionReal(realPlus(n)))).toEqual(
 					toArray(concat(signExpansionReal(n), fromArray([true]))),
 				);
 			}),
@@ -117,11 +112,11 @@ describe("plus/minus", () => {
 
 	it("signExpansion(minus(n)) = signExpansion(n) & (-)", () => {
 		fc.assert(
-			fc.property(arbReal, (n) =>
+			fc.property(arbReal, (n) => {
 				expect(toArray(signExpansionReal(realMinus(n)))).toEqual(
 					toArray(concat(signExpansionReal(n), fromArray([false]))),
-				),
-			),
+				);
+			}),
 		);
 	});
 

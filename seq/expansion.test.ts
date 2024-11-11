@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { isPositive, isZero, lt } from "../op/comparison";
 import type { Seq } from "./types";
-import { assertEq } from "../test/propsTest";
 import { SeqExpansion, type ExpansionEntryConstructor } from "./expansion";
 import { ordinalMult, ordinalEnsure as ensure } from "../op/ordinal";
 import { concat, cycleArray, empty, fromArray } from ".";
@@ -60,7 +59,7 @@ const arbSE2 = arbSE(arbSE1);
 const arbSE3 = arbSE(arbSE2);
 
 const ensureSeqEquiv = <T>(s1: Seq<T>, s2: Seq<T>, i: Ord) => {
-	assertEq(s1.length, s2.length);
+	expect(s1.length).conwayEq(s2.length);
 	fc.pre(lt(i, s1.length));
 	expect(s1.index(i)).toBe(s2.index(i));
 	return true;
@@ -70,7 +69,7 @@ describe("rep of a single element", () => {
 	it("length equals reps", () => {
 		fc.assert(
 			fc.property(arbSERepSingleton, ({ reps, seq }) => {
-				return assertEq(reps, seq.length);
+				expect(reps).conwayEq(seq.length);
 			}),
 		);
 	});
@@ -99,7 +98,7 @@ describe("rep single array", () => {
 	it("length equals array length", () => {
 		fc.assert(
 			fc.property(arbSESingleArray, ({ array, seq }) => {
-				assertEq(ensure(array.length), seq.length);
+				expect(ensure(array.length)).conwayEq(seq.length);
 			}),
 		);
 	});
@@ -129,10 +128,9 @@ describe("rep of multi single arrays", () => {
 	it("length equals sum of lengths", () => {
 		fc.assert(
 			fc.property(arbSEMultiSingleArray, ({ arrays, seq }) => {
-				assertEq(
+				expect(
 					ensure(arrays.reduce((s, { length }) => s + length, 0)),
-					seq.length,
-				);
+				).conwayEq(seq.length);
 			}),
 		);
 	});
@@ -161,15 +159,14 @@ describe("rep of multi arrays", () => {
 	it("length equals sum of lengths", () => {
 		fc.assert(
 			fc.property(arbSERepMultiArray, ({ arrays, seq }) => {
-				assertEq(
+				expect(
 					ensure(
 						arrays.reduce(
 							(s, [{ length }, r]) => s.ordinalAdd(ordinalMult(length, r)),
 							zero,
 						),
 					),
-					seq.length,
-				);
+				).conwayEq(seq.length);
 			}),
 		);
 	});
@@ -303,20 +300,18 @@ describe("flattening", () => {
 
 describe("concat", () => {
 	it("empty and empty", () => {
-		assertEq(
+		expect(
 			SeqExpansion.concat(SeqExpansion.empty, SeqExpansion.empty).length,
-			zero,
-		);
+		).conwayEq(zero);
 	});
 
 	it("lengths add up", () => {
 		fc.assert(
-			fc.property(arbSE3, arbSE3, (f, g) =>
-				assertEq(
-					SeqExpansion.concat(f, g).length,
+			fc.property(arbSE3, arbSE3, (f, g) => {
+				expect(SeqExpansion.concat(f, g).length).conwayEq(
 					f.length.ordinalAdd(g.length),
-				),
-			),
+				);
+			}),
 		);
 	});
 
@@ -334,8 +329,11 @@ describe("concat", () => {
 		fc.assert(
 			fc.property(
 				arbSE3.filter((f) => !f.isEmpty),
-				(f) =>
-					assertEq(f.length, SeqExpansion.concat(f, SeqExpansion.empty).length),
+				(f) => {
+					expect(f.length).conwayEq(
+						SeqExpansion.concat(f, SeqExpansion.empty).length,
+					);
+				},
 			),
 		);
 	});

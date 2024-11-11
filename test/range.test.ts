@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { zero, one, birthday, ensure, mono1, mono } from "../op";
 import { right, roundToOrd } from "../op/range";
-import { assertEq } from "./propsTest";
 import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
 import { isOrdinal, succ } from "../op/ordinal";
 import { signExpansion } from "../signExpansion";
@@ -22,21 +21,21 @@ fc.configureGlobal({ numRuns: 1000, verbose: true });
 
 describe("roundToOrd", () => {
 	it("constants", () => {
-		assertEq(roundToOrd(0n), 0n);
-		assertEq(roundToOrd(-1n), 0n);
-		assertEq(roundToOrd(-1.5), 0n);
-		assertEq(roundToOrd(1n), 1n);
-		assertEq(roundToOrd(5.5), 6n);
-		assertEq(roundToOrd(0.25), 1n);
-		assertEq(roundToOrd(mono1(-1)), 1n);
-		assertEq(roundToOrd(add(0.25, mono(0.015625, -0.0625))), 1n);
-		assertEq(roundToOrd(add(2.1, mono1(-1))), 3n);
+		expect(roundToOrd(0n)).conwayEq(0n);
+		expect(roundToOrd(-1n)).conwayEq(0n);
+		expect(roundToOrd(-1.5)).conwayEq(0n);
+		expect(roundToOrd(1n)).conwayEq(1n);
+		expect(roundToOrd(5.5)).conwayEq(6n);
+		expect(roundToOrd(0.25)).conwayEq(1n);
+		expect(roundToOrd(mono1(-1))).conwayEq(1n);
+		expect(roundToOrd(add(0.25, mono(0.015625, -0.0625)))).conwayEq(1n);
+		expect(roundToOrd(add(2.1, mono1(-1)))).conwayEq(3n);
 	});
 
 	it("roundToOrd(x) = x for ordinals", () => {
 		fc.assert(
 			fc.property(arbOrd3, (x) => {
-				assertEq(roundToOrd(x), x, "roundToOrd(x)", "x");
+				expect(roundToOrd(x)).conwayEq(x);
 			}),
 		);
 	});
@@ -105,8 +104,9 @@ describe("roundToOrd", () => {
 				arbConway3(arbFiniteBigint)
 					.map((x) => x.infinitesimalPart)
 					.filter(isPositive),
-				(x, l) =>
-					assertEq(roundToOrd(add(x, l)), succ(x), "roundToOrd(o + low)", "o"),
+				(x, l) => {
+					expect(roundToOrd(add(x, l))).conwayEq(succ(x));
+				},
 			),
 		);
 	});
@@ -118,8 +118,9 @@ describe("roundToOrd", () => {
 				arbConway3(arbFiniteBigint)
 					.map((x) => x.infinitesimalPart)
 					.filter(isNegative),
-				(x, l) =>
-					assertEq(roundToOrd(add(x, l)), x, "roundToOrd(o - low)", "o"),
+				(x, l) => {
+					expect(roundToOrd(add(x, l))).conwayEq(x);
+				},
 			),
 		);
 	});
@@ -127,17 +128,17 @@ describe("roundToOrd", () => {
 
 describe("right(x) = {x|}", () => {
 	it("constants (integer)", () => {
-		assertEq(right(zero), one);
-		assertEq(right(one), 2n);
-		assertEq(right(-1n), zero);
-		assertEq(right(-2n), zero);
+		expect(right(zero)).conwayEq(one);
+		expect(right(one)).conwayEq(2n);
+		expect(right(-1n)).conwayEq(zero);
+		expect(right(-2n)).conwayEq(zero);
 	});
 
 	it("constants (integer plus fraction)", () => {
-		assertEq(right(0.5), one);
-		assertEq(right(-0.5), zero);
-		assertEq(right(3.14), 4n);
-		assertEq(right(-3.14), zero);
+		expect(right(0.5)).conwayEq(one);
+		expect(right(-0.5)).conwayEq(zero);
+		expect(right(3.14)).conwayEq(4n);
+		expect(right(-3.14)).conwayEq(zero);
 	});
 
 	it("{x|} != x", () => {
@@ -150,7 +151,9 @@ describe("right(x) = {x|}", () => {
 
 	it("{o|} = succ(o) for ordinal number o", () => {
 		fc.assert(
-			fc.property(arbOrd3, (x) => assertEq(right(x), succ(x), "right", "succ")),
+			fc.property(arbOrd3, (x) => {
+				expect(right(x)).conwayEq(succ(x));
+			}),
 		);
 	});
 
@@ -161,7 +164,9 @@ describe("right(x) = {x|}", () => {
 				arbConway3(arbFiniteBigint)
 					.map((x) => x.infinitesimalPart)
 					.filter(isPositive),
-				(x, l) => assertEq(right(add(x, l)), succ(x), "right", "succ"),
+				(x, l) => {
+					expect(right(add(x, l))).conwayEq(succ(x));
+				},
 			),
 		);
 	});
@@ -173,7 +178,9 @@ describe("right(x) = {x|}", () => {
 				arbConway3(arbFiniteBigint)
 					.map((x) => x.infinitesimalPart)
 					.filter(isNegative),
-				(x, l) => assertEq(right(add(x, l)), x, "right", "succ"),
+				(x, l) => {
+					expect(right(add(x, l))).conwayEq(x);
+				},
 			),
 		);
 	});
@@ -196,7 +203,6 @@ describe("right(x) = {x|}", () => {
 					const rx = ensure(right(x)) as Ord;
 					fc.pre(isPositive(rx));
 					const se = signExpansion(x);
-					// console.log(({ x, rx, se }));
 					expect(se.index(zero)).toBe(true);
 					expect(se.index(rx)).toBe(false);
 				},

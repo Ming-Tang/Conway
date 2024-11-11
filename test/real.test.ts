@@ -13,7 +13,7 @@ import {
 	type Real,
 } from "../real";
 import { arbRealGeneral } from "./generators";
-import { propTotalOrder } from "./propsTest";
+import { propTotalOrder } from "./propsTest.test";
 import {
 	Dyadic,
 	dyadicFromBigint,

@@ -5,7 +5,6 @@ import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
 import { eq, isPositive, isZero } from "../op/comparison";
 import type { Conway0 } from "../conway";
 import { ensure, mono, zero, one, unit } from "../op";
-import { assertEq } from "./propsTest";
 
 const close = (a: Conway0, b: Conway0) => {
 	expect(ensure(a)).toEqual(ensure(b));
@@ -171,7 +170,7 @@ describe("(w + 1)^w = e w^w - e w^(w-1)/2 + ...", () => {
 		const expanded = ensure(exp(unit.mult(log(unit.add(one), 10)), 10));
 		[...expanded].slice(0, 2).forEach(([p, c], i) => {
 			const s = i % 2 === 0 ? 1 : -1;
-			assertEq(unit.sub(i), p);
+			expect(unit.sub(i)).conwayEq(p);
 			expect(c).toBeCloseTo((s * Math.E) / (i + 1));
 		});
 	});

@@ -13,7 +13,7 @@ import {
 	propIdentity,
 	propTotalOrder,
 	propZero,
-} from "./propsTest";
+} from "./propsTest.test";
 import {
 	arbConway1,
 	arbConway2,

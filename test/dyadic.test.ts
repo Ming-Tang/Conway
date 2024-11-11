@@ -12,7 +12,7 @@ import {
 	propIdentity,
 	propTotalOrder,
 	propZero,
-} from "./propsTest";
+} from "./propsTest.test";
 import {
 	birthday,
 	lca,

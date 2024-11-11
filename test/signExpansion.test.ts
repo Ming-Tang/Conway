@@ -11,7 +11,6 @@ import {
 	arbOrd2,
 	arbOrd3,
 } from "./generators";
-import { assertEq } from "./propsTest";
 import { Conway, type Ord } from "../conway";
 import { eq, isZero, lt } from "../op/comparison";
 import { neg } from "../op/arith";
@@ -56,19 +55,7 @@ describe("signExpansion", () => {
 		it("|signExpansion(x)| = birthday(x)", () => {
 			fc.assert(
 				fc.property(arb, (x) => {
-					try {
-						return assertEq(
-							birthday(x),
-							signExpansion(x).length,
-							"birthday",
-							"|signExpansion|",
-						);
-					} catch (e) {
-						console.log("Value: ", x);
-						console.log("Birthday: ", birthday(x));
-						console.log("Sign expansion: ", signExpansion(x));
-						throw e;
-					}
+					expect(birthday(x)).conwayEq(signExpansion(x).length);
 				}),
 			);
 		});

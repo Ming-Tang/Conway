@@ -1,23 +1,7 @@
+import "./expect.test";
 import fc from "fast-check";
-import { Conway, type Conway0 } from "../conway";
-import { eq } from "../op/comparison";
-import { ensure } from "../op";
 
 type BinOp<T> = (a: T, b: T) => T;
-
-export const assertEq = (
-	a: Conway0,
-	b: Conway0,
-	leftName = "a",
-	rightName = "b",
-) => {
-	if (!eq(a, b)) {
-		throw new Error(
-			`not equal: ${leftName}=[${a}], ${rightName}=[${b}]\nRepr:\n  ${leftName}=${JSON.stringify(ensure(a).toJson(false))},\n  ${rightName}=${JSON.stringify(Conway.ensure(b).toJson(false))}`,
-		);
-	}
-	return true;
-};
 
 export interface RunConfig {
 	numRuns?: number;
