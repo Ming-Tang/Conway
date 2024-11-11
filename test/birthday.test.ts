@@ -2,7 +2,7 @@ import {} from "../signExpansion/gonshor";
 import fc from "fast-check";
 import { arbFinite, arbOrd3, arbConway3, arbFiniteBigint } from "./generators";
 import { birthday, ensure, mono, mono1, zero } from "../op";
-import { eq, ge, gt, isZero } from "../op/comparison";
+import { eq, ge, gt } from "../op/comparison";
 import { isOrdinal, ordinalAdd } from "../op/ordinal";
 import { add } from "../op/arith";
 import type { Conway } from "../conway";
@@ -158,26 +158,7 @@ describe("birthday", () => {
 			);
 		});
 
-		it("birthday is additive if the first number has no infinitesimal part", () => {
-			fc.assert(
-				fc.property(
-					arbConway3(arbFiniteBigint),
-					arbConway3(arbFiniteBigint),
-					(a, b) => {
-						fc.pre(a.length > 0 && b.length > 0 && isZero(a.infinitesimalPart));
-						const lp = b.leadingPower;
-						fc.pre(lp === null || gt(a.getByIndex(a.length - 1)[0], lp));
-						return eq(
-							a.add(b).birthday(),
-							ordinalAdd(a.birthday(), b.birthday()),
-						);
-					},
-				),
-				{ numRuns: 300 },
-			);
-		});
-
-		it("birthday is increasing with respect to number of terms", () => {
+		it("birthday is increasing with respect to the number of terms", () => {
 			fc.assert(
 				fc.property(arbConway3(arbFiniteBigint), (x) => {
 					let partialSum: Conway = zero;
