@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import "./expect.test";
 import { Conway, type Ord, type Ord0 } from "../conway";
 import { realToBigint, type Real } from "../real";
 import {
@@ -43,7 +44,7 @@ import {
 	lt,
 } from "../op/comparison";
 
-// fc.configureGlobal({ numRuns: 2000, verbose: false });
+fc.configureGlobal({ numRuns: 1000, verbose: false });
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
@@ -325,11 +326,11 @@ describe("ordinals", () => {
 			for (const [arb0, arb1, arb2, title] of arb3s) {
 				it(title, () => {
 					fc.assert(
-						fc.property(arb0, arb1, arb2, (a, b, c) =>
+						fc.property(arb0, arb1, arb2, (a, b, c) => {
 							expect(ordinalMult(a, ordinalAdd(b, c))).conwayEq(
 								ordinalAdd(ordinalMult(a, b), ordinalMult(a, c)),
-							),
-						),
+							);
+						}),
 					);
 				});
 			}
@@ -339,11 +340,11 @@ describe("ordinals", () => {
 			for (const [arb0, arb1, arb2, title] of arb3s) {
 				it(title, () => {
 					fc.assert(
-						fc.property(arb0, arb1, arb2, (a, b, c) =>
+						fc.property(arb0, arb1, arb2, (a, b, c) => {
 							expect(ordinalMult(ordinalMult(a, b), c)).conwayEq(
 								ordinalMult(a, ordinalMult(b, c)),
-							),
-						),
+							);
+						}),
 					);
 				});
 			}
@@ -558,11 +559,11 @@ describe("ordinals", () => {
 
 					it("law of exponents (addition of exponents): a^b . a^c = a^(b+c)", () => {
 						fc.assert(
-							fc.property(arb1, arb2, arb3, (a, b, c) =>
+							fc.property(arb1, arb2, arb3, (a, b, c) => {
 								expect(
 									ordinalMult(ordinalPow(a, b), ordinalPow(a, c)),
-								).conwayEq(ordinalPow(a, ordinalAdd(b, c))),
-							),
+								).conwayEq(ordinalPow(a, ordinalAdd(b, c)));
+							}),
 							{ numRuns },
 						);
 					});
@@ -572,11 +573,11 @@ describe("ordinals", () => {
 
 		it("law of exponents (multiplication of exponents): (a^b)^c = a^(b.c)", () => {
 			fc.assert(
-				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) =>
+				fc.property(arbOrd3, arbOrd3, arbOrd3, (a, b, c) => {
 					expect(ordinalPow(ordinalPow(a, b), c)).conwayEq(
 						ordinalPow(a, ordinalMult(b, c)),
-					),
-				),
+					);
+				}),
 				{ numRuns: 50 },
 			);
 		});

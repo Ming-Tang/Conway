@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import "../test/expect.test";
 import {
 	concat,
 	cycle,
@@ -243,10 +244,11 @@ describe("cycle", () => {
 				fc.property(
 					fc.array(arbElem, { minLength: 0, maxLength: 50 }),
 					arbFiniteBigintOrd,
-					(xs, k) =>
+					(xs, k) => {
 						expect(cycle(fromArray(xs), ensure(k)).length).conwayEq(
 							BigInt(xs.length) * k,
-						),
+						);
+					},
 				),
 			);
 		});
@@ -482,9 +484,9 @@ describe("prod", () => {
 	describe("cycle", () => {
 		it("|prod(f, g)| = |cycle(f, |g|)|", () => {
 			fc.assert(
-				fc.property(arbSeq3, arbSeq3, (f, g) =>
-					expect(prod(f, g).length).conwayEq(cycle(f, g.length).length),
-				),
+				fc.property(arbSeq3, arbSeq3, (f, g) => {
+					expect(prod(f, g).length).conwayEq(cycle(f, g.length).length);
+				}),
 			);
 		});
 
@@ -503,14 +505,14 @@ describe("prod", () => {
 	describe("concat", () => {
 		it("|prod(f, g & h)| = |f|.|g| + |f|.|h|", () => {
 			fc.assert(
-				fc.property(arbSeq3, arbSeq3, arbSeq3, (f, g, h) =>
+				fc.property(arbSeq3, arbSeq3, arbSeq3, (f, g, h) => {
 					expect(prod(f, concat(g, h)).length).conwayEq(
 						ordinalAdd(
 							ordinalMult(f.length, g.length),
 							ordinalMult(f.length, h.length),
 						),
-					),
-				),
+					);
+				}),
 			);
 		});
 	});

@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import "../test/expect.test";
 import { isPositive, isZero, lt } from "../op/comparison";
 import type { Seq } from "./types";
 import { SeqExpansion, type ExpansionEntryConstructor } from "./expansion";

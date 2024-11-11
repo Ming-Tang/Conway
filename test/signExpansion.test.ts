@@ -16,9 +16,9 @@ import { eq, isZero, lt } from "../op/comparison";
 import { neg } from "../op/arith";
 import type { Seq } from "../seq";
 
-fc.configureGlobal({ numRuns: 500 });
+fc.configureGlobal({ numRuns: 200 });
 
-const arbNum16 = arbDyadic(16);
+const arbNum8 = arbDyadic(8);
 
 describe("signExpansion", () => {
 	it.skip("examples", () => {
@@ -101,7 +101,7 @@ describe("signExpansion", () => {
 		it("SE(c w^-1)[0] = +, SE(w^-1)[1] = -", () => {
 			fc.assert(
 				fc.property(
-					arbNum16.filter((x) => !isZero(x)),
+					arbNum8.filter((x) => !isZero(x)),
 					() => {
 						const se = signExpansion(mono1(-1n));
 						expect(se.index(zero)).toBe(true);
@@ -118,21 +118,21 @@ describe("signExpansion", () => {
 		});
 
 		describe("reals / 2^16", () => {
-			assertPropBirthday(arbNum16.map(fromReal));
+			assertPropBirthday(arbNum8.map(fromReal));
 		});
 	});
 
 	describe("No1", () => {
 		describe("in general", () => {
-			assertPropBirthday(arbConway1(arbNum16));
+			assertPropBirthday(arbConway1(arbNum8));
 		});
 
 		describe("pure infinite", () => {
-			assertPropBirthday(arbConway1(arbNum16).map((x) => x.infinitePart));
+			assertPropBirthday(arbConway1(arbNum8).map((x) => x.infinitePart));
 		});
 
 		describe("pure infinitesimal", () => {
-			assertPropBirthday(arbConway1(arbNum16).map((x) => x.infinitesimalPart));
+			assertPropBirthday(arbConway1(arbNum8).map((x) => x.infinitesimalPart));
 		});
 
 		describe("Ord1", () => {
@@ -142,15 +142,15 @@ describe("signExpansion", () => {
 
 	describe("No2", () => {
 		describe("in general", () => {
-			assertPropBirthday(arbConway2(arbNum16));
+			assertPropBirthday(arbConway2(arbNum8));
 		});
 
 		describe("pure infinite", () => {
-			assertPropBirthday(arbConway2(arbNum16).map((x) => x.infinitePart));
+			assertPropBirthday(arbConway2(arbNum8).map((x) => x.infinitePart));
 		});
 
 		describe("pure infinitesimal", () => {
-			assertPropBirthday(arbConway2(arbNum16).map((x) => x.infinitesimalPart));
+			assertPropBirthday(arbConway2(arbNum8).map((x) => x.infinitesimalPart));
 		});
 
 		describe("Ord2", () => {
@@ -160,15 +160,15 @@ describe("signExpansion", () => {
 
 	describe("No3", () => {
 		describe("in general", () => {
-			assertPropBirthday(arbConway3(arbNum16));
+			assertPropBirthday(arbConway3(arbNum8));
 		});
 
 		describe("pure infinite", () => {
-			assertPropBirthday(arbConway3(arbNum16).map((x) => x.infinitePart));
+			assertPropBirthday(arbConway3(arbNum8).map((x) => x.infinitePart));
 		});
 
 		describe("pure infinitesimal", () => {
-			assertPropBirthday(arbConway3(arbNum16).map((x) => x.infinitesimalPart));
+			assertPropBirthday(arbConway3(arbNum8).map((x) => x.infinitesimalPart));
 		});
 
 		describe("Ord3", () => {

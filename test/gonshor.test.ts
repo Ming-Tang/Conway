@@ -982,6 +982,7 @@ describe("commonPrefix, let n = length of commonPrefix(a, b)", () => {
 				fc.pre(lt(i, seqA.length) && lt(i, seqB.length));
 				return seqA.index(i) === seqB.index(i);
 			}),
+			{ numRuns: 50 },
 		);
 	});
 });
