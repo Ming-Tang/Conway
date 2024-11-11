@@ -2,7 +2,8 @@ import { Conway, type Conway0 } from "../conway";
 import { one } from "../op";
 import type { Real } from "../real";
 import type { Seq } from "../seq";
-import { signExpansion as _signExpansion, SignExpansionSeq } from "./gonshor";
+import { signExpansion as _signExpansion } from "./gonshor";
+import { SignExpansionSeq } from "./types";
 import { realMinus, realPlus, type Sign } from "./real";
 
 export const signExpansion = (value: Real | Conway): Seq<Sign> => {

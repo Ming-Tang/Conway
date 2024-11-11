@@ -1,15 +1,8 @@
-import { birthday, ensure, mono, mono1, one, termAt, zero } from ".";
+import { ensure, one, zero } from ".";
 import { Conway, type Conway0, type Ord0 } from "../conway";
-import {
-	Dyadic,
-	dyadicFromBigint,
-	dyadicFromNumber,
-	dyadicLca,
-} from "../dyadic";
 import {
 	realAbs,
 	realCeilingToBigint,
-	realEq,
 	realFloorToBigint,
 	realIsNegative,
 	realIsPositive,
@@ -23,19 +16,8 @@ import {
 	type Real,
 } from "../real";
 import { signExpansion } from "../signExpansion/gonshor";
-import { realMinus, realPlus } from "../signExpansion/real";
-import { add, neg, sub } from "./arith";
-import {
-	eq,
-	gt,
-	isNegative,
-	isPositive,
-	isZero,
-	le,
-	lt,
-	ne,
-	sign,
-} from "./comparison";
+import { neg } from "./arith";
+import { gt, isNegative, isPositive, isZero } from "./comparison";
 import { isOrdinal, ordinalAdd, succ } from "./ordinal";
 
 const roundToOrdReal = (x: Real): Real =>

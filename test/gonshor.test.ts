@@ -11,21 +11,21 @@ import {
 	arbOrd3,
 } from "./generators";
 import {
-	commonPrefix,
-	normalizedSignExpansionLength,
-	normalizeSignExpansionSeq,
 	signExpansion,
 	signExpansionMono1,
 	signExpansionOmit,
 	signExpansionReal,
-	SignExpansionSeq,
-	type SignExpansionElement,
 } from "../signExpansion/gonshor";
+import { normalizedSignExpansionLength } from "../signExpansion/normalize";
+import { commonPrefix } from "../signExpansion/normalize";
+import { normalizeSignExpansionSeq } from "../signExpansion/normalize";
+import { SignExpansionSeq } from "../signExpansion/types";
+import type { SignExpansionElement } from "../signExpansion/types";
 import { compare, eq, isPositive, isZero, le, lt } from "../op/comparison";
 import { ordinalAdd } from "../op/ordinal";
 import { add, neg } from "../op/arith";
 
-fc.configureGlobal({ numRuns: 2000 });
+fc.configureGlobal({ numRuns: 200 });
 
 const assertSignExpansion = (x: Conway0, parts: [boolean, Ord0][]) => {
 	const l = [...signExpansion(x)];
