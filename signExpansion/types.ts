@@ -4,6 +4,7 @@ import { lt } from "../op/comparison";
 import { ordinalRightSub } from "../op/ordinal";
 import type { Seq } from "../seq";
 import { assertLength } from "../seq/helpers";
+import type { CanonSeq } from "./canonSeq";
 
 /**
  * An entry in the sign expansion of a surreal number.
@@ -18,6 +19,7 @@ export interface SignExpansionElement<V = Conway0> {
 	length: Ord0;
 	initValue: V;
 	finalValue: V;
+	seq: CanonSeq;
 	omitted?: unknown;
 	omittedBy?: V;
 } /**

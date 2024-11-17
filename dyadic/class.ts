@@ -75,6 +75,10 @@ export class Dyadic {
 		}
 	}
 
+	public static pow2(n: bigint) {
+		return new Dyadic(1n, -n);
+	}
+
 	public get isZero() {
 		return this.numerator === 0n;
 	}

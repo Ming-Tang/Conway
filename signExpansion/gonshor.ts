@@ -5,11 +5,13 @@ import {
 	type Ord,
 	type Ord0,
 } from "../conway";
+import { Dyadic } from "../dyadic";
 import { ensure, mono, mono1, zero } from "../op";
 import { add, neg } from "../op/arith";
 import { ge, gt, isNegative, isZero, lt } from "../op/comparison";
 import { ordinalAdd, succ } from "../op/ordinal";
 import { realIsNegative, realNeg, realSub, realZero, type Real } from "../real";
+import { CanonSeq } from "./canonSeq";
 import {
 	realMinus,
 	realPlus,
@@ -34,7 +36,13 @@ export const signExpansionRealNonReduced = function* (
 		}
 		const ri = value;
 		const finalValue = sign ? realPlus(ri) : realMinus(ri);
-		yield { sign, length: 1n, initValue: ri, finalValue };
+		yield {
+			sign,
+			length: 1n,
+			initValue: ri,
+			finalValue,
+			seq: CanonSeq.step(ri, finalValue),
+		};
 		value = finalValue;
 	}
 	return nPlus;
@@ -107,7 +115,7 @@ export const signExpansionOmit = function* (
 			break;
 		}
 		const entry = res.value;
-		const { initValue: initValue0, finalValue: finalValue0 } = entry;
+		const { initValue: initValue0, finalValue: finalValue0, seq: seq0 } = entry;
 		const iInitTooHigh = findTooHighInclusive(initValue0);
 		const initTooHigh = iInitTooHigh !== -1;
 		const iFinalTooHigh = findTooHighExclusive(finalValue0);
@@ -127,6 +135,7 @@ export const signExpansionOmit = function* (
 		let containsPlus = entry.sign;
 		let initValue1 = initTooHigh ? finalValue0 : initValue0;
 		let finalValue1 = finalValue0;
+		let seq1 = seq0;
 		let nPlus: Ord0 = entry.sign ? entry.length : 0n;
 		const omitted: SignExpansionElement[] = [entry];
 		while (findTooHighExclusive(finalValue1) !== -1) {
@@ -140,6 +149,7 @@ export const signExpansionOmit = function* (
 				sign: sign1,
 				initValue: initValue2,
 				finalValue: finalValue2,
+				seq: seq2,
 				length: n,
 			} = res1.value;
 			if (sign1) {
@@ -147,6 +157,7 @@ export const signExpansionOmit = function* (
 				nPlus = ordinalAdd(nPlus, n);
 			}
 			finalValue1 = finalValue2;
+			seq1 = seq2;
 			if (findTooHighInclusive(initValue1) !== -1) {
 				initValue1 = initValue2;
 			}
@@ -158,6 +169,7 @@ export const signExpansionOmit = function* (
 			initValue:
 				findTooHighInclusive(initValue1) !== -1 ? finalValue1 : initValue1,
 			finalValue: finalValue1,
+			seq: seq1,
 			length: nPlus,
 			omitted,
 			omittedBy,
@@ -165,7 +177,7 @@ export const signExpansionOmit = function* (
 	}
 };
 
-const DEBUG = true;
+const DEBUG = false;
 
 /**
  * Get the sign expansion of `w^p` in the middle of a Conway normal form
@@ -189,6 +201,7 @@ export const signExpansionMono1 = function* (
 			length: 1n,
 			initValue: 0n,
 			finalValue: plusValue,
+			seq: CanonSeq.step(0n, plusValue),
 			...debug0,
 		};
 		return 0n;
@@ -200,48 +213,65 @@ export const signExpansionMono1 = function* (
 
 	// [Gonshor] Corollary 5.1
 	for (const entry of se) {
-		const { sign, length: n, initValue: pi, finalValue: pNext } = entry;
+		const {
+			sign,
+			length: n,
+			initValue: pi,
+			finalValue: pNext,
+			seq: pSeq,
+		} = entry;
 		if (index === 1n) {
+			const rest = {
+				sign: true,
+				length: 1n,
+				initValue: 0n,
+				...debug0,
+			};
+
 			if (isZero(n)) {
 				yield {
-					sign: true,
-					length: 1n,
-					initValue: 0n,
 					finalValue: mono1(pNext),
-					...debug0,
+					seq: CanonSeq.step(0n, mono1(pNext)),
+					...rest,
 				};
 				index++;
 				continue;
 			}
 
 			yield {
-				sign: true,
-				length: 1n,
-				initValue: 0n,
 				finalValue: plusValue,
-				...debug0,
+				seq: CanonSeq.step(0n, plusValue),
+				...rest,
 			};
 		}
 
 		const initValue = index === 1n ? plusValue : mono1(pi);
 		const finalValue = mono1(pNext);
+		let seq: CanonSeq;
+		if (index === 1n) {
+			seq = sign ? CanonSeq.iterPlus(plusValue) : CanonSeq.iterMinus(plusValue);
+		} else if (pSeq.isInfinite) {
+			seq = pSeq.mono1();
+		} else {
+			seq = sign
+				? new CanonSeq((i) => mono(i, pi))
+				: new CanonSeq((i) => mono(Dyadic.pow2(-i), pi));
+		}
+
 		const debug = DEBUG ? { $mono1: { ...$mono1, index, $entry: entry } } : {};
+		const rest = { initValue, finalValue, seq, ...debug };
 		if (sign) {
 			nPlus = ordinalAdd(nPlus, n);
 			yield {
 				sign: true,
 				length: mono1(nPlus),
-				initValue,
-				finalValue,
-				...debug,
+				...rest,
 			};
 		} else {
 			yield {
 				sign: false,
 				length: mono1(succ(nPlus)).ordinalMult(n),
-				initValue,
-				finalValue,
-				...debug,
+				...rest,
 			};
 		}
 		index++;
@@ -302,16 +332,19 @@ export const signExpansion = function* (
 				length,
 				initValue: mi,
 				finalValue: mNext,
+				seq: mSeq,
 				...omit
 			} = res.value;
 			const outSign = flip ? !sign : sign;
 			const initValue = add(base, flip ? neg(mi) : mi);
 			const finalValue = add(base, flip ? neg(mNext) : mNext);
+			const seq = (flip ? mSeq.neg() : mSeq).add(base);
 			yield {
 				sign: outSign,
 				length,
 				initValue,
 				finalValue,
+				seq,
 				...(DEBUG
 					? {
 							$term: {
@@ -339,6 +372,9 @@ export const signExpansion = function* (
 				length: mono1(nPlus).ordinalMult(length) as Ord0,
 				initValue: add(base, mono(ri, p)),
 				finalValue: add(base, mono(rNext, p)),
+				// TODO incorrect
+				// TODO should be: base + ri w^p + i w^(p_Left)
+				seq: new CanonSeq((i) => add(base, mono(ri, p).add(i))),
 				...(DEBUG
 					? {
 							$term: {
