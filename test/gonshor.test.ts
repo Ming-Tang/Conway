@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import "./expect.test";
 import type { Conway0, Ord, Ord0 } from "../conway";
-import { ensure, mono, mono1, unit } from "../op";
+import { ensure, isReal, mono, mono1, unit } from "../op";
 import {
 	arbConway1,
 	arbConway2,
@@ -21,7 +21,7 @@ import { commonPrefix } from "../signExpansion/normalize";
 import { normalizeSignExpansionSeq } from "../signExpansion/normalize";
 import { SignExpansionSeq } from "../signExpansion/types";
 import type { SignExpansionElement } from "../signExpansion/types";
-import { compare, eq, isPositive, isZero, le, lt } from "../op/comparison";
+import { compare, eq, gt, isPositive, isZero, le, lt } from "../op/comparison";
 import { ordinalAdd } from "../op/ordinal";
 import { add, neg } from "../op/arith";
 
@@ -180,6 +180,66 @@ const testPropSignExpansion = <T extends Conway0 = Conway0>(
 				return true;
 			}),
 		);
+	});
+
+	describe("seq", () => {
+		it("first value of seq is initValue", () => {
+			fc.assert(
+				fc.property(gen, (x) => {
+					fc.pre(!isZero(x));
+					for (const e of signExpansion(x)) {
+						if (isZero(e.length)) {
+							continue;
+						}
+						expect(e.initValue).conwayEq(e.seq.head[0]);
+					}
+					return true;
+				}),
+			);
+		});
+
+		it("for infinite seqs, is increasing or descreasing depending on the sign", () => {
+			fc.assert(
+				fc.property(gen, (x) => {
+					fc.pre(!isZero(x));
+					for (const e of signExpansion(x)) {
+						if (isReal(e.length) || isZero(e.length)) {
+							continue;
+						}
+
+						if (e.sign) {
+							expect(gt(e.seq.head[1], e.seq.head[0])).toBe(true);
+						} else {
+							expect(lt(e.seq.head[1], e.seq.head[0])).toBe(true);
+						}
+					}
+					return true;
+				}),
+			);
+		});
+
+		it("for infinite seqs, never overtake the next initValue", () => {
+			fc.assert(
+				fc.property(gen, (x) => {
+					fc.pre(!isZero(x));
+					const entries = [...signExpansion(x)];
+					for (let i = 0; i < entries.length - 1; i++) {
+						const e = entries[i];
+						const e1 = entries[i + 1];
+						if (isReal(e.length) || isZero(e.length)) {
+							continue;
+						}
+
+						if (e.sign) {
+							expect(lt(e.seq.head[0], e1.initValue)).toBe(true);
+						} else {
+							expect(gt(e.seq.head[0], e1.initValue)).toBe(true);
+						}
+					}
+					return true;
+				}),
+			);
+		});
 	});
 
 	it("is non-empty for non-zero values", () => {
@@ -861,8 +921,7 @@ describe("normalizeSignExpansionSeq", () => {
 		);
 	});
 
-	// TODO fix
-	it.skip("for each element, length is non-zero", () => {
+	it("for each element, length is non-zero", () => {
 		fc.assert(
 			fc.property(arbSE, (se) =>
 				[...normalizeSignExpansionSeq(se)].every((x) => !isZero(x.length)),
@@ -880,8 +939,7 @@ describe("normalizeSignExpansionSeq", () => {
 		);
 	});
 
-	// TODO fix
-	it.skip("for each element, min < max", () => {
+	it("for each element, min < max", () => {
 		fc.assert(
 			fc.property(arbSE, (se) =>
 				[...normalizeSignExpansionSeq(se)].every((x) => lt(x.min, x.max)),
@@ -934,6 +992,71 @@ describe("normalizeSignExpansionSeq", () => {
 						0n as Ord0,
 					);
 					return eq(nMinus, added);
+				}),
+			);
+		});
+	});
+
+	describe("captured", () => {
+		it("non-empty", () => {
+			fc.assert(
+				fc.property(arbSE, (se) => {
+					for (const { captured } of normalizeSignExpansionSeq(se)) {
+						expect(captured).not.toHaveLength(0);
+					}
+					return true;
+				}),
+			);
+		});
+
+		it("entries combine into original list", () => {
+			fc.assert(
+				fc.property(arbSE, (se) => {
+					const combined = [...normalizeSignExpansionSeq(se)].flatMap(
+						(e) => e.captured,
+					);
+					expect(combined).toStrictEqual(se);
+					return true;
+				}),
+			);
+		});
+
+		it("first initValue of captured = initValue of entry", () => {
+			fc.assert(
+				fc.property(arbSE, (se) => {
+					for (const { initValue, captured } of normalizeSignExpansionSeq(se)) {
+						expect(captured).not.toHaveLength(0);
+						expect(captured[0].initValue).conwayEq(initValue);
+					}
+					return true;
+				}),
+			);
+		});
+
+		it("last finalValue of captured = finalValue of entry", () => {
+			fc.assert(
+				fc.property(arbSE, (se) => {
+					for (const { finalValue, captured } of normalizeSignExpansionSeq(
+						se,
+					)) {
+						expect(captured).not.toHaveLength(0);
+						expect(captured[captured.length - 1].finalValue).conwayEq(
+							finalValue,
+						);
+					}
+					return true;
+				}),
+			);
+		});
+
+		it("last seq of captured = seq of entry", () => {
+			fc.assert(
+				fc.property(arbSE, (se) => {
+					for (const { seq, captured } of normalizeSignExpansionSeq(se)) {
+						expect(captured).not.toHaveLength(0);
+						expect(captured[captured.length - 1].seq).toBe(seq);
+					}
+					return true;
 				}),
 			);
 		});

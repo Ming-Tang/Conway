@@ -21,11 +21,11 @@ export class CanonSeq {
 		}
 	}
 
-	static step(v0: Conway0, v1: Conway0) {
+	public static step(v0: Conway0, v1: Conway0) {
 		return new CanonSeq((i) => (i === 0n ? v0 : v1), false);
 	}
 
-	static iterPlus(v0: Conway0) {
+	public static iterPlus(v0: Conway0) {
 		return new CanonSeq((n) => {
 			let v = v0;
 			for (let i = 0n; i < n; i++) {
@@ -35,7 +35,7 @@ export class CanonSeq {
 		});
 	}
 
-	static iterMinus(v0: Conway0) {
+	public static iterMinus(v0: Conway0) {
 		return new CanonSeq((n) => {
 			let v = v0;
 			for (let i = 0n; i < n; i++) {
@@ -43,6 +43,10 @@ export class CanonSeq {
 			}
 			return v;
 		});
+	}
+
+	public static zero(): CanonSeq {
+		return new CanonSeq(() => 0n);
 	}
 
 	public map(func: (value: Conway0, i: bigint) => Conway0) {
@@ -64,6 +68,11 @@ export class CanonSeq {
 
 	public neg() {
 		return this.map((x) => neg(x));
+	}
+
+	public shift(v0 = 0n as Conway0) {
+		const func = this.seq;
+		return new CanonSeq((i) => (i === 0n ? v0 : func(i - 1n)), this.isInfinite);
 	}
 
 	public [customInspectSymbol]() {

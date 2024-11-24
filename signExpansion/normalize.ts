@@ -2,6 +2,7 @@ import type { Ord0, Conway0 } from "../conway";
 import { zero } from "../op";
 import { eq, isZero, lt } from "../op/comparison";
 import { ordinalAdd } from "../op/ordinal";
+import { CanonSeq } from "./canonSeq";
 import type {
 	SignExpansionElement,
 	NormalizeSignExpansionElement,
@@ -10,22 +11,23 @@ import type {
 export const normalizeSignExpansionSeq = function* (
 	it: Iterable<SignExpansionElement>,
 ): Generator<NormalizeSignExpansionElement, { nMinus: Ord0; nPlus: Ord0 }> {
-	let last: boolean | null = null;
+	let lastSign: boolean | null = null;
 	let run: Ord0 = 0n;
 	let min: Ord0 = 0n;
 	let nMinus: Ord0 = 0n;
 	let nPlus: Ord0 = 0n;
 	let lastInitValue: Conway0 = zero;
 	let lastFinalValue: Conway0 = zero;
+	let lastSeq: CanonSeq = CanonSeq.zero();
+	let captured: SignExpansionElement[] = [];
 	const gen = it[Symbol.iterator]();
 	while (true) {
 		const res = gen.next();
-
 		if (res.done) {
 			break;
 		}
 
-		const { sign, length, initValue, finalValue } = res.value;
+		const { sign, length, initValue, finalValue, seq } = res.value;
 		if (isZero(length)) {
 			continue;
 		}
@@ -36,37 +38,46 @@ export const normalizeSignExpansionSeq = function* (
 			nMinus = ordinalAdd(nMinus, length);
 		}
 
-		if (sign === last) {
+		if (sign === lastSign) {
 			run = ordinalAdd(run, length);
 			lastFinalValue = finalValue;
+			lastSeq = seq;
+			captured.push(res.value);
 			continue;
 		}
 
-		if (last !== null) {
+		if (lastSign !== null) {
 			yield {
-				sign: last,
+				sign: lastSign,
 				length: run,
 				min,
 				max: ordinalAdd(min, run),
 				initValue: lastInitValue,
 				finalValue: lastFinalValue,
+				seq: lastSeq,
+				captured,
 			};
-			last = null;
+			lastSign = null;
+			captured = [];
 		}
 		lastInitValue = initValue;
 		lastFinalValue = finalValue;
-		last = sign;
+		captured.push(res.value);
+		lastSeq = seq;
+		lastSign = sign;
 		min = ordinalAdd(min, run);
 		run = length;
 	}
-	if (last !== null) {
+	if (lastSign !== null) {
 		yield {
-			sign: last,
+			sign: lastSign,
 			length: run,
 			min,
 			max: ordinalAdd(min, run),
 			initValue: lastInitValue,
 			finalValue: lastFinalValue,
+			seq: lastSeq,
+			captured,
 		};
 	}
 	return { nMinus, nPlus };
@@ -93,14 +104,17 @@ export const commonPrefix = function* (
 			yield e1;
 			continue;
 		}
+		const lower = lt(e1.length, e2.length);
 		yield {
 			sign,
-			length: lt(e1.length, e2.length) ? e1.length : e2.length,
+			length: lower ? e1.length : e2.length,
 			min: e1.min,
-			max: lt(e1.max, e2.max) ? e1.max : e2.max,
+			max: lower ? e1.max : e2.max,
 			// TODO fix this
-			initValue: zero,
-			finalValue: zero,
+			initValue: e1.initValue,
+			finalValue: lower ? e1.finalValue : e2.finalValue,
+			seq: lower ? e1.seq : e2.seq,
+			captured: lower ? e1.captured : e2.captured,
 		};
 		break;
 	}

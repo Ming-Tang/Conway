@@ -6,7 +6,7 @@ import {
 	type Ord0,
 } from "../conway";
 import { Dyadic } from "../dyadic";
-import { ensure, mono, mono1, zero } from "../op";
+import { ensure, isReal, mono, mono1, zero } from "../op";
 import { add, neg } from "../op/arith";
 import { ge, gt, isNegative, isZero, lt } from "../op/comparison";
 import { ordinalAdd, succ } from "../op/ordinal";
@@ -254,7 +254,7 @@ export const signExpansionMono1 = function* (
 			seq = pSeq.mono1();
 		} else {
 			seq = sign
-				? new CanonSeq((i) => mono(i, pi))
+				? new CanonSeq((i) => mono(1n + i, pi))
 				: new CanonSeq((i) => mono(Dyadic.pow2(-i), pi));
 		}
 
@@ -277,6 +277,16 @@ export const signExpansionMono1 = function* (
 		index++;
 	}
 	return nPlus;
+};
+
+const rightmostLeft = (x: Conway0): SignExpansionElement | null => {
+	let last: SignExpansionElement | null = null;
+	for (const e of signExpansion(x)) {
+		if (e.sign) {
+			last = e;
+		}
+	}
+	return last;
 };
 
 export const signExpansion = function* (
@@ -360,6 +370,16 @@ export const signExpansion = function* (
 		}
 
 		idx = 0;
+		const last = rightmostLeft(p);
+		let pLeft: CanonSeq | Conway0 = 0n;
+		if (last === null) {
+			pLeft = 0n;
+		} else if (isReal(last.length)) {
+			pLeft = last.initValue;
+		} else {
+			pLeft = last.seq;
+		}
+
 		// real part: r w^p
 		for (const {
 			sign,
@@ -367,14 +387,18 @@ export const signExpansion = function* (
 			initValue: ri,
 			finalValue: rNext,
 		} of signExpansionReal(c, true)) {
+			const base1 = add(base, mono(ri, p));
 			yield {
 				sign,
 				length: mono1(nPlus).ordinalMult(length) as Ord0,
-				initValue: add(base, mono(ri, p)),
+				initValue: base1,
 				finalValue: add(base, mono(rNext, p)),
-				// TODO incorrect
-				// TODO should be: base + ri w^p + i w^(p_Left)
-				seq: new CanonSeq((i) => add(base, mono(ri, p).add(i))),
+				seq: (pLeft instanceof CanonSeq
+					? (!sign ? pLeft.mono1().neg() : pLeft.mono1()).shift()
+					: !sign
+						? new CanonSeq((i) => mono(-i, pLeft))
+						: new CanonSeq((i) => mono(i, pLeft))
+				).add(base1),
 				...(DEBUG
 					? {
 							$term: {

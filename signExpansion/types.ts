@@ -22,7 +22,9 @@ export interface SignExpansionElement<V = Conway0> {
 	seq: CanonSeq;
 	omitted?: unknown;
 	omittedBy?: V;
-} /**
+}
+
+/**
  * An entry in the normalized sign expansion.
  */
 
@@ -32,6 +34,10 @@ export interface NormalizeSignExpansionElement<V = Conway0>
 	min: Ord0;
 	/** The exclusive maximum index of the consecutive block of signs. */
 	max: Ord0;
+	/** The constituent elements of the merged sign expansion block. */
+	captured: SignExpansionElement<V>[];
+	/** The sequence of the last captured element. */
+	seq: CanonSeq;
 }
 
 export class SignExpansionSeq implements Seq<boolean> {
