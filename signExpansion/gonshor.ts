@@ -8,7 +8,15 @@ import {
 import { Dyadic } from "../dyadic";
 import { ensure, isReal, mono, mono1, zero } from "../op";
 import { add, neg } from "../op/arith";
-import { ge, gt, isNegative, isZero, lt } from "../op/comparison";
+import {
+	ge,
+	gt,
+	isAboveReals,
+	isNegative,
+	isOne,
+	isZero,
+	lt,
+} from "../op/comparison";
 import { ordinalAdd, succ } from "../op/ordinal";
 import { realIsNegative, realNeg, realSub, realZero, type Real } from "../real";
 import { CanonSeq } from "./canonSeq";
@@ -249,13 +257,11 @@ export const signExpansionMono1 = function* (
 		const finalValue = mono1(pNext);
 		let seq: CanonSeq;
 		if (index === 1n) {
-			seq = sign ? CanonSeq.iterPlus(plusValue) : CanonSeq.iterMinus(plusValue);
+			seq = CanonSeq.iterSign(plusValue, !sign);
 		} else if (pSeq.isInfinite) {
 			seq = pSeq.mono1();
 		} else {
-			seq = sign
-				? new CanonSeq((i) => mono(1n + i, pi))
-				: new CanonSeq((i) => mono(Dyadic.pow2(-i), pi));
+			seq = CanonSeq.monosPos(pi, !sign);
 		}
 
 		const debug = DEBUG ? { $mono1: { ...$mono1, index, $entry: entry } } : {};
@@ -383,22 +389,24 @@ export const signExpansion = function* (
 		// real part: r w^p
 		for (const {
 			sign,
-			length,
+			length: len0,
 			initValue: ri,
 			finalValue: rNext,
 		} of signExpansionReal(c, true)) {
 			const base1 = add(base, mono(ri, p));
+			const finalValue = add(base, mono(rNext, p));
+			const length = mono1(nPlus).ordinalMult(len0) as Ord0;
 			yield {
 				sign,
-				length: mono1(nPlus).ordinalMult(length) as Ord0,
+				length,
 				initValue: base1,
-				finalValue: add(base, mono(rNext, p)),
-				seq: (pLeft instanceof CanonSeq
-					? (!sign ? pLeft.mono1().neg() : pLeft.mono1()).shift()
-					: !sign
-						? new CanonSeq((i) => mono(-i, pLeft))
-						: new CanonSeq((i) => mono(i, pLeft))
-				).add(base1),
+				finalValue,
+				seq: isOne(length)
+					? CanonSeq.step(base1, finalValue)
+					: (pLeft instanceof CanonSeq
+							? (!sign ? pLeft.mono1().neg() : pLeft.mono1()).shift()
+							: CanonSeq.monos(pLeft, !sign)
+						).add(base1),
 				...(DEBUG
 					? {
 							$term: {

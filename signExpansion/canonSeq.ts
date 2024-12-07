@@ -1,6 +1,7 @@
 import { conwayMinus, conwayPlus } from ".";
 import type { Conway0 } from "../conway";
-import { mono1, zero } from "../op";
+import { Dyadic } from "../dyadic";
+import { mono, mono1, zero } from "../op";
 import { add, mult, neg } from "../op/arith";
 
 const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");
@@ -21,28 +22,37 @@ export class CanonSeq {
 		}
 	}
 
+	public evaluate(i: bigint): Conway0 {
+		return this.seq(i);
+	}
+
 	public static step(v0: Conway0, v1: Conway0) {
 		return new CanonSeq((i) => (i === 0n ? v0 : v1), false);
 	}
 
-	public static iterPlus(v0: Conway0) {
+	public static iterSign(v0: Conway0, isMinus = false) {
+		const f = isMinus ? conwayMinus : conwayPlus;
 		return new CanonSeq((n) => {
 			let v = v0;
 			for (let i = 0n; i < n; i++) {
-				v = conwayPlus(v);
+				v = f(v);
 			}
 			return v;
 		});
 	}
 
-	public static iterMinus(v0: Conway0) {
-		return new CanonSeq((n) => {
-			let v = v0;
-			for (let i = 0n; i < n; i++) {
-				v = conwayMinus(v);
-			}
-			return v;
-		});
+	public static monos(p: Conway0, isNegative = false) {
+		if (isNegative) {
+			return new CanonSeq((i) => mono(-i, p));
+		}
+		return new CanonSeq((i) => mono(i, p));
+	}
+
+	public static monosPos(p: Conway0, isDecreasing = false) {
+		if (isDecreasing) {
+			return new CanonSeq((i) => mono(Dyadic.pow2(-i), p));
+		}
+		return new CanonSeq((i) => mono(1n + i, p));
 	}
 
 	public static zero(): CanonSeq {

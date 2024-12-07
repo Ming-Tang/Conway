@@ -1,6 +1,7 @@
 import type { Ord0, Conway0 } from "../conway";
+import { signExpansion } from "./gonshor";
 import { zero } from "../op";
-import { eq, isZero, lt } from "../op/comparison";
+import { eq, gt, isZero, le, lt } from "../op/comparison";
 import { ordinalAdd } from "../op/ordinal";
 import { CanonSeq } from "./canonSeq";
 import type {
@@ -110,7 +111,6 @@ export const commonPrefix = function* (
 			length: lower ? e1.length : e2.length,
 			min: e1.min,
 			max: lower ? e1.max : e2.max,
-			// TODO fix this
 			initValue: e1.initValue,
 			finalValue: lower ? e1.finalValue : e2.finalValue,
 			seq: lower ? e1.seq : e2.seq,
@@ -150,4 +150,59 @@ export const normalizedSignExpansionLength = (
 	}
 
 	return last;
+};
+
+interface SimplestBetweenReturn {
+	element: SignExpansionElement;
+	value: Conway0;
+	isFinal: boolean;
+	length: Ord0;
+}
+export const simplestBetween = (
+	a: Conway0,
+	b: Conway0,
+): SimplestBetweenReturn => {
+	if (gt(a, b)) {
+		throw new RangeError("a > b");
+	}
+
+	const inRange = (x: Conway0) => le(a, x) && le(x, b);
+	const inputs = [a, b];
+	const results: (SimplestBetweenReturn | null)[] = [null, null];
+	for (let i = 0; i < results.length; i++) {
+		let res: null | SimplestBetweenReturn = null;
+		let length: Ord0 = 0n;
+		for (const element of signExpansion(inputs[i])) {
+			const { initValue, finalValue, length: dLen } = element;
+			if (inRange(initValue)) {
+				res = { element, value: initValue, isFinal: false, length };
+				break;
+			}
+			length = ordinalAdd(length, dLen);
+			if (inRange(finalValue)) {
+				res = { element, value: finalValue, isFinal: true, length };
+				break;
+			}
+		}
+		results[i] = res;
+	}
+
+	let best = -1;
+	let minLen: Conway0 | null = null;
+	for (let i = 0; i < results.length; i++) {
+		const res = results[i];
+		if (res === null) {
+			continue;
+		}
+
+		if (minLen === null || lt(res.length, minLen)) {
+			best = i;
+			minLen = res.length;
+		}
+	}
+
+	if (minLen === null) {
+		throw new Error("unreachable");
+	}
+	return results[best] as SimplestBetweenReturn;
 };

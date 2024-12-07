@@ -16,7 +16,10 @@ import {
 	signExpansionOmit,
 	signExpansionReal,
 } from "../signExpansion/gonshor";
-import { normalizedSignExpansionLength } from "../signExpansion/normalize";
+import {
+	normalizedSignExpansionLength,
+	simplestBetween,
+} from "../signExpansion/normalize";
 import { commonPrefix } from "../signExpansion/normalize";
 import { normalizeSignExpansionSeq } from "../signExpansion/normalize";
 import { SignExpansionSeq } from "../signExpansion/types";
@@ -74,6 +77,9 @@ const assertSignExpansionMono1Omit = (
 ) => assertSignExpansionOmit(x, omit, parts, true);
 
 const arbSE = arbConway4(arbDyadic(4)).map((x) => [...signExpansion(x)]);
+const arbSEWithValue = arbConway4(arbDyadic(4)).map(
+	(x): [Conway0, SignExpansionElement[]] => [x, [...signExpansion(x)]],
+);
 
 const genReturnValue = <S, T>(g: Generator<S, T>) => {
 	while (true) {
@@ -1089,23 +1095,122 @@ describe("commonPrefix, let n = length of commonPrefix(a, b)", () => {
 				fc.pre(lt(lc, seqA.length) && lt(lc, seqB.length));
 				return seqA.index(lc) !== seqB.index(lc);
 			}),
+			{ numRuns: 100 },
 		);
 	});
 
 	it("truncation: for all i < n, a[i] = b[i]", () => {
 		fc.assert(
-			fc.property(arbSE, arbSE, arbOrd3, (a, b, i) => {
-				const sa = [...normalizeSignExpansionSeq(a)];
-				const sb = [...normalizeSignExpansionSeq(b)];
-				const sc = [...commonPrefix(sa, sb)];
+			fc.property(arbSE, arbSE, arbOrd3, (sa, sb, i) => {
+				const na = [...normalizeSignExpansionSeq(sa)];
+				const nb = [...normalizeSignExpansionSeq(sb)];
+				const sc = [...commonPrefix(na, nb)];
 				const lc = ensure(len(sc)) as Ord;
 				fc.pre(lt(i, lc.length));
-				const seqA = new SignExpansionSeq(sa);
-				const seqB = new SignExpansionSeq(sb);
+				const seqA = new SignExpansionSeq(na);
+				const seqB = new SignExpansionSeq(nb);
 				fc.pre(lt(i, seqA.length) && lt(i, seqB.length));
 				return seqA.index(i) === seqB.index(i);
 			}),
-			{ numRuns: 50 },
+			{ numRuns: 100 },
 		);
+	});
+
+	const getFinalValue = (xs: { finalValue: Conway0 }[]): Conway0 =>
+		xs.length === 0 ? 0n : xs[xs.length - 1].finalValue;
+
+	describe("a <= finalValue of commonPrefix <= b", () => {
+		it("finalValue of the last entry = a if a = b", () => {
+			fc.assert(
+				fc.property(arbSEWithValue, ([a, sa]) => {
+					const na = [...normalizeSignExpansionSeq([...sa])];
+					const nb = [...normalizeSignExpansionSeq([...sa])];
+					const sc = [...commonPrefix(na, nb)];
+					const finalValue = getFinalValue(sc);
+					expect(eq(a, finalValue)).toBe(true);
+					return true;
+				}),
+				{ numRuns: 100 },
+			);
+		});
+
+		it("finalValue of the last entry is between a and b if a < b", () => {
+			fc.assert(
+				fc.property(arbSEWithValue, arbSEWithValue, ([a, sa], [b, sb]) => {
+					fc.pre(lt(a, b));
+					const na = [...normalizeSignExpansionSeq(sa)];
+					const nb = [...normalizeSignExpansionSeq(sb)];
+					const sc = [...commonPrefix(na, nb)];
+					const finalValue = getFinalValue(sc);
+					try {
+						expect(le(a, finalValue)).toBe(true);
+						expect(le(finalValue, b)).toBe(true);
+					} catch (e) {
+						console.error({ a, b, finalValue });
+						console.error({ sa, sb, sc });
+						console.error({
+							a_finalValue: lt(a, finalValue),
+							finalValue_b: lt(finalValue, b),
+						});
+						throw e;
+					}
+					return true;
+				}),
+				{ numRuns: 100 },
+			);
+		});
+
+		it.skip("values other than the finalValue of the last entry are NOT between a and b if a < b", () => {
+			fc.assert(
+				fc.property(arbSEWithValue, arbSEWithValue, ([a, sa], [b, sb]) => {
+					fc.pre(lt(a, b));
+					const na = [...normalizeSignExpansionSeq(sa)];
+					const nb = [...normalizeSignExpansionSeq(sb)];
+					const sc = [...commonPrefix(na, nb)];
+					sc.forEach(({ initValue, finalValue }, i, { length }) => {
+						expect(lt(a, initValue) && lt(initValue, b)).toBe(false);
+						expect(lt(a, finalValue) && lt(finalValue, b)).toBe(
+							i + 1 === length,
+						);
+					});
+					return true;
+				}),
+				{ numRuns: 100 },
+			);
+		});
+
+		it("equivalent with simplestBetween", () => {
+			fc.assert(
+				fc.property(arbSEWithValue, arbSEWithValue, ([a, sa], [b, sb]) => {
+					fc.pre(lt(a, b));
+					const na = [...normalizeSignExpansionSeq(sa)];
+					const nb = [...normalizeSignExpansionSeq(sb)];
+					const sc = [...commonPrefix(na, nb)];
+					const commonPrefixValue = getFinalValue(sc);
+					const {
+						element,
+						isFinal,
+						value: simplestValue,
+					} = simplestBetween(a, b);
+					try {
+						expect(commonPrefixValue).conwayEq(simplestValue);
+					} catch (e) {
+						console.error({
+							a,
+							b,
+							commonPrefixValue,
+							simplestValue,
+							element,
+							isFinal,
+						});
+						console.error({ sa, sb });
+						console.error({ na, nb, sc });
+						throw e;
+					}
+					return true;
+				}),
+				{ numRuns: 500 },
+			);
+		});
 	});
 });
