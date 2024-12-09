@@ -119,6 +119,10 @@ export class Dyadic {
 		return Number(this.numerator) / Number(1n << this.power);
 	}
 
+	public half(power = 1n) {
+		return new Dyadic(this.numerator, this.power + power);
+	}
+
 	public toString(radix?: number) {
 		return (this.isInteger ? this.bigintQuotient : this.quotient).toString(
 			radix,

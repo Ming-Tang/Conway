@@ -34,20 +34,16 @@ export const realIsOne = (value: Real): boolean =>
 export const realIsZero = (value: Real): boolean =>
 	value instanceof Dyadic ? value.isZero : !value;
 
+export const realToDyadic = (a: Real): Dyadic => {
+	if (a instanceof Dyadic) {
+		return a;
+	}
+	return typeof a === "bigint" ? dyadicFromBigint(a) : dyadicFromNumber(a);
+};
+
 const maybeCoerceDyadic2 = (a: Real, b: Real): [Dyadic, Dyadic] | null => {
 	if (a instanceof Dyadic || b instanceof Dyadic) {
-		return [
-			a instanceof Dyadic
-				? a
-				: typeof a === "bigint"
-					? dyadicFromBigint(a)
-					: dyadicFromNumber(a),
-			b instanceof Dyadic
-				? b
-				: typeof b === "bigint"
-					? dyadicFromBigint(b)
-					: dyadicFromNumber(b),
-		];
+		return [realToDyadic(a), realToDyadic(b)];
 	}
 	return null;
 };

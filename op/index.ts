@@ -1,5 +1,11 @@
 import { Conway, type Conway0 } from "../conway";
-import { hasRealType, realZero, type Real } from "../real";
+import {
+	hasRealType,
+	realToBigint,
+	realToDyadic,
+	realZero,
+	type Real,
+} from "../real";
 
 export const {
 	zero,
@@ -38,6 +44,30 @@ export const tryGetReal = (x: Conway0): Real | Conway => {
 		return rv === null ? x : rv;
 	}
 	return x;
+};
+
+export const tryGetFiniteOrd = (x: Conway0): bigint | null => {
+	const realValue: Real | null = x instanceof Conway ? x.realValue : x;
+	if (typeof realValue === "bigint") {
+		if (realValue < 0n) {
+			return null;
+		}
+		return realValue;
+	}
+	if (typeof realValue === "number") {
+		if (realValue >= 0 && Number.isInteger(realValue)) {
+			return BigInt(realValue);
+		}
+		return null;
+	}
+	if (realValue === null) {
+		return null;
+	}
+	const d = realToDyadic(realValue);
+	if (d.isNegative || !d.isInteger) {
+		return null;
+	}
+	return d.bigintQuotient;
 };
 
 export const isReal = (x: Conway0): boolean => {
