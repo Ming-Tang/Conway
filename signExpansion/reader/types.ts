@@ -23,15 +23,16 @@ export function* groupBySign<O extends Ord0 = Ord0>(
 			break;
 		}
 
+		if (isZero(entry.length)) {
+			continue;
+		}
+
 		if (partialEntry === null) {
 			partialEntry = entry;
 			continue;
 		}
 
 		const { sign: sign0, length: len0 } = partialEntry as Entry;
-		if (isZero(len0)) {
-			continue;
-		}
 
 		const { sign, length } = entry;
 		if (sign0 === sign) {
@@ -50,12 +51,13 @@ export function* groupBySign<O extends Ord0 = Ord0>(
 	}
 }
 
-export class IterReader<O extends Ord0 = Ord0>
+export class IterReader<O extends Ord0 = Ord0, Return = void>
 	implements SignExpansionReader<O>
 {
 	#it: Iterator<Entry<O>>;
 	#done = false;
 	#entry: Entry<O> | null = null;
+	public returnValue: Return | undefined = undefined;
 
 	constructor(iter: Iterable<Entry<O>>) {
 		this.#it = groupBySign(iter)[Symbol.iterator]();
@@ -104,6 +106,10 @@ export class IterReader<O extends Ord0 = Ord0>
 		}
 
 		const { done, value: entry } = this.#it.next();
+		if (done) {
+			this.returnValue = entry;
+		}
+
 		if (done || isZero(entry.length)) {
 			this.#entry = null;
 			this.#done = true;
@@ -111,5 +117,19 @@ export class IterReader<O extends Ord0 = Ord0>
 		}
 
 		this.#entry = entry;
+	}
+}
+
+export function* iterSignExpansionReader<O extends Ord0 = Ord0>(
+	reader: SignExpansionReader<O>,
+) {
+	while (true) {
+		const entry = reader.lookahead();
+		if (entry === null) {
+			break;
+		}
+		const { sign, length } = entry;
+		yield { sign, length } as Entry<O>;
+		reader.consume(entry.length);
 	}
 }
