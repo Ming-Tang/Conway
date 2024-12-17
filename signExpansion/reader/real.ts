@@ -49,6 +49,13 @@ function* genRealPos(r: Dyadic, plus: boolean, omitInitial = false) {
 	}
 }
 
+/**
+ * Given a real number that is a dyadic, generates its
+ * sign expansion.
+ * @param omitInitial `true` to omit the initial plus or minus.
+ * `false` (default) otherwise.
+ * @see `readReal` for the inverse
+ */
 export function* genReal(real: Real, omitInitial = false) {
 	if (realIsZero(real)) {
 		return;
@@ -60,6 +67,16 @@ export function* genReal(real: Real, omitInitial = false) {
 }
 
 export type LastSign = { value: Real; sign: boolean } | null;
+
+/**
+ * Given the sign expansion of a real number, generates its sign expansion.
+ * @param reader The reader to read the real from
+ * @see `genReal` for the inverse
+ * @returns The tuple `[lastSign, real]` where:
+ * - `real` is the real number from the sign expansion.
+ * - `lastSign` The last sign (`+^1` or `-^1`) and the real value before
+ * the last sign was added. `lastSign === null` if and only if the `real` is zero.
+ */
 export const readReal = (
 	reader: SignExpansionReader<bigint>,
 ): [LastSign, Real] => {
@@ -101,6 +118,15 @@ export const readReal = (
 	return [last, value];
 };
 
+/**
+ * Given a sign expansion reader for the real part and the number of
+ * pluses of the mono1.
+ * Generates the sign expansion contribution of the real part.
+ * @param real The real number of generate
+ * @param unitLength The number of pluses in the sign expansion of the exponent
+ * @param plus `true` if the monomial is positive, `false` for negative
+ * @see `readRealPart` for the inverse
+ */
 export function* genRealPart(
 	real: Real,
 	unitLength: Ord0,
@@ -122,6 +148,14 @@ export function* genRealPart(
 	}
 }
 
+/**
+ * Given a sign expansion reader that has already read a mono1
+ * with a known number of pluses. Generates the sign expansion
+ * of the real part without the initial plus or minus.
+ * @param reader The sign expansion reader in the state right after reading a mono1
+ * @param unitLength The number of pluses in the sign expansion of the exponent, obtained after reading the mono1
+ * @see `genRealPart` for the inverse
+ */
 export function* readRealPartOmit(
 	reader: SignExpansionReader,
 	unitLength: Ord0,

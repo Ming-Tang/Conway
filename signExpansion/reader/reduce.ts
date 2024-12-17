@@ -9,6 +9,22 @@ import {
 	type SignExpansionReader,
 } from "./types";
 
+/**
+ * Given an unreduced sign expansion (`child`) and a sign expansion
+ * to reduce againt (`parent`), generates the reduced sign expansion
+ * of `child`.
+ *
+ * The concept of "reduced" sign expansions is explained in the
+ * proof of [Gonshor] Theorem 5.12.
+ * The "the last minus is discarded" subrule is not implemented
+ * because non-dyadic coefficients are not supported by this
+ * representation.
+ *
+ * Precondition: `child < parent`.
+ * @param child The unreduced sign expansion
+ * @param parent The unreduced sign expansion to reduce against.
+ * @see `unreduceSignExpansion` for the inverse
+ */
 export function* reduceSignExpansion<O extends Ord0 = Ord0>(
 	child: SignExpansionReader<O>,
 	parent: SignExpansionReader<O>,
@@ -23,6 +39,21 @@ export function* reduceSignExpansion<O extends Ord0 = Ord0>(
 	return yield* iterSignExpansionReader(child);
 }
 
+/**
+ * Given a reduced sign expansion (`child`) and an unreduced
+ * sign expansion reduceed againt (`parent`), generates the
+ * unreduced sign expansion of `child`.
+ *
+ * The concept of "reduced" sign expansions is explained in the
+ * proof of [Gonshor] Theorem 5.12.
+ * The "the last minus is discarded" subrule is not implemented
+ * because non-dyadic coefficients are not supported by this
+ * representation.
+ *
+ * @param child The reduced sign expansion
+ * @param parent The unreduced sign expansion to unreduce against
+ * @see `unreduceSignExpansion` for the inverse
+ */
 export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 	reducedChild: SignExpansionReader<O>,
 	parent: SignExpansionReader<O>,
@@ -51,16 +82,7 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 		return;
 	}
 
-	// if (!entry0.sign && !entry0Parent.sign) {
-	// 	// [-^l S] || [-^k R] = [-^(k + l) S]
-	// 	// --> [-^(k + l) S] | [-^k R] = [-^l S]
-	// 	const k = entry0Parent.sign === false ? entry0Parent.length : 0n;
-	// 	yield { sign: false, length: k as O };
-	// 	yield* iterSignExpansionReader(reducedChild);
-	// 	return;
-	// }
-
-	// too many (or same) leading plpuses as number of pluses in parent
+	// too many (or same) leading pluses as number of pluses in parent
 	// [+^(k + d) S] || [C] = [C +^d S]
 	// too few leading pluses
 	// [+^k S] || [C P] = [C S]
@@ -92,6 +114,19 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 	yield* iterSignExpansionReader(reducedChild);
 }
 
+/**
+ * Given a sequence of unreduced sign expansions of the exponents
+ * in a term list, returns the reduced sign expansions of them
+ * in the context of previous terms.
+ *
+ * The concept of "reduced" sign expansions is explained in the
+ * proof of [Gonshor] Theorem 5.12.
+ * The "the last minus is discarded" subrule is not implemented
+ * because non-dyadic coefficients are not supported by this
+ * representation.
+ * @param unreduced The list of unreduced sign expansions
+ * @see `unreduceMulti` for the inverse
+ */
 export const reduceMulti = <O extends Ord0 = Ord0>(
 	unreduced: Entry<O>[][],
 ): Entry<O>[][] => {
@@ -127,6 +162,19 @@ export const reduceMulti = <O extends Ord0 = Ord0>(
 	return reduced;
 };
 
+/**
+ * Given a sequence of reduced sign expansions of the exponents
+ * in a term list, returns the unreduced sign expansions of them
+ * in the context of previous terms.
+ *
+ * The concept of "reduced" sign expansions is explained in the
+ * proof of [Gonshor] Theorem 5.12.
+ * The "the last minus is discarded" subrule is not implemented
+ * because non-dyadic coefficients are not supported by this
+ * representation.
+ * @param reduced The list of reduced sign expansions
+ * @see `reduceMulti` for the inverse
+ */
 export const unreduceMulti = <O extends Ord0 = Ord0>(
 	reduced: Entry<O>[][],
 ): Entry<O>[][] => {
