@@ -1,14 +1,20 @@
 import type { Ord0 } from "../../conway";
-import { Dyadic, dyadicSignExpansionFrac, dyadicToMixed } from "../../dyadic";
+import type { Dyadic } from "../../dyadic";
+import {
+	dyadicAdd,
+	dyadicFromBigint,
+	dyadicNeg,
+	dyadicSignExpansionFrac,
+	dyadicToMixed,
+} from "../../dyadic";
+import { dyadicPow2 } from "../../dyadic/arith";
 import { tryGetFiniteOrd } from "../../op";
 import { isZero, isAboveReals, lt } from "../../op/comparison";
 import { ordinalDivRem, ordinalMult } from "../../op/ordinal";
 import {
-	realAdd,
 	realIsNegative,
 	realIsZero,
 	realNeg,
-	realSub,
 	realToDyadic,
 	type Real,
 } from "../../real";
@@ -53,49 +59,46 @@ export function* genReal(real: Real, omitInitial = false) {
 	return yield* genRealPos(realToDyadic(real), true, omitInitial);
 }
 
-const readRealPos = (
+export type LastSign = { value: Real; sign: boolean } | null;
+export const readReal = (
 	reader: SignExpansionReader<bigint>,
-	plus: boolean,
-): Real => {
+): [LastSign, Real] => {
 	const pre = reader.lookahead();
 	if (pre === null) {
-		return 0n;
+		return [null, 0n];
 	}
 
-	const { sign, length: prefixLength } = pre;
-	let val: Real = prefixLength;
-	if (sign !== plus) {
-		val = realNeg(val);
-	}
-	reader.consume(prefixLength);
-	let delta = Dyadic.ONE;
+	reader.consume(pre.length);
+	let value: Dyadic | bigint = pre.sign ? pre.length : -pre.length;
+	// The exponent of b(i) in [Gonshor] Theorem 4.2: b(i) = 1/(2^(i-m+1))
+	let exponent = -1n;
+	let last: LastSign = {
+		value: pre.sign ? value - 1n : value + 1n,
+		sign: pre.sign,
+	};
+
 	while (true) {
-		const res = reader.lookahead();
-		if (res === null || (res && isAboveReals(res.length))) {
+		const head = reader.lookahead();
+		if (head === null) {
 			break;
 		}
-		const { sign, length } = res;
-
-		for (let i = 0n; lt(i, length); i++) {
-			delta = delta.half();
-			val = sign === plus ? realAdd(val, delta) : realSub(val, delta);
+		if (typeof value === "bigint") {
+			value = dyadicFromBigint(value);
 		}
-		reader.consume(length);
+
+		const { sign, length: n } = head;
+		for (let i = 0n; i < n; i++) {
+			const delta = sign
+				? dyadicPow2(exponent)
+				: dyadicNeg(dyadicPow2(exponent));
+			exponent--;
+			last = { value, sign };
+			value = dyadicAdd(value, delta);
+		}
+		reader.consume(n);
 	}
 
-	return val;
-};
-
-export const readReal = (reader: SignExpansionReader<bigint>): Real => {
-	const pre = reader.lookahead();
-	if (pre === null) {
-		return 0n;
-	}
-
-	if (!pre.sign) {
-		return realNeg(readRealPos(reader, false));
-	}
-	return readRealPos(reader, true);
+	return [last, value];
 };
 
 export function* genRealPart(
@@ -136,10 +139,7 @@ export function* readRealPartOmit(
 
 		const [q] = ordinalDivRem(length, unitLength);
 		const o = tryGetFiniteOrd(q);
-		if (isAboveReals(q) || o === null) {
-			throw new RangeError("not supported: infinitely number of real signs");
-		}
-		if (q === 0n) {
+		if (isAboveReals(q) || o === null || q === 0n) {
 			break;
 		}
 

@@ -7,7 +7,7 @@ import {
 	type Entry,
 } from "../signExpansion/reader/types";
 import type { Ord0 } from "../conway";
-import { ge, gt, isZero, le, lt, ne } from "../op/comparison";
+import { ge, gt, isAboveReals, isZero, le, lt, ne } from "../op/comparison";
 import {
 	genMono,
 	genMono1,
@@ -15,10 +15,10 @@ import {
 	readMono1,
 } from "../signExpansion/reader/mono";
 import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
-import { mono, unit } from "../op";
+import { mono, mono1, unit } from "../op";
 import { genReal, readReal } from "../signExpansion/reader/real";
 import { realAdd, realNeg, type Real } from "../real";
-import { Dyadic } from "../dyadic";
+import { Dyadic, dyadicMinus, dyadicPlus } from "../dyadic";
 import {
 	commonPrefix,
 	compareSign,
@@ -35,6 +35,12 @@ import {
 	unreduceSignExpansion,
 } from "../signExpansion/reader/reduce";
 import { propTotalOrder } from "./propsTest.test";
+import {
+	composeSignExpansion,
+	decomposeSignExpansion,
+} from "../signExpansion/reader/normalForm";
+
+fc.configureGlobal({ numRuns: 100 });
 
 const arbEntry = (
 	arbLength = arbOrd3 as fc.Arbitrary<Ord0>,
@@ -310,12 +316,28 @@ describe("genReal", () => {
 	});
 });
 
+describe("readReal", () => {
+	it("readReal(SE(xp)).lastSign = { value: x, sign } where xp = plus(x) or minus(x) given sign", () => {
+		fc.assert(
+			fc.property(fc.boolean(), arbDyadic(), (sign, x) => {
+				const xp = sign ? dyadicPlus(x) : dyadicMinus(x);
+				const [lastSign, real] = readReal(new IterReader(genReal(xp)));
+				expect(real).conwayEq(xp);
+				expect(lastSign).toStrictEqual({
+					value: expect.conwayEq(x),
+					sign,
+				});
+			}),
+		);
+	});
+});
+
 describe("genReal", () => {
 	it("returns original real after readReal, no omit initial", () => {
 		fc.assert(
 			fc.property(arbDyadic(), (x) => {
 				const sx = [...genReal(x)];
-				const rx = readReal(new IterReader(sx));
+				const rx = readReal(new IterReader(sx))[1];
 				expect(rx).conwayEq(x);
 			}),
 		);
@@ -1082,5 +1104,101 @@ describe("reduceMulti/unreduceMulti", () => {
 				},
 			),
 		);
+	});
+});
+
+describe("decomposeSignExpansion/composeSignExpansion", () => {
+	it("decomposeSignExpansion reads to the end", () => {
+		fc.assert(
+			fc.property(arbSigns, (xs) => {
+				const reader = new IterReader(xs);
+				decomposeSignExpansion(reader);
+				return reader.isDone;
+			}),
+		);
+	});
+
+	const arbSignsReal = fc.array(
+		fc.record<Entry<bigint>>({
+			sign: fc.boolean(),
+			length: fc.bigInt({ min: 1n, max: 4n }),
+		}),
+	);
+
+	it("decomposeSignExpansion on real plus infinitesimal", () => {
+		// SE(r + w^-p or r - w^-p) = SE(r) & [+] & [-^p]
+		fc.assert(
+			fc.property(
+				arbSignsReal.filter((x) => x.length > 0),
+				fc.boolean(),
+				arbOrd3.filter(isAboveReals),
+				(signsReal, lastSign, p) => {
+					const realValue = readReal(new IterReader(signsReal))[1];
+					const xs: Entry[] = [
+						...(signsReal as Entry[]),
+						{ sign: lastSign, length: 1n },
+						{
+							sign: !lastSign,
+							length: mono1(p),
+						},
+					];
+					const reader = new IterReader(xs);
+					const decomposed = decomposeSignExpansion(reader);
+					expect(decomposed.map(([p, r]) => ({ p, r }))).toStrictEqual([
+						{ p: [], r: expect.conwayEq(realValue) },
+						{
+							p: [{ length: p, sign: false }],
+							r: expect.conwayEq(lastSign ? 1n : -1n),
+						},
+					]);
+					return true;
+				},
+			),
+		);
+	});
+
+	const arbSignsMono1 = arbSigns.map((p) => [
+		...composeSignExpansion([[p, 1n]]),
+	]);
+	const arbSignsMono = fc
+		.tuple(arbSigns, arbDyadic())
+		.map(([p, r]) => [...composeSignExpansion([[p, r]])]);
+
+	const rules = [
+		{ gen: arbSignsMono1, name: "mono1" },
+		{ gen: arbSignsMono, name: "mono" },
+		{
+			gen: fc.record({ sign: fc.boolean(), length: arbOrd3 }).map((x) => [x]),
+			name: "+/- ordinal",
+		},
+		{ gen: arbSigns, name: "any sign expansion" },
+	];
+
+	describe("invertible", () => {
+		for (const { gen, name } of rules) {
+			describe(`${name}`, () => {
+				it("composeSignExpansion on decomposeSignExpansion without reducing", () => {
+					fc.assert(
+						fc.property(gen, (xs) => {
+							const reader = new IterReader(xs);
+							const decomposed = decomposeSignExpansion(reader, false);
+							const composed = composeSignExpansion(decomposed, false);
+							groupedEq(composed, xs);
+						}),
+					);
+				});
+
+				it("composeSignExpansion on decomposeSignExpansion", () => {
+					fc.assert(
+						fc.property(gen, (xs) => {
+							const reader = new IterReader(xs);
+							const decomposed = decomposeSignExpansion(reader);
+							const composed = composeSignExpansion(decomposed);
+							groupedEq(composed, xs);
+						}),
+					);
+				});
+			});
+		}
 	});
 });

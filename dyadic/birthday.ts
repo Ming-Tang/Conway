@@ -29,6 +29,9 @@ export const birthday = (p: Dyadic): bigint => {
 	return n + 1n + q.power;
 };
 
+/**
+ * Given a dyadic, returns a new dyadic with plus appended to its sign expansion.
+ */
 export const plus = (p: Dyadic): Dyadic => {
 	if (p.isZero) {
 		return one;
@@ -41,6 +44,9 @@ export const plus = (p: Dyadic): Dyadic => {
 	return dyadicNew(p.numerator + (1n << p.power), p.power);
 };
 
+/**
+ * Given a dyadic, returns a new dyadic with minus appended to its sign expansion.
+ */
 export const minus = (p: Dyadic): Dyadic => neg(plus(neg(p)));
 
 export const withSign = (p: Dyadic, sign: boolean) =>

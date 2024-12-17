@@ -68,6 +68,8 @@ export const mult = (p: Dyadic, q: Dyadic) => {
 	return dyadicNew(a * c, b + d);
 };
 
+export const dyadicPow2 = Dyadic.pow2;
+
 const EPSILON = fromNumber(Number.EPSILON);
 
 /**

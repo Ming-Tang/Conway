@@ -36,10 +36,16 @@ const genToArrayReturn = <T, R>(gen: Generator<T, R>) => {
 	throw new Error("unreachable code");
 };
 
-export function* readMono1(reader: SignExpansionReader, plus = true) {
-	// +^1
-	if (!tryConsume(reader, { sign: plus, length: 1n })) {
-		return 0n;
+export function* readMono1(
+	reader: SignExpansionReader,
+	plus = true,
+	skipFirstPlus = false,
+) {
+	if (!skipFirstPlus) {
+		// +^1
+		if (!tryConsume(reader, { sign: plus, length: 1n })) {
+			return 0n;
+		}
 	}
 
 	let nPlus = 0n as Ord0;
@@ -67,8 +73,6 @@ export function* readMono1(reader: SignExpansionReader, plus = true) {
 			yield {
 				sign: true,
 				length: addlPlus,
-				// $addlPlus: addlPlus,
-				// $nPlus: nPlus,
 			} as Entry;
 			reader.consume(mono1(p0));
 			continue;
@@ -80,13 +84,10 @@ export function* readMono1(reader: SignExpansionReader, plus = true) {
 		}
 
 		const d = mono1(b0);
-		const [q, rem] = ordinalDivRem(length, d);
+		const [q] = ordinalDivRem(length, d);
 		yield {
 			sign: false,
 			length: q,
-			// $nPlus: nPlus,
-			// $b0: b0,
-			// $div: [length, '/', d, '=', q, 'R', rem]
 		};
 		reader.consume(ordinalMult(d, q));
 	}
@@ -115,18 +116,37 @@ export function* genMono1(reader: SignExpansionReader, plus = true) {
 	return nPlus;
 }
 
-export const readMono = (reader: SignExpansionReader) => {
+/**
+ * Reads a monomial (exponent and real coefficient) from the `reader`.
+ * The next sign from the reader determines the sign of the real part. If the first
+ * sign was already consumed by the previous term, pass the already-consumed sign to
+ * the `skippedFirstPlus` parameter.
+ * @param reader
+ * @param skippedFirstPlus
+ * @returns `null` if there's nothing to parse. Otherwise:
+ *  - The exponent (`.mono1`),
+ *  - the real part (`.real`),
+ *  - the number of pluses in the parsed exponent (`nPlus`),
+ *  - and the `.lastSign` to handle skipping the first plus for reading the next monomial.
+ */
+export const readMono = (
+	reader: SignExpansionReader,
+	skippedFirstPlus = null as true | false | null,
+) => {
 	const head = reader.lookahead();
 	if (head === null) {
 		return null;
 	}
-	const plus = head.sign;
-	const [mono1Part, nPlus] = genToArrayReturn(readMono1(reader, plus));
+	const plus = skippedFirstPlus ?? head.sign;
+	const [mono1Part, nPlus] = genToArrayReturn(
+		readMono1(reader, plus, skippedFirstPlus !== null),
+	);
 	const real = [
 		{ sign: plus, length: 1n } as Entry<bigint>,
 		...readRealPartOmit(reader, mono1(nPlus)),
 	];
-	return { mono1: mono1Part, real: readReal(new IterReader(real)), nPlus };
+	const [lastSign, realValue] = readReal(new IterReader(real));
+	return { mono1: mono1Part, real: realValue, nPlus, lastSign };
 };
 
 export function* genMono({
