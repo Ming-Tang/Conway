@@ -1,7 +1,11 @@
-import { isAboveReals, isZero } from "../../op/comparison";
+import { Conway, type Conway0, type Ord0 } from "../../conway";
+import { create, tryGetReal } from "../../op";
+import { gt, isAboveReals, isZero } from "../../op/comparison";
 import type { Real } from "../../real";
-import { genMono, readMono } from "./mono";
+import { genMono, readMono, type SkipFirst } from "./mono";
+import { genReal } from "./real";
 import { reduceMulti, unreduceMulti } from "./reduce";
+import { countSigns } from "./split";
 import { IterReader, type Entry, type SignExpansionReader } from "./types";
 
 /**
@@ -26,30 +30,30 @@ export const decomposeSignExpansion = (
 	unreduce = true,
 ) => {
 	const terms: Term[] = [];
-	let skippedFirstPlus = null as null | true | false;
+	// skippedPlus: Entry | null
+	let skipFirst = null as SkipFirst | null;
 	while (reader.lookahead() !== null) {
-		const res =
-			skippedFirstPlus !== null
-				? readMono(reader, skippedFirstPlus)
-				: readMono(reader);
+		const res = readMono(reader, skipFirst);
+		skipFirst = null;
+
 		if (res === null) {
 			break;
 		}
 
-		skippedFirstPlus = null;
 		const { mono1, real, lastSign, nPlus } = res;
 
 		const next = reader.lookahead();
 		if (next !== null && lastSign !== null) {
 			const { sign: nextSign, length: nextLen } = next;
 			const isInNonInfPart = isZero(nPlus);
-			// Are we in a segment of [+^1 -^(infinite)] or [-^1 +^(infinite)]?
-			// The `+^1` or `-^1` must be part of a real part (nPlus=0) and it
+			// Are we in a segment of [+^(w^b) -^(w^c)] or [-^(w^b) +^(w^c)]?
+			// where the next mono1 can overtake the current term?
+			// The `+^(w^b)` or `-^(w^b)` must be part of a real part and it
 			// has already been parsed by the previous term.
 			if (isInNonInfPart && isAboveReals(nextLen)) {
 				if (lastSign.sign === nextSign) {
 					console.error("invalid parser state", {
-						skippedFirstPlus,
+						skipFirst,
 						res,
 						lastSign,
 						nextSign,
@@ -60,7 +64,7 @@ export const decomposeSignExpansion = (
 				}
 
 				terms.push([mono1, lastSign.value]);
-				skippedFirstPlus = lastSign.sign;
+				skipFirst = { sign: lastSign.sign, exponent: 0n };
 				continue;
 			}
 		}
@@ -115,3 +119,37 @@ export function* composeSignExpansion(terms: Iterable<Term>, reduce = true) {
 		i++;
 	}
 }
+
+export function* signExpansionFromConway(conway: Conway0) {
+	if (isZero(conway)) {
+		return;
+	}
+
+	const realValue = tryGetReal(conway);
+	if (!(realValue instanceof Conway)) {
+		yield* genReal(realValue, false);
+		return;
+	}
+
+	const terms: Term[] = realValue
+		.getTerms()
+		.map(([p, r]) => [[...signExpansionFromConway(p)], r]);
+	yield* composeSignExpansion(terms, true);
+}
+
+export const conwayFromSignExpansion = (
+	reader: SignExpansionReader,
+): Conway0 => {
+	if (reader.lookahead() === null) {
+		return 0n;
+	}
+
+	const decomposed = decomposeSignExpansion(reader);
+	const terms: [Conway0, Real][] = decomposed.map(([p, r]) => {
+		return [conwayFromSignExpansion(new IterReader(p)), r];
+	});
+	return create(terms);
+};
+
+export const birthdayConway = (conway: Conway0) =>
+	countSigns(new IterReader(signExpansionFromConway(conway)), null);

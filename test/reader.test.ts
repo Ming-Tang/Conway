@@ -1,6 +1,11 @@
 import "../test/expect.test";
 import fc from "fast-check";
-import { arbDyadic, arbFiniteBigintOrd, arbOrd3 } from "./generators";
+import {
+	arbConway3,
+	arbDyadic,
+	arbFiniteBigintOrd,
+	arbOrd3,
+} from "./generators";
 import {
 	groupBySign,
 	IterReader,
@@ -37,7 +42,9 @@ import {
 import { propTotalOrder } from "./propsTest.test";
 import {
 	composeSignExpansion,
+	conwayFromSignExpansion,
 	decomposeSignExpansion,
+	signExpansionFromConway,
 } from "../signExpansion/reader/normalForm";
 
 fc.configureGlobal({ numRuns: 100 });
@@ -424,44 +431,41 @@ describe("genMono/readMono", () => {
 		);
 	});
 
-	const checkReturnOriginalExponent = ({
-		mono1,
-		real,
-	}: { mono1: Entry[]; real: Real }) => {
-		const se = [...genMono({ mono1: new IterReader(mono1), real })];
-		const res = readMono(new IterReader(se));
-		if (res === null) {
-			expect(real).conwayEq(0n);
-			return;
-		}
+	describe("returns original exponent", () => {
+		const checkReturnOriginalExponent = ({
+			mono1,
+			real,
+		}: { mono1: Entry[]; real: Real }) => {
+			const se = [...genMono({ mono1: new IterReader(mono1), real })];
+			const res = readMono(new IterReader(se));
+			if (res === null) {
+				expect(real).conwayEq(0n);
+				return;
+			}
 
-		const { mono1: m1p1, real: r1 } = res;
-		expect({
-			real: r1,
-			exponent: [...groupBySign(m1p1)].map(lengthToString),
-		}).toStrictEqual({
-			real: r1,
-			exponent: [...groupBySign(mono1)].map(lengthToString),
+			const { mono1: m1p1, real: r1 } = res;
+			expect(r1).conwayEq(real);
+			groupedEq(m1p1, mono1);
+		};
+
+		it("given w^ordinal * real", () => {
+			fc.assert(
+				fc.property(arbDyadic(), arbOrd3, (real, o) => {
+					checkReturnOriginalExponent({
+						mono1: [{ sign: true, length: o }],
+						real,
+					});
+				}),
+			);
 		});
-	};
 
-	it("returns original exponent and real given w^ordinal * real", () => {
-		fc.assert(
-			fc.property(arbDyadic(), arbOrd3, (real, o) => {
-				checkReturnOriginalExponent({
-					mono1: [{ sign: true, length: o }],
-					real,
-				});
-			}),
-		);
-	});
-
-	it("returns original exponent and real given w^exponent * real", () => {
-		fc.assert(
-			fc.property(arbDyadic(), arbGroupedSigns, (real, mono1) => {
-				checkReturnOriginalExponent({ mono1, real });
-			}),
-		);
+		it("given w^exponent * real", () => {
+			fc.assert(
+				fc.property(arbDyadic(), arbGroupedSigns, (real, mono1) => {
+					checkReturnOriginalExponent({ mono1, real });
+				}),
+			);
+		});
 	});
 });
 
@@ -1108,14 +1112,67 @@ describe("reduceMulti/unreduceMulti", () => {
 });
 
 describe("decomposeSignExpansion/composeSignExpansion", () => {
-	it("decomposeSignExpansion reads to the end", () => {
-		fc.assert(
-			fc.property(arbSigns, (xs) => {
-				const reader = new IterReader(xs);
-				decomposeSignExpansion(reader);
-				return reader.isDone;
-			}),
-		);
+	describe("decomposeSignExpansion", () => {
+		it("reads to the end", () => {
+			fc.assert(
+				fc.property(arbSigns, (xs) => {
+					const reader = new IterReader(xs);
+					decomposeSignExpansion(reader);
+					return reader.isDone;
+				}),
+			);
+		});
+
+		it("generates no zero real -arts", () => {
+			fc.assert(
+				fc.property(arbSigns, (xs) => {
+					const terms = decomposeSignExpansion(new IterReader(xs));
+					for (const term of terms) {
+						expect(term[1]).not.conwayEq(0n);
+					}
+				}),
+			);
+		});
+
+		it("generates a decreasing list of exponents and non-zero real parts", () => {
+			fc.assert(
+				fc.property(arbSigns, (xs) => {
+					const terms = decomposeSignExpansion(new IterReader(xs));
+					fc.pre(terms.length >= 2);
+					for (let i = 1; i < terms.length; i++) {
+						expect(
+							compareSignExpansions(
+								new IterReader(terms[i - 1][0]),
+								new IterReader(terms[i][0]),
+							),
+						).toBe(-1);
+					}
+				}),
+			);
+		});
+
+		it("negation symmetry on real parts only", () => {
+			fc.assert(
+				fc.property(arbSigns, (xs) => {
+					const terms = decomposeSignExpansion(new IterReader(xs));
+					const termsNeg = decomposeSignExpansion(
+						new IterReader(xs.map(flipSign)),
+					);
+					expect(termsNeg).toHaveLength(terms.length);
+					for (let i = 0; i < terms.length; i++) {
+						const r0 = terms[i][1];
+						const r1 = termsNeg[i][1];
+						expect(r1).conwayEq(realNeg(r0));
+					}
+
+					for (let i = 0; i < terms.length; i++) {
+						const p0 = terms[i][0];
+						const p1 = termsNeg[i][0];
+						groupedEq(p1, p0);
+					}
+				}),
+			);
+		});
 	});
 
 	const arbSignsReal = fc.array(
@@ -1201,4 +1258,51 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 			});
 		}
 	});
+});
+
+describe("signExpansionFromConway/conwayFromSignExpansion", () => {
+	it("invertible: signExpansionFromConway(conwayFromSignExpansion(x)) = x", () => {
+		fc.assert(
+			fc.property(arbSigns, (xs) => {
+				groupedEq(
+					signExpansionFromConway(conwayFromSignExpansion(new IterReader(xs))),
+					xs,
+				);
+			}),
+			{ verbose: true },
+		);
+	});
+
+	it("invertible: conwayFromSignExpansion(signExpansionFromConway(x)) = x", () => {
+		fc.assert(
+			fc.property(arbConway3(arbDyadic()), (x) => {
+				expect(
+					conwayFromSignExpansion(new IterReader(signExpansionFromConway(x))),
+				).conwayEq(x);
+			}),
+			{ verbose: true },
+		);
+	});
+
+	it("failing example", () => {
+		const se = [
+			{ sign: true, length: mono(2n, 1n) },
+			{ sign: false, length: mono1(2n) },
+		];
+		console.log(se);
+		console.log(conwayFromSignExpansion(new IterReader(se)));
+		console.log("---");
+		for (const t of decomposeSignExpansion(new IterReader(se), true)) {
+			console.log(...t);
+		}
+		console.log("---");
+		for (const t of decomposeSignExpansion(new IterReader(se), false)) {
+			console.log(...t);
+		}
+	});
+	// TODO failing:
+	// +^(2w) -^(w^2)
+	// Incorrect: [+^(2w)] [-^(w^2)] = -w^2 + 2w
+	// Correct: [+^w] [+^w -^(w^2)] = w + w^(1/2)
+	// w + w^(1/2)
 });

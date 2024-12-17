@@ -36,30 +36,50 @@ const genToArrayReturn = <T, R>(gen: Generator<T, R>) => {
 	throw new Error("unreachable code");
 };
 
+export interface SkipFirst {
+	sign: boolean;
+	exponent: Ord0;
+}
+
 /**
  * Reads the next sign expansion of a positive or negative mono1 (`w^p` or `-w^p`)
  * and generates the sign expansion for `p`.
  * See [Gonshor] Theorem 5.11(a) and Corollary 5.1 for more details.
  * @param plus True for parsing a positive mono1, false for negative.
- * @param skipFirstPlus Skip reading the first plus (`+^1`) of the sign expansion.
+ * @param skipFirst Skip reading the first segment of the sign expansion.
  * @returns The ordinal number of pluses in the parsed `p`.
  * @see `genMono1` for its inverse
  */
 export function* readMono1(
 	reader: SignExpansionReader,
 	plus = true,
-	skipFirstPlus = false,
+	skipFirst = null as SkipFirst | null,
 ) {
-	if (!skipFirstPlus) {
+	let skip = skipFirst;
+	if (skip === null) {
 		// +^1
 		if (!tryConsume(reader, { sign: plus, length: 1n })) {
 			return 0n;
 		}
 	}
 
+	// Consume skip w^0
+	if (skip && isZero(skip.exponent)) {
+		skip = null;
+	}
+
 	let nPlus = 0n as Ord0;
 	while (true) {
-		const result = reader.lookahead();
+		let result: Entry | null = null;
+		let consumedSkipped = false;
+		if (skip !== null) {
+			result = { sign: skip.sign, length: mono1<Ord0>(skip.exponent) };
+			consumedSkipped = true;
+			skip = null;
+		} else {
+			result = reader.lookahead();
+		}
+
 		if (!result) {
 			break;
 		}
@@ -99,7 +119,10 @@ export function* readMono1(
 			sign: false,
 			length: q,
 		};
-		reader.consume(ordinalMult(d, q));
+
+		if (!consumedSkipped) {
+			reader.consume(ordinalMult(d, q));
+		}
 	}
 
 	return nPlus;
@@ -155,17 +178,18 @@ export function* genMono1(reader: SignExpansionReader, plus = true) {
  *  - and the `.lastSign` to handle skipping the first plus for reading the next monomial.
  * @see `genMono` for its inverse
  */
+
 export const readMono = (
 	reader: SignExpansionReader,
-	skippedFirstPlus = null as true | false | null,
+	skipFirst = null as SkipFirst | null,
 ) => {
 	const head = reader.lookahead();
 	if (head === null) {
 		return null;
 	}
-	const plus = skippedFirstPlus ?? head.sign;
+	const plus = skipFirst?.sign ?? head.sign;
 	const [mono1Part, nPlus] = genToArrayReturn(
-		readMono1(reader, plus, skippedFirstPlus !== null),
+		readMono1(reader, plus, skipFirst),
 	);
 	const real = [
 		{ sign: plus, length: 1n } as Entry<bigint>,
