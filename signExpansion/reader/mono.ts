@@ -15,12 +15,13 @@ import { IterReader, type Entry, type SignExpansionReader } from "./types";
 const tryConsume = (
 	reader: SignExpansionReader,
 	{ sign, length }: Entry,
+	strict = true,
 ): boolean => {
 	const res = reader.lookahead();
 	if (!res || res.sign !== sign || gt(length, res.length)) {
 		return false;
 	}
-	reader.consume(length);
+	reader.consume(length, strict);
 	return true;
 };
 
@@ -46,7 +47,7 @@ export interface SkipFirst {
  * and generates the sign expansion for `p`.
  * See [Gonshor] Theorem 5.11(a) and Corollary 5.1 for more details.
  * @param plus True for parsing a positive mono1, false for negative.
- * @param skipFirst Skip reading the first segment of the sign expansion.
+ * @param skipFirst If not null, skip consuming the first segment of the sign expansion.
  * @returns The ordinal number of pluses in the parsed `p`.
  * @see `genMono1` for its inverse
  */
@@ -58,22 +59,28 @@ export function* readMono1(
 	let skip = skipFirst;
 	if (skip === null) {
 		// +^1
-		if (!tryConsume(reader, { sign: plus, length: 1n })) {
+		if (!tryConsume(reader, { sign: plus, length: 1n }, false)) {
 			return 0n;
 		}
-	}
+	} else {
+		if (skip.sign !== plus) {
+			throw new Error("Need to skip a +^1 but got a -");
+		}
 
-	// Consume skip w^0
-	if (skip && isZero(skip.exponent)) {
-		skip = null;
+		if (isZero(skip.exponent)) {
+			// Consume skip w^0 = 1
+			skip = null;
+		}
 	}
 
 	let nPlus = 0n as Ord0;
 	while (true) {
 		let result: Entry | null = null;
 		let consumedSkipped = false;
+		// let skippedLen: Ord0 | null = null;
 		if (skip !== null) {
 			result = { sign: skip.sign, length: mono1<Ord0>(skip.exponent) };
+			// skippedLen = result.length;
 			consumedSkipped = true;
 			skip = null;
 		} else {
@@ -103,7 +110,19 @@ export function* readMono1(
 				sign: true,
 				length: addlPlus,
 			} as Entry;
-			reader.consume(mono1(p0));
+
+			// if (skippedLen !== null) {
+			// 	const m = mono1(p0);
+			// 	const mult = ordinalDivRem(skippedLen, m)[0];
+			// 	skippedLen = null;
+			// 	if (isZero(mult)) {
+			// 		throw new Error(`consumed too little: d=${m} tot=${skippedLen}`);
+			// 	}
+			// }
+
+			if (!consumedSkipped) {
+				reader.consume(mono1(p0));
+			}
 			continue;
 		}
 
@@ -115,10 +134,20 @@ export function* readMono1(
 
 		const d = mono1(b0);
 		const [q] = ordinalDivRem(length, d);
+		// console.log("divRem", `${d} * [${q}] + [${r}] = ${length}`);
 		yield {
 			sign: false,
 			length: q,
 		};
+
+		// if (skippedLen !== null) {
+		// 	const m = ordinalMult(d, q);
+		// 	const mult = ordinalDivRem(skippedLen, m)[0];
+		// 	skippedLen = null;
+		// 	if (isZero(mult)) {
+		// 		throw new Error(`consumed too little: d=${m} tot=${skippedLen}`);
+		// 	}
+		// }
 
 		if (!consumedSkipped) {
 			reader.consume(ordinalMult(d, q));

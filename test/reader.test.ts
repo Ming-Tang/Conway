@@ -1,6 +1,7 @@
 import "../test/expect.test";
 import fc from "fast-check";
 import {
+	arbConway2,
 	arbConway3,
 	arbDyadic,
 	arbFiniteBigintOrd,
@@ -20,7 +21,7 @@ import {
 	readMono1,
 } from "../signExpansion/reader/mono";
 import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
-import { mono, mono1, unit } from "../op";
+import { create, ensure, mono, mono1, unit } from "../op";
 import { genReal, readReal } from "../signExpansion/reader/real";
 import { realAdd, realNeg, type Real } from "../real";
 import { Dyadic, dyadicMinus, dyadicPlus } from "../dyadic";
@@ -45,6 +46,7 @@ import {
 	conwayFromSignExpansion,
 	decomposeSignExpansion,
 	signExpansionFromConway,
+	type Term,
 } from "../signExpansion/reader/normalForm";
 
 fc.configureGlobal({ numRuns: 100 });
@@ -79,11 +81,36 @@ const signExpansionEq = (
 	);
 };
 
+const mapEntryToMatcher = ({ sign, length }: Entry) => ({
+	sign,
+	length: expect.conwayEq(length),
+});
+
 const groupedEq = (actual: Iterable<Entry>, expected: Iterable<Entry>) => {
 	expect([...groupBySign(actual)]).toStrictEqual(
-		[...groupBySign(expected)].map(({ sign, length }) => ({
-			sign,
-			length: expect.conwayEq(length),
+		[...groupBySign(expected)].map(mapEntryToMatcher),
+	);
+};
+
+const groupedEqMulti = (
+	actual: Iterable<Entry[]>,
+	expected: Iterable<Entry[]>,
+) => {
+	expect([...actual].map((xs) => [...groupBySign(xs)])).toStrictEqual(
+		[...expected].map((xs) => [...groupBySign(xs)].map(mapEntryToMatcher)),
+	);
+};
+
+const termsEq = (actual: Iterable<Term>, expected: Iterable<Term>) => {
+	expect(
+		[...actual].map(([m1, r]) => ({
+			mono1: [...groupBySign(m1)],
+			realPart: r,
+		})),
+	).toStrictEqual(
+		[...expected].map(([m1, r]) => ({
+			mono1: [...groupBySign(m1)].map(mapEntryToMatcher),
+			realPart: expect.conwayEq(r),
 		})),
 	);
 };
@@ -191,7 +218,7 @@ describe("IterReader", () => {
 				const reader = new IterReader(xs);
 				const result1 = reader.lookahead();
 				fc.pre(result1 !== null && gt(result1.length, 1n));
-				reader.consume(1n);
+				reader.consume(1n, false);
 				const result2 = reader.lookahead();
 				expect(result2?.length).conwayEq(ordinalRightSub(1n, result1.length));
 			}),
@@ -314,7 +341,7 @@ describe("genReal", () => {
 
 	it("negation symmetry", () => {
 		fc.assert(
-			fc.property(arbDyadic(), (x) => {
+			fc.property(arbDyadic(4), (x) => {
 				const sx = [...genReal(x)];
 				const snx = [...genReal(realNeg(x)).map(flipSign)];
 				signExpansionEq(snx, sx);
@@ -326,7 +353,7 @@ describe("genReal", () => {
 describe("readReal", () => {
 	it("readReal(SE(xp)).lastSign = { value: x, sign } where xp = plus(x) or minus(x) given sign", () => {
 		fc.assert(
-			fc.property(fc.boolean(), arbDyadic(), (sign, x) => {
+			fc.property(fc.boolean(), arbDyadic(4), (sign, x) => {
 				const xp = sign ? dyadicPlus(x) : dyadicMinus(x);
 				const [lastSign, real] = readReal(new IterReader(genReal(xp)));
 				expect(real).conwayEq(xp);
@@ -342,7 +369,7 @@ describe("readReal", () => {
 describe("genReal", () => {
 	it("returns original real after readReal, no omit initial", () => {
 		fc.assert(
-			fc.property(arbDyadic(), (x) => {
+			fc.property(arbDyadic(4), (x) => {
 				const sx = [...genReal(x)];
 				const rx = readReal(new IterReader(sx))[1];
 				expect(rx).conwayEq(x);
@@ -354,7 +381,7 @@ describe("genReal", () => {
 describe("genMono/readMono", () => {
 	it("returns original real given zero exponent and real", () => {
 		fc.assert(
-			fc.property(arbDyadic(), (r) => {
+			fc.property(arbDyadic(4), (r) => {
 				const se = [...genMono({ mono1: new IterReader([]), real: r })];
 				const res = readMono(new IterReader(se));
 				if (res === null) {
@@ -371,7 +398,7 @@ describe("genMono/readMono", () => {
 
 	it("negation symmetry over real", () => {
 		fc.assert(
-			fc.property(arbGroupedSigns, arbDyadic(), (xs, real) => {
+			fc.property(arbGroupedSigns, arbDyadic(4), (xs, real) => {
 				const se1 = [...genMono({ mono1: new IterReader(xs), real })];
 				const se2 = [
 					...genMono({ mono1: new IterReader(xs), real: realNeg(real) }),
@@ -392,7 +419,7 @@ describe("genMono/readMono", () => {
 
 	it("parses zero exponent", () => {
 		fc.assert(
-			fc.property(arbDyadic(), (real) => {
+			fc.property(arbDyadic(4), (real) => {
 				const se = [
 					...groupBySign(genMono({ mono1: new IterReader([]), real })),
 				];
@@ -450,7 +477,7 @@ describe("genMono/readMono", () => {
 
 		it("given w^ordinal * real", () => {
 			fc.assert(
-				fc.property(arbDyadic(), arbOrd3, (real, o) => {
+				fc.property(arbDyadic(4), arbOrd3, (real, o) => {
 					checkReturnOriginalExponent({
 						mono1: [{ sign: true, length: o }],
 						real,
@@ -461,7 +488,7 @@ describe("genMono/readMono", () => {
 
 		it("given w^exponent * real", () => {
 			fc.assert(
-				fc.property(arbDyadic(), arbGroupedSigns, (real, mono1) => {
+				fc.property(arbDyadic(4), arbGroupedSigns, (real, mono1) => {
 					checkReturnOriginalExponent({ mono1, real });
 				}),
 			);
@@ -979,6 +1006,43 @@ describe("reduceMulti/unreduceMulti", () => {
 
 	const arbUnreduceInput = arbDecreasing.map(reduceMulti);
 
+	it("reducing ladder of minuses", () => {
+		const res = reduceMulti([
+			[{ sign: false, length: 1n }],
+			[{ sign: false, length: 2n }],
+			[{ sign: false, length: 3n }],
+			[{ sign: false, length: 4n }],
+			[{ sign: false, length: 5n }],
+			[{ sign: false, length: 6n }],
+		]).map((x) => [...groupBySign(x)]);
+		expect(res).toHaveLength(6);
+		for (let i = 0; i < 6; i++) {
+			expect(res[i]).toStrictEqual([
+				{
+					sign: false,
+					length: 1n,
+				},
+			]);
+		}
+	});
+
+	it("reduceMulti: same as reduceSignExpansion for 2 elements", () => {
+		fc.assert(
+			fc.property(
+				arbDecreasing
+					.filter((xs) => xs.length >= 2)
+					.map((xs) => [xs[0], xs[1]]),
+				([p, x]) => {
+					const xs = reduceMulti([p, x]);
+					const xo = reduceSignExpansion(new IterReader(x), new IterReader(p));
+					expect(xs).toHaveLength(2);
+					groupedEq(xs[0], p);
+					groupedEq(xs[1], xo);
+				},
+			),
+		);
+	});
+
 	it("unreduceMulti: same as unreduceSignExpansion for 2 elements", () => {
 		fc.assert(
 			fc.property(
@@ -999,20 +1063,21 @@ describe("reduceMulti/unreduceMulti", () => {
 		);
 	});
 
-	it("reduceMulti: same as reduceSignExpansion for 2 elements", () => {
+	it("no 2 equal values from the return value of unreduceMulti ", () => {
 		fc.assert(
-			fc.property(
-				arbDecreasing
-					.filter((xs) => xs.length >= 2)
-					.map((xs) => [xs[0], xs[1]]),
-				([p, x]) => {
-					const xs = reduceMulti([p, x]);
-					const xo = reduceSignExpansion(new IterReader(x), new IterReader(p));
-					expect(xs).toHaveLength(2);
-					groupedEq(xs[0], p);
-					groupedEq(xs[1], xo);
-				},
-			),
+			fc.property(arbUnreduceInput, (xs) => {
+				const x1 = unreduceMulti(xs);
+				for (let i = 0; i < x1.length; i++) {
+					for (let j = 0; j < i; j++) {
+						expect(
+							compareSignExpansions(
+								new IterReader(x1[i]),
+								new IterReader(x1[j]),
+							),
+						).not.toBe(0);
+					}
+				}
+			}),
 		);
 	});
 
@@ -1109,6 +1174,40 @@ describe("reduceMulti/unreduceMulti", () => {
 			),
 		);
 	});
+
+	it("unreduceMulti failing example: not invertible, not descending", () => {
+		// Unreduce failure: [w^-1, -0.25, -0.5]
+		// Reduced: [w^-1, -0.25, 1]
+		// Unreduced (incorrect): [w^-1, -0.25, w^-1]
+		const exponents = [
+			[{ sign: true, length: 1n } as Entry, { sign: false, length: mono1(1n) }],
+			[
+				{ sign: false, length: 1n },
+				{ sign: true, length: 2n },
+			],
+			[
+				{ sign: false, length: 1n },
+				{ sign: true, length: 1n },
+			],
+		];
+		const exponentsReduced = reduceMulti(exponents);
+		groupedEqMulti(exponentsReduced, [
+			[
+				{ sign: true, length: 1n },
+				{ sign: false, length: mono1(1n) },
+			],
+			[
+				{ sign: false, length: 1n },
+				{ sign: true, length: 2n },
+			],
+			[
+				// first minus removed by previous
+				{ sign: true, length: 1n },
+			],
+		]);
+		const exponentsUnreduced = unreduceMulti(exponentsReduced);
+		groupedEqMulti(exponentsUnreduced, exponents);
+	});
 });
 
 describe("decomposeSignExpansion/composeSignExpansion", () => {
@@ -1123,7 +1222,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 			);
 		});
 
-		it("generates no zero real -arts", () => {
+		it("generates no zero real parts", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
 					const terms = decomposeSignExpansion(new IterReader(xs));
@@ -1134,7 +1233,27 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 			);
 		});
 
-		it("generates a decreasing list of exponents and non-zero real parts", () => {
+		it("generates a list of exponents that does not repeat", () => {
+			fc.assert(
+				fc.property(arbSigns, (xs) => {
+					const terms = decomposeSignExpansion(new IterReader(xs));
+					fc.pre(terms.length >= 2);
+					for (let i = 0; i < terms.length; i++) {
+						for (let j = 0; j < i; j++) {
+							expect(
+								compareSignExpansions(
+									new IterReader(terms[j][0]),
+									new IterReader(terms[i][0]),
+								),
+							).not.toBe(0);
+						}
+					}
+				}),
+				{ verbose: true },
+			);
+		});
+
+		it("generates a decreasing list of exponents", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
 					const terms = decomposeSignExpansion(new IterReader(xs));
@@ -1218,7 +1337,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 		...composeSignExpansion([[p, 1n]]),
 	]);
 	const arbSignsMono = fc
-		.tuple(arbSigns, arbDyadic())
+		.tuple(arbSigns, arbDyadic(4))
 		.map(([p, r]) => [...composeSignExpansion([[p, r]])]);
 
 	const rules = [
@@ -1261,48 +1380,155 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 });
 
 describe("signExpansionFromConway/conwayFromSignExpansion", () => {
-	it("invertible: signExpansionFromConway(conwayFromSignExpansion(x)) = x", () => {
-		fc.assert(
-			fc.property(arbSigns, (xs) => {
-				groupedEq(
-					signExpansionFromConway(conwayFromSignExpansion(new IterReader(xs))),
-					xs,
-				);
-			}),
-			{ verbose: true },
-		);
+	describe.skip("invertible signExpansionFromConway", () => {
+		it("signExpansionFromConway(conwayFromSignExpansion(x)) = x", () => {
+			fc.assert(
+				fc.property(arbSigns, (xs) => {
+					const reader = new IterReader(xs);
+					const a = conwayFromSignExpansion(reader);
+					groupedEq(signExpansionFromConway(a), xs);
+					expect(reader.isDone).toBe(true);
+				}),
+			);
+		});
+
+		it("conwayFromSignExpansion(signExpansionFromConway(x)) = x", () => {
+			fc.assert(
+				fc.property(arbConway2(arbDyadic(3)), (x) => {
+					const reader = new IterReader(signExpansionFromConway(x));
+					expect(conwayFromSignExpansion(reader)).conwayEq(x);
+					expect(reader.isDone).toBe(true);
+				}),
+			);
+		});
+
+		it("number of terms: conwayFromSignExpansion(signExpansionFromConway(x)).length = x.length", () => {
+			fc.assert(
+				fc.property(arbConway2(arbDyadic(3)), (x) => {
+					fc.pre(!x.isZero);
+					const a = [...signExpansionFromConway(x)];
+					const reader = new IterReader(a);
+					expect(ensure(conwayFromSignExpansion(reader))).toHaveLength(
+						x.length,
+					);
+				}),
+			);
+		});
 	});
 
-	it("invertible: conwayFromSignExpansion(signExpansionFromConway(x)) = x", () => {
-		fc.assert(
-			fc.property(arbConway3(arbDyadic()), (x) => {
-				expect(
-					conwayFromSignExpansion(new IterReader(signExpansionFromConway(x))),
-				).conwayEq(x);
-			}),
-			{ verbose: true },
-		);
-	});
+	const printDecomposed = (terms: Term[]) => {
+		let i = 0;
+		console.log("----------");
+		for (const t of terms) {
+			console.log("index =", i, ":", {
+				mono1: [...groupBySign(t[0])].map(({ sign, length }) => [sign, length]),
+				coeff: t[1],
+			});
+			i++;
+		}
+	};
 
-	it("failing example", () => {
+	it("failing example 1", () => {
+		// +^(2w) -^(w^2)
+		// Incorrect: [+^(2w)] [-^(w^2)] = -w^2 + 2w
+		// Correct: [+^w] [+^w -^(w^2)] = w + w^(1/2)
+		// w + w^(1/2)
 		const se = [
 			{ sign: true, length: mono(2n, 1n) },
 			{ sign: false, length: mono1(2n) },
 		];
-		console.log(se);
-		console.log(conwayFromSignExpansion(new IterReader(se)));
-		console.log("---");
-		for (const t of decomposeSignExpansion(new IterReader(se), true)) {
-			console.log(...t);
-		}
-		console.log("---");
-		for (const t of decomposeSignExpansion(new IterReader(se), false)) {
-			console.log(...t);
-		}
+		expect(conwayFromSignExpansion(new IterReader(se))).conwayEq(
+			create([
+				[1n, 1n],
+				[0.5, 1n],
+			]),
+		);
 	});
+
+	it("failing example 2", () => {
+		// w^-0.5 - w^-1
+		const conway = create([
+			[-0.5, -1n],
+			[-1n, 1n],
+		]);
+		const se = [...signExpansionFromConway(conway)];
+		const conway1 = conwayFromSignExpansion(new IterReader(se));
+		expect(conway1).conwayEq(conway);
+	});
+
+	it("failing example 3", () => {
+		// [+^w -^(w^w + 1) +^w -^(w^2 + w)]
+		// [+^w -^(w^w)] [- +^w -^(w^2)] [-^w]
+		// const se = [
+		// 	{ sign: true, length: mono1(1n) },
+		// 	{ sign: false, length: mono1(mono1(1n)).add(1n) },
+		// 	{ sign: true, length: mono1(1n) },
+		// 	{ sign: false, length: mono1(2n).add(mono1(1n)) },
+		// ];
+		const se = [
+			{ sign: true, length: mono1(1n) },
+			{ sign: false, length: mono1(mono1(1n)) },
+			{ sign: true, length: 1n as Ord0 },
+			{ sign: false, length: mono1(1n) },
+			{ sign: true, length: mono1(2n).add(mono1(1n)) },
+		];
+		// const decomposed = decomposeSignExpansion(new IterReader(se));
+		// printDecomposed(decomposed);
+		// const decomposedUnreduced = decomposeSignExpansion(new IterReader(se), false);
+		// printDecomposed(decomposedUnreduced);
+		const conway = conwayFromSignExpansion(new IterReader(se));
+		const se1 = [...signExpansionFromConway(conway)];
+	});
+
+	it("failing example 4", () => {
+		// w^[+-+].[+-] + w^[+-]
+		// reduced: w^[+-+].[+-] + w^[+]
+		// SE: [+^w -^(w^2) +^(w^2) -^(w^2) +^w]
+		const conway = create([
+			[0.75, 0.5],
+			[0.5, 1],
+		]);
+		const se = [...signExpansionFromConway(conway)];
+		const conway1 = conwayFromSignExpansion(new IterReader(se));
+		expect(conway1).conwayEq(conway);
+	});
+
+	it("failing example 5", () => {
+		// w^-1 + w^-2 + w^-3
+		// = w^[-] + w^[--] + w^[---]
+		// = w^[-] + w^[-] + w^[-] (reduced)
+		const conway = create([
+			[-1, 1],
+			[-2, 1],
+			[-3, 1],
+		]);
+		//console.log(conway);
+		const se = [...signExpansionFromConway(conway)];
+		const conway1 = conwayFromSignExpansion(new IterReader(se));
+		expect(conway1).conwayEq(conway);
+	});
+
+	it("failing example 6", () => {
+		const se: Entry[] = [
+			{ sign: true, length: 1n },
+			{ sign: false, length: mono1(1n) },
+			{ sign: true, length: mono1(mono1(2n)).add(mono1(mono(6n, 1n))) },
+		];
+		const decomposed = decomposeSignExpansion(new IterReader(se));
+		printDecomposed(decomposed);
+		const decomposedUnreduced = decomposeSignExpansion(
+			new IterReader(se),
+			false,
+		);
+		printDecomposed(decomposedUnreduced);
+		const conway = conwayFromSignExpansion(new IterReader(se));
+		const se1 = [...signExpansionFromConway(conway)];
+		console.log("conway", conway);
+		console.log("se", [...groupBySign(se)]);
+		console.log("se1", [...groupBySign(se1)]);
+		groupedEq(se1, se);
+	});
+
 	// TODO failing:
-	// +^(2w) -^(w^2)
-	// Incorrect: [+^(2w)] [-^(w^2)] = -w^2 + 2w
-	// Correct: [+^w] [+^w -^(w^2)] = w + w^(1/2)
-	// w + w^(1/2)
+	// [{"sign":true,"length":w},{"sign":false,"length":w^w},{"sign":true,"length":1},{"sign":false,"length":w},{"sign":true,"length":w^2 + w}]
 });

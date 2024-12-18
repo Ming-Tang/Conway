@@ -1,11 +1,11 @@
-import { Conway, type Conway0, type Ord0 } from "../../conway";
-import { create, tryGetReal } from "../../op";
+import { Conway, type Conway0, type Ord, type Ord0 } from "../../conway";
+import { create, ensure, tryGetReal } from "../../op";
 import { gt, isAboveReals, isZero } from "../../op/comparison";
 import type { Real } from "../../real";
 import { genMono, readMono, type SkipFirst } from "./mono";
 import { genReal } from "./real";
-import { reduceMulti, unreduceMulti } from "./reduce";
-import { countSigns } from "./split";
+import { reduceMulti, unreduceMulti, unreduceSingle } from "./reduce";
+import { compareSignExpansions, countSigns } from "./split";
 import { IterReader, type Entry, type SignExpansionReader } from "./types";
 
 /**
@@ -29,8 +29,8 @@ export const decomposeSignExpansion = (
 	reader: SignExpansionReader,
 	unreduce = true,
 ) => {
-	const terms: Term[] = [];
-	// skippedPlus: Entry | null
+	const termsReduced: Term[] = [];
+	const prevUnreduced: Entry[][] = [];
 	let skipFirst = null as SkipFirst | null;
 	while (reader.lookahead() !== null) {
 		const res = readMono(reader, skipFirst);
@@ -41,54 +41,62 @@ export const decomposeSignExpansion = (
 		}
 
 		const { mono1, real, lastSign, nPlus } = res;
+		const newUnreduced = unreduceSingle(mono1, prevUnreduced);
+		prevUnreduced.push(newUnreduced);
 
 		const next = reader.lookahead();
 		if (next !== null && lastSign !== null) {
 			const { sign: nextSign, length: nextLen } = next;
-			const isInNonInfPart = isZero(nPlus);
+			const terms1 = ensure<Ord0>(nextLen).getTerms();
+			const nextMono1 = terms1.length === 0 ? 0n : (terms1[0][0] as Ord0);
+
+			const proposedReduced: Entry[] = [{ sign: true, length: nextMono1 }];
+			const currentUnreduced = prevUnreduced[prevUnreduced.length - 1];
+			const proposedUnreduced = unreduceSingle(proposedReduced, prevUnreduced);
+
 			// Are we in a segment of [+^(w^b) -^(w^c)] or [-^(w^b) +^(w^c)]?
 			// where the next mono1 can overtake the current term?
 			// The `+^(w^b)` or `-^(w^b)` must be part of a real part and it
 			// has already been parsed by the previous term.
-			if (isInNonInfPart && isAboveReals(nextLen)) {
-				if (lastSign.sign === nextSign) {
-					console.error("invalid parser state", {
-						skipFirst,
-						res,
-						lastSign,
-						nextSign,
-					});
-					throw new Error(
-						"invalid parser state: [+^finite +^infinite] or [-^finite -^infinite]",
-					);
-				}
+			if (
+				compareSignExpansions(
+					new IterReader(currentUnreduced),
+					new IterReader(proposedUnreduced),
+				) !== -1 &&
+				lastSign.sign !== nextSign
+			) {
+				// if (lastSign.sign === nextSign) {
+				// 	console.error("invalid parser state", {
+				// 		prevMono1: mono1,
+				// 		nextMono1: [{sign: true, length: nextMono1 }],
+				// 		lastSign,
+				// 		nextSign,
+				// 	});
+				// 	throw new Error(
+				// 		"invalid parser state: [+^finite +^infinite] or [-^finite -^infinite]",
+				// 	);
+				// }
 
-				terms.push([mono1, lastSign.value]);
-				skipFirst = { sign: lastSign.sign, exponent: 0n };
+				// console.log("skipping real part contribution", {
+				// 	mono1: mono1,
+				// 	nextMono1: [{ sign: true, length: nextMono1 }],
+				// 	nPlus,
+				// 	termIndex: termsReduced.length,
+				// });
+				termsReduced.push([mono1, lastSign.value]);
+				skipFirst = { sign: lastSign.sign, exponent: nPlus };
 				continue;
 			}
 		}
 
-		terms.push([mono1, real]);
+		termsReduced.push([mono1, real]);
 	}
 
 	if (!unreduce) {
-		return terms;
+		return termsReduced;
 	}
 
-	const terms1: Term[] = [];
-	const prev: Entry[][] = [];
-	for (let i = 0; i < terms.length; i++) {
-		const [m1, real] = terms[i];
-		const unreduced = i === 0 ? m1 : unreduceMulti([...prev, m1])[i];
-		terms1.push([
-			unreduced,
-			real,
-			{ m1, multi: [...prev, m1], un: unreduceMulti([...prev, m1]) },
-		] as never);
-		prev.push(m1);
-	}
-	return terms1;
+	return termsReduced.map(([_, r], i): Term => [prevUnreduced[i], r]);
 };
 
 /**
@@ -120,6 +128,12 @@ export function* composeSignExpansion(terms: Iterable<Term>, reduce = true) {
 	}
 }
 
+export const decomposeSignExpansionFromConway = (conway: Conway): Term[] => {
+	return conway
+		.getTerms()
+		.map(([p, r]) => [[...signExpansionFromConway(p)], r]);
+};
+
 export function* signExpansionFromConway(conway: Conway0) {
 	if (isZero(conway)) {
 		return;
@@ -131,9 +145,7 @@ export function* signExpansionFromConway(conway: Conway0) {
 		return;
 	}
 
-	const terms: Term[] = realValue
-		.getTerms()
-		.map(([p, r]) => [[...signExpansionFromConway(p)], r]);
+	const terms: Term[] = decomposeSignExpansionFromConway(realValue);
 	yield* composeSignExpansion(terms, true);
 }
 

@@ -1,7 +1,7 @@
 import type { Ord0 } from "../../conway";
 import { gt, isZero, lt } from "../../op/comparison";
 import { ordinalRightSub } from "../../op/ordinal";
-import { commonPrefix, countSigns } from "./split";
+import { commonPrefix, compareSignExpansions, countSigns } from "./split";
 import {
 	IterReader,
 	iterSignExpansionReader,
@@ -73,7 +73,7 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 			return;
 		}
 
-		parent.consume(length);
+		parent.consume(length, false);
 		// [] || [-^k S] = [-^k]
 		yield {
 			length: length as O,
@@ -99,7 +99,7 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 
 		if (gt(length, remain)) {
 			// length > remain
-			reducedChild.consume(remain);
+			reducedChild.consume(remain, false);
 			yield { sign, length: remain };
 			remain = 0n as O;
 			break;
@@ -107,12 +107,43 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 
 		// length <= remain
 		yield { sign, length };
-		reducedChild.consume(length);
+		reducedChild.consume(length, false);
 		remain = ordinalRightSub(length, remain) as O;
 	}
 
 	yield* iterSignExpansionReader(reducedChild);
 }
+
+export const reduceSingle = <O extends Ord0 = Ord0>(
+	x: Entry<O>[],
+	unreduced: Entry<O>[][],
+) => {
+	if (unreduced.length === 0) {
+		return x;
+	}
+
+	let longest: O = 0n as O;
+	let xo: Entry<O>[] = [];
+	for (let j = 0; j < unreduced.length; j++) {
+		const prefixLen = countSigns(
+			new IterReader(
+				commonPrefix(new IterReader(x), new IterReader(unreduced[j])),
+			),
+		) as O;
+		if (lt(prefixLen, longest)) {
+			continue;
+		}
+
+		longest = prefixLen;
+		xo = [
+			...reduceSignExpansion<O>(
+				new IterReader(x),
+				new IterReader(unreduced[j]),
+			),
+		];
+	}
+	return xo;
+};
 
 /**
  * Given a sequence of unreduced sign expansions of the exponents
@@ -136,30 +167,49 @@ export const reduceMulti = <O extends Ord0 = Ord0>(
 
 	const reduced = [unreduced[0]];
 	for (let i = 1; i < unreduced.length; i++) {
-		const x = unreduced[i];
-		let longest: O = 0n as O;
-		let xo: Entry<O>[] = [];
-		for (let j = 0; j < i; j++) {
-			const prefixLen = countSigns(
-				new IterReader(
-					commonPrefix(new IterReader(x), new IterReader(unreduced[j])),
-				),
-			) as O;
-			if (lt(prefixLen, longest)) {
-				continue;
-			}
-
-			longest = prefixLen;
-			xo = [
-				...reduceSignExpansion<O>(
-					new IterReader(x),
-					new IterReader(unreduced[j]),
-				),
-			];
-		}
+		const xo = reduceSingle(unreduced[i], unreduced.slice(0, i));
 		reduced.push(xo);
 	}
 	return reduced;
+};
+
+export const unreduceSingle = <O extends Ord0 = Ord0>(
+	xo: Entry<O>[],
+	unreduced: Entry<O>[][],
+) => {
+	if (unreduced.length === 0) {
+		return xo;
+	}
+	let longest: O = 0n as O;
+	let x: Entry<O>[] = [];
+	for (let j = 0; j < unreduced.length; j++) {
+		const x1 = [
+			...unreduceSignExpansion<O>(
+				new IterReader(xo),
+				new IterReader(unreduced[j]),
+			),
+		];
+		const isSmallest = unreduced.every(
+			(xj) =>
+				compareSignExpansions(new IterReader(xj), new IterReader(x1)) === -1,
+		);
+		if (!isSmallest) {
+			continue;
+		}
+
+		const prefixLen = countSigns(
+			new IterReader(
+				commonPrefix(new IterReader(x1), new IterReader(unreduced[j])),
+			),
+		) as O;
+		if (lt(prefixLen, longest)) {
+			continue;
+		}
+
+		longest = prefixLen;
+		x = x1;
+	}
+	return x;
 };
 
 /**
@@ -184,28 +234,7 @@ export const unreduceMulti = <O extends Ord0 = Ord0>(
 
 	const unreduced: Entry<O>[][] = [reduced[0]];
 	for (let i = 1; i < reduced.length; i++) {
-		const xo = reduced[i];
-		let longest: O = 0n as O;
-		let x: Entry<O>[] = [];
-		for (let j = 0; j < i; j++) {
-			const x1 = [
-				...unreduceSignExpansion<O>(
-					new IterReader(xo),
-					new IterReader(unreduced[j]),
-				),
-			];
-			const prefixLen = countSigns(
-				new IterReader(
-					commonPrefix(new IterReader(x1), new IterReader(unreduced[j])),
-				),
-			) as O;
-			if (lt(prefixLen, longest)) {
-				continue;
-			}
-
-			longest = prefixLen;
-			x = x1;
-		}
+		const x = unreduceSingle(reduced[i], unreduced);
 		unreduced.push(x);
 	}
 	return unreduced;

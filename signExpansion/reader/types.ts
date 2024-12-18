@@ -1,5 +1,6 @@
 import type { Ord0 } from "../../conway";
-import { eq, isZero, lt } from "../../op/comparison";
+import { ensure } from "../../op";
+import { eq, gt, isAboveReals, isZero, lt } from "../../op/comparison";
 import { ordinalAdd, ordinalRightSub } from "../../op/ordinal";
 
 export interface Entry<O extends Ord0 = Ord0> {
@@ -9,7 +10,7 @@ export interface Entry<O extends Ord0 = Ord0> {
 
 export interface SignExpansionReader<O extends Ord0 = Ord0> {
 	lookahead(): Readonly<Entry<O>> | null;
-	consume(length: O): void;
+	consume(length: O, strict?: boolean): void;
 }
 
 export function* groupBySign<O extends Ord0 = Ord0>(
@@ -72,8 +73,11 @@ export class IterReader<O extends Ord0 = Ord0, Return = void>
 		return !this.#done && this.#entry ? { ...this.#entry } : null;
 	}
 
-	consume(length: Ord0): void {
+	consume(length: Ord0, strict = true): void {
 		if (isZero(length)) {
+			if (strict) {
+				throw new RangeError("consume: zero length");
+			}
 			return;
 		}
 
@@ -91,12 +95,20 @@ export class IterReader<O extends Ord0 = Ord0, Return = void>
 		}
 
 		if (lt(remain, length)) {
+			console.error("cannot consume", { remain, length, sign: entry.sign });
 			throw new RangeError("cannot consume: larger than lookahead");
+		}
+
+		const remain1 = ordinalRightSub(length, remain) as O;
+		if (strict && eq(remain1, remain)) {
+			throw new RangeError(
+				`cannot consume: too small to make a difference, to_consume=${length}, remain=${remain}`,
+			);
 		}
 
 		this.#entry = {
 			sign: entry.sign,
-			length: ordinalRightSub(length, remain) as O,
+			length: remain1,
 		};
 	}
 
