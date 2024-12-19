@@ -24,6 +24,7 @@ import {
 	arbFiniteBigint,
 	arbRealGeneral,
 	arbFinite,
+	arbDyadic,
 } from "./generators";
 import {
 	compare,
@@ -46,8 +47,10 @@ import {
 	unit,
 	ensure,
 	maybeDowngrade,
+	create,
 } from "../op";
 import { add, mult, neg, sub } from "../op/arith";
+import { dyadicPow2 } from "../dyadic/arith";
 
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);
@@ -710,6 +713,150 @@ describe("Conway", () => {
 		eqProps(arb);
 		//derivProps(arb);
 		arithProps(arb, false, 100);
+	});
+
+	describe("ordHash - distinct guarantee", () => {
+		const towers: Conway0[] = [];
+		let a = 1n as Conway0;
+		for (let i = 0; i < 10; i++) {
+			towers.push(a);
+			a = mono1(a);
+		}
+
+		// TODO proper rescaling for smaller infinitesimals
+		const powInts: Conway0[] = [];
+		for (let i = -1; i <= 8; i++) {
+			powInts.push(mono1(i));
+		}
+
+		const ints: Conway0[] = [];
+		for (let i = 16; i <= 16; i++) {
+			ints.push(i);
+		}
+
+		const fracs: Conway0[] = [];
+		for (let i = 1n; i <= 8n; i++) {
+			fracs.push(dyadicPow2(-i));
+		}
+
+		const ensureDistinct = (xs: Conway0[]) => {
+			for (let i = 0; i < xs.length - 1 - 1; i++) {
+				const a = ensure(xs[i]);
+				const b = ensure(xs[i + 1]);
+				expect(a.ordHash).not.toEqual(b.ordHash);
+			}
+		};
+
+		it("power towers", () => {
+			ensureDistinct(towers);
+		});
+
+		it("integer powers", () => {
+			ensureDistinct(powInts);
+		});
+
+		it("integers", () => {
+			ensureDistinct(ints);
+		});
+
+		it("fractions", () => {
+			ensureDistinct(fracs);
+		});
+	});
+
+	describe("ordHash - No5", () => {
+		const arb = arbConway5(arbDyadic(8));
+
+		it("is preserved under recrating the same value", () => {
+			fc.assert(
+				fc.property(arb, (a) => {
+					const a1 = a.mult(one);
+					const a2 = a.add(zero);
+					const a3 = create(a.getTerms());
+					return (
+						a.ordHash === a1.ordHash &&
+						a1.ordHash === a2.ordHash &&
+						a2.ordHash === a3.ordHash
+					);
+				}),
+			);
+		});
+
+		it("ordHash of zero is zero", () => {
+			expect(zero.ordHash).toBe(0n);
+		});
+
+		it("ordHash of negative is non-positive", () => {
+			fc.assert(fc.property(arb.filter(isNegative), (a) => a.ordHash <= 0n));
+		});
+
+		it("ordHash of positive is non-negative", () => {
+			fc.assert(fc.property(arb.filter(isPositive), (a) => a.ordHash >= 0n));
+		});
+
+		it("squaring of >= 1 does not decrease ordHash", () => {
+			fc.assert(
+				fc.property(
+					arb.filter((a) => gt(a, 1n)),
+					(a) => compare(a.ordHash, a.mult(a).ordHash) >= 0,
+				),
+			);
+		});
+
+		it("preserves ordering of ordHash by adding a positive", () => {
+			fc.assert(
+				fc.property(arb, arb.filter(isPositive), (a, b) => {
+					const c = a.add(b);
+					fc.pre(compare(a, c) >= 0);
+					return compare(a.ordHash, c.ordHash) >= 0;
+				}),
+			);
+		});
+
+		it("preserves ordering under multiplication of greater than 1 quantities", () => {
+			fc.assert(
+				fc.property(
+					arb.filter((a) => gt(a, 1n)),
+					arb.filter((a) => gt(a, 1n)),
+					(a, b) => {
+						const c = a.mult(b);
+						return compare(a.ordHash, c.ordHash) >= 0;
+					},
+				),
+			);
+		});
+
+		it("preserves anti-ordering under neg", () => {
+			fc.assert(
+				fc.property(arb, arb, (a, b) => {
+					const ha = ensure(a).neg().ordHash;
+					const hb = ensure(b).neg().ordHash;
+					return hb <= ha === ensure(a).ordHash <= ensure(b).ordHash;
+				}),
+			);
+		});
+
+		it("preserves ordering under mono1", () => {
+			fc.assert(
+				fc.property(arb, arb, (a, b) => {
+					const ha = mono1(a).ordHash;
+					const hb = mono1(b).ordHash;
+					fc.pre(ha !== hb);
+					return ha <= hb === ensure(a).ordHash <= ensure(b).ordHash;
+				}),
+			);
+		});
+
+		it("preserves anti-ordering under mono1 neg", () => {
+			fc.assert(
+				fc.property(arb, arb, (a, b) => {
+					const ha = mono1(neg(a)).ordHash;
+					const hb = mono1(neg(b)).ordHash;
+					fc.pre(ha !== hb);
+					return hb <= ha === ensure(a).ordHash <= ensure(b).ordHash;
+				}),
+			);
+		});
 	});
 
 	describe("divRem", () => {

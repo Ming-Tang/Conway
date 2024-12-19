@@ -1,4 +1,5 @@
-import { Dyadic } from "./dyadic";
+import { Dyadic, dyadicNeg } from "./dyadic";
+import { dyadicOrdHash } from "./dyadic/ordHash";
 import {
 	realAdd,
 	realBirthday,
@@ -15,6 +16,7 @@ import {
 	realSign,
 	realSub,
 	realToBigint,
+	realToDyadic,
 	realToJson,
 	realZero,
 	type Real,
@@ -435,24 +437,22 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return 1 + (p instanceof Conway ? p.order : 0);
 	}
 
-	// @ts-expect-error freeze
-	static #POW_THRESHOLDS: Readonly<[Conway, bigint][]> = freeze(
-		[
-			[Conway.real(6), 17n],
-			[Conway.real(5), 16n],
-			[Conway.real(4), 15n],
-			[Conway.real(3), 14n],
-			[Conway.real(2), 13n],
-			[Conway.real(1), 12n],
-			[Conway.real(0), 11n],
-			[Conway.real(-1), 10n],
-			[Conway.real(-2), 9n],
-			[Conway.real(-3), 8n],
-			[Conway.real(-4), 7n],
-			[Conway.real(-5), 6n],
-			[Conway.real(-6), 5n],
-		].map(freeze),
-	);
+	// Ord hash layout:
+	// sign bit + archimedean class bits + multiplier bits
+	// h(w^x) = (sign = +, class = ..., multiplier = ...)
+	public static ORD_HASH_MULTIPLIER_BITS = 8n;
+	public static ORD_HASH_MAX_MULTIPLIER =
+		(1n << this.ORD_HASH_MULTIPLIER_BITS) - 1n;
+
+	static #ordHashClamp = (x: bigint, threshold: bigint): bigint => {
+		if (x > threshold) {
+			return threshold;
+		}
+		if (x < -threshold) {
+			return -threshold;
+		}
+		return x;
+	};
 
 	/**
 	 * Get the ordering hash code, which is a number.
@@ -467,32 +467,25 @@ export class Conway<IsOrd extends boolean = boolean> {
 			return 0n;
 		}
 
-		let h = 0n;
-		const [e0, c0] = this.#terms[0];
-		const sign = realToBigint(realSign(c0));
-		let powHash = 0n;
-
-		if (e0 instanceof Conway && e0.order > 1) {
-			powHash = 64n * BigInt(e0.order);
-		} else if (e0 instanceof Conway && e0.isAboveReals) {
-			const [p0] = e0.#terms[0];
-			powHash = Conway.isAboveReals(p0)
-				? 21n + (p0 instanceof Conway ? realToBigint(p0.order) : 0n)
-				: Conway.isPositive(p0)
-					? 21n
-					: 20n;
-		} else if (e0 instanceof Conway && e0.isBelowNegativeReals) {
-			powHash = 1n;
-		} else {
-			for (const [threshold, shift] of Conway.#POW_THRESHOLDS) {
-				if (Conway.compare(e0, threshold, true) < 0) {
-					powHash = shift;
-					break;
-				}
-			}
-		}
-
-		h = sign * ((1n << powHash) * 2n);
+		const [p0, c0] = this.#terms[0];
+		const isReal = Conway.isZero(p0);
+		const hashAC = Conway.ensure(p0).ordHash;
+		const D = 256n;
+		const hashACAdj = hashAC <= -D ? 1n : hashAC + D + 1n;
+		const isNeg = realIsNegative(c0);
+		const sign = isNeg ? -1n : 1n;
+		const d0 = !isReal
+			? Dyadic.ONE
+			: isNeg
+				? dyadicNeg(realToDyadic(c0))
+				: realToDyadic(c0);
+		const h =
+			sign *
+			((hashACAdj << Conway.ORD_HASH_MULTIPLIER_BITS) +
+				Conway.#ordHashClamp(
+					dyadicOrdHash(d0),
+					Conway.ORD_HASH_MAX_MULTIPLIER,
+				));
 		this.#ordHash = h;
 		return h;
 	}
@@ -1052,16 +1045,14 @@ export class Conway<IsOrd extends boolean = boolean> {
 			return 0;
 		}
 
-		// TODO bug in ordHash invariance detected
-		// w^[-w^[-w]] vs. w^[-w^-6]
-		// if (!_noHash) {
-		// 	if (this.ordHash > other.ordHash) {
-		// 		return -1;
-		// 	}
-		// 	if (this.ordHash < other.ordHash) {
-		// 		return 1;
-		// 	}
-		// }
+		if (!_noHash) {
+			if (this.ordHash > other.ordHash) {
+				return -1;
+			}
+			if (this.ordHash < other.ordHash) {
+				return 1;
+			}
+		}
 
 		let i = 0;
 		let j = 0;
