@@ -73,7 +73,7 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 			return;
 		}
 
-		parent.consume(length, false);
+		parent.consume(length);
 		// [] || [-^k S] = [-^k]
 		yield {
 			length: length as O,
@@ -99,7 +99,7 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 
 		if (gt(length, remain)) {
 			// length > remain
-			reducedChild.consume(remain, false);
+			reducedChild.consume(remain);
 			yield { sign, length: remain };
 			remain = 0n as O;
 			break;
@@ -107,7 +107,7 @@ export function* unreduceSignExpansion<O extends Ord0 = Ord0>(
 
 		// length <= remain
 		yield { sign, length };
-		reducedChild.consume(length, false);
+		reducedChild.consume(length);
 		remain = ordinalRightSub(length, remain) as O;
 	}
 

@@ -6,7 +6,7 @@ import { signExpansionFromConway } from "./reader/normalForm";
 import { realMinus, realPlus, type Sign } from "./real";
 
 export const signExpansion = (value: Real | Conway): Seq<Sign> => {
-	const se = signExpansionFromConway(value);
+	const se = [...signExpansionFromConway(value)];
 	return se.reduce(
 		(s, { sign, length }) =>
 			concat(s, cycleArray([sign], ensure(length) as Ord)),

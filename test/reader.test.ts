@@ -218,7 +218,7 @@ describe("IterReader", () => {
 				const reader = new IterReader(xs);
 				const result1 = reader.lookahead();
 				fc.pre(result1 !== null && gt(result1.length, 1n));
-				reader.consume(1n, false);
+				reader.consume(1n);
 				const result2 = reader.lookahead();
 				expect(result2?.length).conwayEq(ordinalRightSub(1n, result1.length));
 			}),

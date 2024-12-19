@@ -14,7 +14,7 @@ export const countSigns = <O extends Ord0 = Ord0>(
 			break;
 		}
 		const { sign, length } = res;
-		reader.consume(length, true);
+		reader.consume(length);
 		if (signIncluded !== null && sign !== signIncluded) {
 			continue;
 		}
@@ -65,15 +65,15 @@ export function* commonPrefix<O extends Ord0 = Ord0>(
 		const { length: len1 } = res1;
 		const { length: len2 } = res2;
 		if (eq(len1, len2)) {
-			reader1.consume(len1, false);
-			reader2.consume(len1, false);
+			reader1.consume(len1);
+			reader2.consume(len1);
 			yield { sign: res1.sign, length: len1 } as Entry<O>;
 			continue;
 		}
 
 		const length = lt(len1, len2) ? len1 : len2;
-		reader1.consume(length, false);
-		reader2.consume(length, false);
+		reader1.consume(length);
+		reader2.consume(length);
 		yield {
 			sign: res1.sign,
 			length,
@@ -119,7 +119,7 @@ export const index = <O extends Ord0 = Ord0>(
 			break;
 		}
 		const { sign, length } = res;
-		reader.consume(length, false);
+		reader.consume(length);
 		const indexEnd = ordinalAdd(count, length) as O;
 		if (le(count, index) && lt(index, indexEnd)) {
 			return sign;
@@ -150,7 +150,7 @@ export const findIndexToSign = <O extends Ord0 = Ord0>(
 			break;
 		}
 		const { sign, length } = res;
-		reader.consume(length, false);
+		reader.consume(length);
 		if (sign !== signIncluded) {
 			partialIndex = ordinalAdd(partialIndex, length) as O;
 			continue;
@@ -185,7 +185,7 @@ export function* truncate<O extends Ord0 = Ord0>(
 		const indexEnd = ordinalAdd(count, length) as O;
 		if (le(count, truncateLength) && lt(truncateLength, indexEnd)) {
 			const partialLen = ordinalRightSub(count, truncateLength) as O;
-			reader.consume(partialLen, false);
+			reader.consume(partialLen);
 			yield {
 				sign,
 				length: partialLen,
@@ -194,7 +194,7 @@ export function* truncate<O extends Ord0 = Ord0>(
 		}
 
 		count = indexEnd;
-		reader.consume(length, false);
+		reader.consume(length);
 		yield { sign, length } as Entry<O>;
 	}
 }

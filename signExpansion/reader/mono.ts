@@ -21,7 +21,7 @@ const tryConsume = (
 	if (!res || res.sign !== sign || gt(length, res.length)) {
 		return false;
 	}
-	reader.consume(length, strict);
+	reader.consume(length);
 	return true;
 };
 

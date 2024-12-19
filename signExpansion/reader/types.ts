@@ -10,7 +10,7 @@ export interface Entry<O extends Ord0 = Ord0> {
 
 export interface SignExpansionReader<O extends Ord0 = Ord0> {
 	lookahead(): Readonly<Entry<O>> | null;
-	consume(length: O, strict?: boolean): void;
+	consume(length: O): void;
 }
 
 export function* groupBySign<O extends Ord0 = Ord0>(
@@ -73,11 +73,8 @@ export class IterReader<O extends Ord0 = Ord0, Return = void>
 		return !this.#done && this.#entry ? { ...this.#entry } : null;
 	}
 
-	consume(length: Ord0, strict = true): void {
+	consume(length: Ord0): void {
 		if (isZero(length)) {
-			if (strict) {
-				throw new RangeError("consume: zero length");
-			}
 			return;
 		}
 
@@ -100,11 +97,6 @@ export class IterReader<O extends Ord0 = Ord0, Return = void>
 		}
 
 		const remain1 = ordinalRightSub(length, remain) as O;
-		if (strict && eq(remain1, remain)) {
-			throw new RangeError(
-				`cannot consume: too small to make a difference, to_consume=${length}, remain=${remain}`,
-			);
-		}
 
 		this.#entry = {
 			sign: entry.sign,
