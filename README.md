@@ -1,37 +1,45 @@
-# conway
+# Conway
 
-Library for representing surreal numbers in Conway normal form.
-
-Also includes functionalities for dealing with ordinal numbers and transfinite sequences.
+`conway` is a TypeScript library for working with surreal numbers
+in Conway normal form and transfinite sequences.
 
 # Summary
 
 ## Types
+
+### Dyadic rational number: `Dyadic`
+
+Represents an arbitrary-precision
+[dyadic rational number](https://en.wikipedia.org/wiki/Dyadic_rational),
+which is a rational number with a `bigint` the numerator and a power of 2 (positive `bigint`) as the denominator.
+
 
 ### Surreal number: `Conway`
 
 Represents a surreal number that can be expressed in terms of a finite expression
 in Conway normal form.
 
-Internally the sum is represented as an array of `[exponent, coefficient]` pairs
-sorted by the exponent descending with zero coefficients discarded.
+Internally, the value is represented as an array of `[exponent, coefficient]`
+pairs sorted by the exponent descending with zero coefficients discarded.
 
 The exponent is either a real number (if possible) or a `Conway` (if it must
 be represented as an expression).
 
-The real coefficients can be `number` or `bigint`.
 
-The upper limit of this representation is epsilon_0 (`e0 = w^e0`) and the lower
-limit is its negation.
+#### Limits
 
-The upper limit of the birthday is the ordinal $\epsilon_0$.
+The real coefficients must be representable as a dyadic rational (in other words,
+finite birthday).
+
+The number of terms in each Conway normal form must be finite.
 
 ### Ordinal number: `Ord`
 
 The `Conway` class is re-used for representing ordinal numbers in Cantor normal form.
 
 The `isOrdinal` property determines if a particular value is an ordinal number,
-and there are ordinal arithmetic operations as well.
+and there are ordinal arithmetic operations as well. It also appears in the
+first generic parameter of `Conway`.
 
 #### Type-safe tracking of `isOrdinal`
 
@@ -95,10 +103,20 @@ concat(mapNatural((i) => i * 2), mapNatural((i) => i * 2 + 1));
 
 ## API Design
 
+### Immutability
+
+`Conway` and `Dyadic` are immutable and all functions that act on them
+return existing or new references.
+
 ### Real numbers
 
-Real numbers (type alias `Real`) are represented as JavaScript
-`number` or `bigint`.
+A real number in this library is a type alias:
+```typescript
+type Real = number | bigint | Dyadic
+```
+
+This type is used by `Conway` to represent the coefficients.
+
 
 ### Unwrapped vs. wrapped
 
@@ -124,6 +142,22 @@ type Conway0 = Conway | Real;
 type Ord = ...;
 type Ord0 = Ord | Real;
 ```
+
+### Equality and hashing
+
+`Conway` and `Dyadic` are reference types with their own equality
+functions `eq` and `dyadicEq`.
+
+The `eqHash` field provides the hash code for equality.
+
+If `x.eqHash !== y.eqHash`, then `!eq(x, y)`.
+
+### Comparison and ordering
+
+The `ordHash` field of `Conway` provides an order-preserving hash
+code in `bigint`.
+
+If `x.ordHash < y.ordHash`, then `lt(x, y)`.
 
 ### Module export
 
@@ -285,10 +319,4 @@ To install dependencies:
 
 ```bash
 bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
 ```
