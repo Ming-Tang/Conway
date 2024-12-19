@@ -54,21 +54,13 @@ export const decomposeSignExpansion = (
 			const nextMono1 = terms1.length === 0 ? 0n : (terms1[0][0] as Ord0);
 
 			const proposedReduced: Entry[] = [{ sign: true, length: nextMono1 }];
-			const currentUnreduced = prevUnreduced[prevUnreduced.length - 1];
 			const proposedUnreduced = unreduceSingle(proposedReduced, prevUnreduced);
 
 			// Are we in a segment of [+^(w^b) -^(w^c)] or [-^(w^b) +^(w^c)]?
 			// where the next mono1 can overtake the current term?
 			// The `+^(w^b)` or `-^(w^b)` must be part of a real part and it
 			// has already been parsed by the previous term.
-			if (
-				proposedUnreduced === null ||
-				(compareSignExpansions(
-					new IterReader(currentUnreduced),
-					new IterReader(proposedUnreduced),
-				) !== -1 &&
-					lastSign.sign !== nextSign)
-			) {
+			if (proposedUnreduced === null && lastSign.sign !== nextSign) {
 				termsReduced.push([mono1, lastSign.value]);
 				skipFirst = { sign: lastSign.sign, exponent: nPlus };
 				continue;
