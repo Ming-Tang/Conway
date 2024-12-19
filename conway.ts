@@ -171,7 +171,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	 * @param iter The array or iterable of [exponent, coefficient] pairs.
 	 */
 	public static create<T extends boolean>(
-		iter:
+		iter?:
 			| [Conway0<T>, Real][]
 			| Iterable<[Conway0<T>, Real]>
 			| null
