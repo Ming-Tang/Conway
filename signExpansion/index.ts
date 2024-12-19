@@ -1,13 +1,17 @@
-import { Conway, type Conway0 } from "../conway";
-import { one } from "../op";
+import { Conway, type Conway0, type Ord, type Ord0 } from "../conway";
+import { ensure, one } from "../op";
 import type { Real } from "../real";
-import type { Seq } from "../seq";
-import { signExpansion as _signExpansion } from "./gonshor";
-import { SignExpansionSeq } from "./types";
+import { concat, cycleArray, empty, type Seq } from "../seq";
+import { signExpansionFromConway } from "./reader/normalForm";
 import { realMinus, realPlus, type Sign } from "./real";
 
 export const signExpansion = (value: Real | Conway): Seq<Sign> => {
-	return new SignExpansionSeq(_signExpansion(value));
+	const se = signExpansionFromConway(value);
+	return se.reduce(
+		(s, { sign, length }) =>
+			concat(s, cycleArray([sign], ensure(length) as Ord)),
+		empty as Seq<Sign>,
+	);
 };
 
 export const conwayPlus = (x: Conway0) => {

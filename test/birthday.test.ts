@@ -1,10 +1,10 @@
-import {} from "../signExpansion/gonshor";
 import fc from "fast-check";
 import { arbFinite, arbOrd3, arbConway3, arbFiniteBigint } from "./generators";
 import { birthday, ensure, mono, mono1, zero } from "../op";
 import { eq, ge, gt } from "../op/comparison";
 import { isOrdinal, ordinalAdd } from "../op/ordinal";
 import { add } from "../op/arith";
+import {} from "../signExpansion/birthday";
 import type { Conway } from "../conway";
 
 describe("birthday", () => {

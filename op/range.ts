@@ -1,4 +1,4 @@
-import { ensure, one, zero } from ".";
+import { one, zero } from ".";
 import { Conway, type Conway0, type Ord0 } from "../conway";
 import {
 	realAbs,
@@ -15,9 +15,8 @@ import {
 	realZero,
 	type Real,
 } from "../real";
-import { signExpansion } from "../signExpansion/gonshor";
-import { neg } from "./arith";
-import { gt, isNegative, isPositive, isZero } from "./comparison";
+import { signExpansionFromConway } from "../signExpansion/reader/normalForm";
+import { gt, isNegative, isZero } from "./comparison";
 import { isOrdinal, ordinalAdd, succ } from "./ordinal";
 
 const roundToOrdReal = (x: Real): Real =>
@@ -46,7 +45,7 @@ export const roundToOrd = (x: Conway0): Ord0 => {
 	}
 
 	let sum = 0n as Ord0;
-	for (const { sign, length } of signExpansion(x)) {
+	for (const { sign, length } of signExpansionFromConway(x)) {
 		if (!sign) {
 			break;
 		}
@@ -79,6 +78,7 @@ export const right = (x: Conway0): Ord0 => {
 	return gt(x1, x) ? x1 : succ(x1);
 };
 
+// TODO rename
 export const lcaReal = (a: Real, b: Real) => {
 	if (realLe(b, a)) {
 		throw new RangeError(`Cannot find { ${a} | ${b} }`);
@@ -117,46 +117,8 @@ export const lcaReal = (a: Real, b: Real) => {
 	return sgn ? realNeg(value) : value;
 };
 
-/**
- * "Least common ancestor".
- * Given two surreal numbers `a` and `b`, get the surreal
- * number `a < x < b` with its birthday minimized.
- * Throws `RangeError` if `b >= a`.
- * @returns `{ a | b }`
- */
+// TODO rename
+// TODO <a | b> when a < b
 export const lca = (a: Conway0, b: Conway0): Conway0 => {
-	// In Conway normal form:
-	// { a + b | a + c } = a + { b | c }
-	// { a w^p | b w^p } = { a | b } x^p
-	// { w^p | w^q } = w^{ p | q }
-	// if p
-	// { a w^p + ... | b w^q + ... } =
-	//   0                       if { a | b } = 0
-	//   -{ -a w^p | -b w^q }    if a < 0 && b < 0
-	//   { a w^p | }             if { p | q } = { p | }
-
-	if (!(a instanceof Conway) && !(b instanceof Conway)) {
-		return lcaReal(a, b);
-	}
-
-	const va = ensure(a);
-	const vb = ensure(b);
-	if (isNegative(va) && isPositive(vb)) {
-		return zero;
-	}
-
-	if (isNegative(va) && isNegative(vb)) {
-		return neg(lca(neg(va), neg(vb)));
-	}
-
-	// Both are zero or positive
-	if (va.isZero) {
-		if (isZero(va.infinitePart) && isZero(va.realPart)) {
-			// { 0 | infinitesimal } = even smaller infinitesimal
-			return va.infinitesimalPart;
-		}
-		return one;
-	}
-
 	throw new Error("Not implemented");
 };
