@@ -1353,7 +1353,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 	describe("invertible", () => {
 		for (const { gen, name } of rules) {
 			describe(`${name}`, () => {
-				it.skip("composeSignExpansion on decomposeSignExpansion without reducing", () => {
+				it("composeSignExpansion on decomposeSignExpansion without reducing", () => {
 					fc.assert(
 						fc.property(gen, (xs) => {
 							const reader = new IterReader(xs);
@@ -1381,7 +1381,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 });
 
 describe("signExpansionFromConway/conwayFromSignExpansion", () => {
-	describe.skip("invertible signExpansionFromConway", () => {
+	describe("invertible signExpansionFromConway", () => {
 		it("signExpansionFromConway(conwayFromSignExpansion(x)) = x", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
@@ -1417,19 +1417,6 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		});
 	});
 
-	// const printDecomposed = (terms: Term[]) => {
-	// 	let i = 0;
-	// 	console.log("----------");
-	// 	for (const t of terms) {
-	// 		console.log("index =", i, ":", {
-	// 			mono1: [...groupBySign(t[0])].map(({ sign, length }) => [sign, length]),
-	// 			mono1Conway: conwayFromSignExpansion(new IterReader(t[0])),
-	// 			coeff: t[1],
-	// 		});
-	// 		i++;
-	// 	}
-	// };
-
 	it("failing example 1", () => {
 		// +^(2w) -^(w^2)
 		// Incorrect: [+^(2w)] [-^(w^2)] = -w^2 + 2w
@@ -1461,12 +1448,6 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 	it("failing example 3", () => {
 		// [+^w -^(w^w + 1) +^w -^(w^2 + w)]
 		// [+^w -^(w^w)] [- +^w -^(w^2)] [-^w]
-		// const se = [
-		// 	{ sign: true, length: mono1(1n) },
-		// 	{ sign: false, length: mono1(mono1(1n)).add(1n) },
-		// 	{ sign: true, length: mono1(1n) },
-		// 	{ sign: false, length: mono1(2n).add(mono1(1n)) },
-		// ];
 		const se = [
 			{ sign: true, length: mono1(1n) },
 			{ sign: false, length: mono1(mono1(1n)) },
@@ -1474,10 +1455,6 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			{ sign: false, length: mono1(1n) },
 			{ sign: true, length: mono1(2n).add(mono1(1n)) },
 		];
-		// const decomposed = decomposeSignExpansion(new IterReader(se));
-		// printDecomposed(decomposed);
-		// const decomposedUnreduced = decomposeSignExpansion(new IterReader(se), false);
-		// printDecomposed(decomposedUnreduced);
 		const conway = conwayFromSignExpansion(new IterReader(se));
 		const se1 = [...signExpansionFromConway(conway)];
 	});
@@ -1523,28 +1500,12 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		];
 		const conway = conwayFromSignExpansion(new IterReader(se));
 
-		// console.log("decomposed (unreduced)");
-		// const decomposed = decomposeSignExpansion(new IterReader(se));
-		// printDecomposed(decomposed);
-		// console.log("decomposed (reduced)");
-		// console.log(lt(exponent1, exponent2));
-		// const decomposedUnreduced = decomposeSignExpansion(
-		// 	new IterReader(se),
-		// 	false,
-		// );
-		// printDecomposed(decomposedUnreduced);
-
-		// expect(conway).conwayEq(mono1(exponent1).add(mono1(exponent2));
 		const se1 = [...signExpansionFromConway(conway)];
-		// console.log("se", [...groupBySign(se)]);
-		// console.log("se1", [...groupBySign(se1)]);
 		groupedEq(se1, se);
 	});
 
 	it("failing example prefix", () => {
 		const exponent = neg(mono1(mono(-1n, 1n)));
-		// console.log(exponent);
-		// console.log(`SE(${exponent}) =`, [...signExpansionFromConway(exponent)]);
 		expect(
 			conwayFromSignExpansion(
 				new IterReader([
@@ -1610,7 +1571,6 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		];
 		const reader = new IterReader(xs);
 		const decomposed = decomposeSignExpansion(reader);
-		// printDecomposed(decomposed);
 		const composed = composeSignExpansion(decomposed);
 		groupedEq(composed, xs);
 	});
