@@ -1,5 +1,5 @@
 import { Conway, type Conway0, type Ord, type Ord0 } from "../conway";
-import { ensure, one } from "../op";
+import { create, ensure, one } from "../op";
 import type { Real } from "../real";
 import { concat, cycleArray, empty, type Seq } from "../seq";
 import { signExpansionFromConway } from "./reader/normalForm";
@@ -25,7 +25,7 @@ export const conwayPlus = (x: Conway0) => {
 		return one;
 	}
 
-	return new Conway([
+	return create([
 		...terms.slice(0, n - 1),
 		[terms[n - 1][0], realPlus(terms[n - 1][1])],
 	]);
@@ -42,7 +42,7 @@ export const conwayMinus = (x: Conway0) => {
 		return one;
 	}
 
-	return new Conway([
+	return create([
 		...terms.slice(0, n - 1),
 		[terms[n - 1][0], realMinus(terms[n - 1][1])],
 	]);

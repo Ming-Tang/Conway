@@ -33,7 +33,7 @@ import {
 	ordinalMono1 as mono1,
 } from "../op/ordinal";
 import { Conway, type Ord } from "../conway";
-import { unit, zero, one } from "../op";
+import { unit, zero, one, create } from "../op";
 
 // fc.configureGlobal({ numRuns: 2000, verbose: false });
 
@@ -409,7 +409,7 @@ describe("prod", () => {
 					arbFiniteBigintOrd,
 					fc.bigInt({ min: 0n, max: 1n }),
 					(i, j) => {
-						const idx = new Conway<true>([
+						const idx = create<true>([
 							[1n, i],
 							[0n, j],
 						]);

@@ -13,9 +13,7 @@ import {
 	realMult,
 	realNeg,
 	realOne,
-	realSign,
 	realSub,
-	realToBigint,
 	realToDyadic,
 	realToJson,
 	realZero,
@@ -107,32 +105,25 @@ export class Conway<IsOrd extends boolean = boolean> {
 	readonly #terms: Readonly<[Conway0<IsOrd>, Real][]>;
 
 	/** 0 */
-	public static readonly zero: Ord = new Conway();
+	public static readonly zero: Ord = Conway.create();
 	/** 1 */
-	public static readonly one: Ord = new Conway([[0n, 1n]]);
+	public static readonly one: Ord = Conway.create([[0n, 1n]]);
 	/** -1 */
-	public static readonly negOne: Ord = new Conway([[0n, -1n]]);
+	public static readonly negOne: Ord = Conway.create([[0n, -1n]]);
 	/** omega */
-	public static readonly unit: Ord = new Conway([[1n, 1n]]);
+	public static readonly unit: Ord = Conway.create([[1n, 1n]]);
 	/** omega^-1 */
-	public static readonly inverseUnit: Conway = new Conway([[-1n, 1n]]);
+	public static readonly inverseUnit: Conway = Conway.create([[-1n, 1n]]);
 	/** log(omega) = omega^(1/omega) */
-	public static readonly logUnit: Conway = new Conway([
+	public static readonly logUnit: Conway = Conway.create([
 		[Conway.inverseUnit, 1n],
 	]);
 	/** exp(omega) = omega^omega */
-	public static readonly expUnit: Conway = new Conway([[Conway.unit, 1n]]);
+	public static readonly expUnit: Conway = Conway.create([[Conway.unit, 1n]]);
 
 	// #region Creation
 
-	/**
-	 * Creates a new surreal number in Conway normal form given an array or iterable
-	 * of tuple [exponent of omega, coefficient] for each element.
-	 *
-	 * Zero coefficients will be filtered out.
-	 * @param iter The array or iterable of [exponent, coefficient] pairs.
-	 */
-	public constructor(
+	private constructor(
 		iter?: [Conway0<IsOrd>, Real][] | Iterable<[Conway0<IsOrd>, Real]> | null,
 		_unchecked = false,
 	) {
@@ -172,6 +163,24 @@ export class Conway<IsOrd extends boolean = boolean> {
 		);
 	}
 
+	/**
+	 * Creates a new surreal number in Conway normal form given an array or iterable
+	 * of tuple [exponent of omega, coefficient] for each element.
+	 *
+	 * Zero coefficients will be filtered out.
+	 * @param iter The array or iterable of [exponent, coefficient] pairs.
+	 */
+	public static create<T extends boolean>(
+		iter:
+			| [Conway0<T>, Real][]
+			| Iterable<[Conway0<T>, Real]>
+			| null
+			| undefined,
+		_unchecked = false,
+	) {
+		return new Conway(iter, _unchecked);
+	}
+
 	private static sortTermsDescending(terms: [Conway0, Real][]) {
 		terms.sort(([e1, c1], [e2, c2]): number => {
 			const compExp = Conway.compare(e1, e2);
@@ -185,7 +194,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	 * @returns A surreal number that constructs this real number.
 	 */
 	public static real(value: Real): Conway {
-		return new Conway(realIsZero(value) ? [] : [[realZero, value]], true);
+		return Conway.create(realIsZero(value) ? [] : [[realZero, value]], true);
 	}
 
 	/**
@@ -200,11 +209,17 @@ export class Conway<IsOrd extends boolean = boolean> {
 		if (realIsZero(value)) {
 			return Conway.zero;
 		}
-		return new Conway([[Conway.maybeDowngrade(power), value]], true) as never;
+		return Conway.create(
+			[[Conway.maybeDowngrade(power), value]],
+			true,
+		) as never;
 	}
 
 	public static mono1<P extends Conway0>(power: P): Conway<InferIsOrd<P>> {
-		return new Conway([[Conway.maybeDowngrade(power), realOne]], true) as never;
+		return Conway.create(
+			[[Conway.maybeDowngrade(power), realOne]],
+			true,
+		) as never;
 	}
 
 	public static ensure<V extends Conway0>(value: V): V & Conway<boolean> {
@@ -600,7 +615,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	// #region Arithmetic
 
 	public neg(): Conway {
-		return new Conway(
+		return Conway.create(
 			this.#terms.map(([e, c]) => [e, realNeg(c)]),
 			true,
 		);
@@ -630,7 +645,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 			if (!added) {
 				newTerms.push([realZero, other]);
 			}
-			return new Conway<never>(newTerms);
+			return Conway.create<never>(newTerms);
 		}
 
 		const terms: [Conway0<never>, Real][] = [];
@@ -646,7 +661,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 				found[1] = realAdd(found[1], c1);
 			}
 		}
-		return new Conway<never>(terms);
+		return Conway.create<never>(terms);
 	}
 
 	public sub(other: Conway0): Conway {
@@ -669,7 +684,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 			for (const [e1, c1] of this) {
 				newTerms.push([e1 as Conway0<never>, realMult(c1, other)]);
 			}
-			return new Conway<never>(newTerms);
+			return Conway.create<never>(newTerms);
 		}
 
 		const terms: [Conway0<never>, Real][] = [];
@@ -686,7 +701,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 				}
 			}
 		}
-		return new Conway<never>(terms);
+		return Conway.create<never>(terms);
 	}
 
 	public ordinalAdd(this: Ord, other: Ord0): Ord {
@@ -911,7 +926,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	}
 
 	public filterTerms(f: (pow: Conway0, coeff: Real) => boolean): Conway {
-		return new Conway(this.#terms.filter(([p, c]) => f(p, c)));
+		return Conway.create(this.#terms.filter(([p, c]) => f(p, c)));
 	}
 
 	public ordSumTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Ord0): Ord0 {

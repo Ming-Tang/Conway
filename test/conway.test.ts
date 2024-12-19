@@ -168,9 +168,9 @@ describe("Conway", () => {
 			expect(zero.isZero).toBe(true);
 			expect(mono(0n, 0n).isZero).toBe(true);
 			expect(mono(0, 0).isZero).toBe(true);
-			expect(new Conway([[0n, 0n]]).isZero).toBe(true);
+			expect(create([[0n, 0n]]).isZero).toBe(true);
 			expect(
-				new Conway([
+				create([
 					[0n, -2n],
 					[0n, 2n],
 				]),
@@ -181,9 +181,9 @@ describe("Conway", () => {
 			expect(zero).toHaveLength(0);
 			expect(mono(0n, 0n)).toHaveLength(0);
 			expect(mono(0, 0)).toHaveLength(0);
-			expect(new Conway([[0n, 0n]])).toHaveLength(0);
+			expect(create([[0n, 0n]])).toHaveLength(0);
 			expect(
-				new Conway([
+				create([
 					[0n, -2n],
 					[0n, 2n],
 				]),
@@ -904,12 +904,12 @@ describe("Conway", () => {
 
 			it("(w^3-2w^2-4)/(w-3)", () => {
 				k = 3;
-				a = new Conway([
+				a = create([
 					[3n, 1n],
 					[2n, -2n],
 					[0n, -4n],
 				]);
-				b = new Conway([
+				b = create([
 					[1n, 1n],
 					[0n, -3n],
 				]);

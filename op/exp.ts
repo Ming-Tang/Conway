@@ -1,5 +1,5 @@
-import { ensure, mono, mono1, one, zero } from ".";
-import { Conway, type Conway0 } from "../conway";
+import { create, ensure, mono, mono1, one, zero } from ".";
+import type { Conway, Conway0 } from "../conway";
 import { realMult, type Real } from "../real";
 import { sub, mult, add } from "./arith";
 import { eq, isZero } from "./comparison";
@@ -94,7 +94,7 @@ export const factorLeadLow = (x: Conway) => {
 		terms.push([sub(p, pLead), realMult(c, 1.0 / Number(r))]);
 	}
 
-	return { inf, r, low: new Conway(terms) };
+	return { inf, r, low: create(terms) };
 };
 
 export const exp = (x: Conway0, terms: number | null = null): Conway0 => {

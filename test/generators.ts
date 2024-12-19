@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { Conway, type Ord } from "../conway";
 import { realToNumber, type Real } from "../real";
-import { fromReal } from "../op";
+import { create, fromReal } from "../op";
 import { Dyadic, dyadicWithSign, dyadicZero } from "../dyadic";
 import { signExpansionDyadic } from "../signExpansion/real";
 import { isAboveReals } from "../op/comparison";
@@ -73,8 +73,7 @@ export const reduceConstraints = ({
 export const arbConway1 = (
 	arbReal = arbRealGeneral,
 	constraints = defaultArrayConstraints,
-) =>
-	fc.array(fc.tuple(arbReal, arbReal), constraints).map((a) => new Conway(a));
+) => fc.array(fc.tuple(arbReal, arbReal), constraints).map(create);
 
 export const arbConway2 = (
 	arbReal = arbRealGeneral,
@@ -88,7 +87,7 @@ export const arbConway2 = (
 			),
 			constraints,
 		)
-		.map((a) => new Conway(a));
+		.map(create);
 
 export const arbConway3 = (
 	arbReal = arbRealGeneral,
@@ -102,7 +101,7 @@ export const arbConway3 = (
 			),
 			constraints,
 		)
-		.map((a) => new Conway(a));
+		.map(create);
 
 export const arbConway4 = (
 	arbReal = arbRealGeneral,
@@ -116,7 +115,7 @@ export const arbConway4 = (
 			),
 			constraints,
 		)
-		.map((a) => new Conway(a));
+		.map(create);
 
 export const arbConway5 = (
 	arbReal = arbRealGeneral,
@@ -130,7 +129,7 @@ export const arbConway5 = (
 			),
 			constraints,
 		)
-		.map((a) => new Conway(a));
+		.map(create);
 
 export const arbConwayReal = (
 	arbReal?: fc.Arbitrary<Real>,

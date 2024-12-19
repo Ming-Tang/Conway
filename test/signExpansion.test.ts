@@ -1,6 +1,15 @@
 import fc from "fast-check";
 import { signExpansion } from "../signExpansion";
-import { birthday, fromReal, mono, mono1, one, unit, zero } from "../op";
+import {
+	birthday,
+	create,
+	fromReal,
+	mono,
+	mono1,
+	one,
+	unit,
+	zero,
+} from "../op";
 import {
 	arbConway1,
 	arbConway2,
@@ -11,7 +20,7 @@ import {
 	arbOrd2,
 	arbOrd3,
 } from "./generators";
-import { Conway, type Ord } from "../conway";
+import type { Conway, Ord } from "../conway";
 import { eq, isZero, lt } from "../op/comparison";
 import { neg } from "../op/arith";
 import type { Seq } from "../seq";
@@ -33,7 +42,7 @@ describe("signExpansion", () => {
 			mono(1, -1),
 			mono(4, -1),
 			mono(4, -1).add(mono(3, -5)),
-			new Conway([
+			create([
 				[-1, 1],
 				[-3, -2],
 				[-5, 4],

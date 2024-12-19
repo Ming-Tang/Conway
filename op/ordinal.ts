@@ -1,3 +1,4 @@
+import { create } from ".";
 import {
 	Conway,
 	INSTANCE_IMPLS,
@@ -189,12 +190,12 @@ const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
 
 		const diffCoeff = realSub(c2, c1);
 		if (isZero(diffCoeff)) {
-			left = new Conway(leftTerms.slice(1));
-			right = new Conway(rightTerms.slice(1));
+			left = create(leftTerms.slice(1));
+			right = create(rightTerms.slice(1));
 			continue;
 		}
 
-		return new Conway([[p1, realSub(c2, c1)], ...rightTerms.slice(1)]);
+		return create([[p1, realSub(c2, c1)], ...rightTerms.slice(1)]);
 	}
 
 	return right;
@@ -487,18 +488,18 @@ export const canon = (x: Ord, n: Real, limitCoeff = 1n): Ord0 => {
 		if (isLimit(p)) {
 			// ... + w^pLim
 			const pow = canon(p, n);
-			return new Conway([...preTerms, [pow, n ? limitCoeff : 0n]]) as Ord;
+			return create([...preTerms, [pow, n ? limitCoeff : 0n]]) as Ord;
 		}
 
 		// ... + w^(p0 + 1)
 		const p0 = pred(p);
-		return new Conway([...preTerms, [p0, n]]) as Ord;
+		return create([...preTerms, [p0, n]]) as Ord;
 	}
 
 	const c0 = realSub(c, realOne);
 	if (isLimit(p)) {
 		// ... + w^pn (p + 1)
-		return new Conway([
+		return create([
 			...preTerms,
 			[p, c0],
 			[canon(p, n), n ? limitCoeff : 0n],
@@ -506,5 +507,5 @@ export const canon = (x: Ord, n: Real, limitCoeff = 1n): Ord0 => {
 	}
 
 	// ... + w^(p0 + 1) * (c0 + 1)
-	return new Conway([...preTerms, [p, c0], [pred(p), n]]) as Ord;
+	return create([...preTerms, [p, c0], [pred(p), n]]) as Ord;
 };

@@ -32,6 +32,7 @@ import {
 	unit,
 	zero,
 	ensure as conwayEnsure,
+	create,
 } from "../op";
 import {
 	eq,
@@ -795,9 +796,9 @@ describe("ordinals", () => {
 					arbN,
 					(x, n) => {
 						// @ts-ignore readonly casting
-						const noTail = new Conway([...x].slice(0, x.length - 1));
+						const noTail = create([...x].slice(0, x.length - 1));
 						// @ts-ignore readonly casting
-						const noTail1 = new Conway([...canon(x, n)].slice(0, x.length - 1));
+						const noTail1 = create([...canon(x, n)].slice(0, x.length - 1));
 						expect(noTail1).conwayEq(noTail);
 					},
 				),

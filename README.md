@@ -164,7 +164,7 @@ unit // w (omega)
 real(r) // real number value
 mono(coeff, exponent) // w^exponent . coeff
 mono1(exponent) // w^exponent
-new Conway([[p1, c1], [p2, c2], [p3, c3]]); // from a list of [power, coeff] tuples
+create([[p1, c1], [p2, c2], [p3, c3]]); // from a list of [power, coeff] tuples
 ```
 
 `zero`, `one` and `unit` are typed as `Ord` and this can cause type errors for an
@@ -190,7 +190,7 @@ Applies to both surreal numbers and ordinal numbers.
 | $0$ | `zero` | Zero |
 | $1$ | `one` | One |
 | $\omega$ | `unit` | Omega |
-| $\sum_i \omega^{p_i} c_i$ | `create([[p0, c0], ...])` or `new Conway(...)` | Construct from Conway/Cantor normal form given an array or `Iterable` of `[power, coefficient]` tuples.
+| $\sum_i \omega^{p_i} c_i$ | `create([[p0, c0], ...])` | Construct from Conway/Cantor normal form given an array or `Iterable` of `[power, coefficient]` tuples.
 | $\omega^p$ | `mono1(p)` | Monomial (given coefficient of 1 and power `p`) |
 | $\omega^p c$ | `mono(c, p)` | Monomial (given coefficient `c` and power `p`) |
 | N/A | `ensure(r)` | Given a real number, convert it to `Conway`, otherwise return the value itself.
