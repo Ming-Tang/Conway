@@ -42,6 +42,9 @@ export const decomposeSignExpansion = (
 
 		const { mono1, real, lastSign, nPlus } = res;
 		const newUnreduced = unreduceSingle(mono1, prevUnreduced);
+		if (newUnreduced === null) {
+			throw new Error("failed to unreduce");
+		}
 		prevUnreduced.push(newUnreduced);
 
 		const next = reader.lookahead();
@@ -59,11 +62,12 @@ export const decomposeSignExpansion = (
 			// The `+^(w^b)` or `-^(w^b)` must be part of a real part and it
 			// has already been parsed by the previous term.
 			if (
-				compareSignExpansions(
+				proposedUnreduced === null ||
+				(compareSignExpansions(
 					new IterReader(currentUnreduced),
 					new IterReader(proposedUnreduced),
 				) !== -1 &&
-				lastSign.sign !== nextSign
+					lastSign.sign !== nextSign)
 			) {
 				// if (lastSign.sign === nextSign) {
 				// 	console.error("invalid parser state", {

@@ -176,12 +176,12 @@ export const reduceMulti = <O extends Ord0 = Ord0>(
 export const unreduceSingle = <O extends Ord0 = Ord0>(
 	xo: Entry<O>[],
 	unreduced: Entry<O>[][],
-) => {
+): Entry<O>[] | null => {
 	if (unreduced.length === 0) {
 		return xo;
 	}
 	let longest: O = 0n as O;
-	let x: Entry<O>[] = [];
+	let x: Entry<O>[] | null = null;
 	for (let j = 0; j < unreduced.length; j++) {
 		const x1 = [
 			...unreduceSignExpansion<O>(
@@ -189,11 +189,12 @@ export const unreduceSingle = <O extends Ord0 = Ord0>(
 				new IterReader(unreduced[j]),
 			),
 		];
-		const isSmallest = unreduced.every(
+
+		const preservesDescOrder = unreduced.every(
 			(xj) =>
 				compareSignExpansions(new IterReader(xj), new IterReader(x1)) === -1,
 		);
-		if (!isSmallest) {
+		if (!preservesDescOrder) {
 			continue;
 		}
 
@@ -235,6 +236,15 @@ export const unreduceMulti = <O extends Ord0 = Ord0>(
 	const unreduced: Entry<O>[][] = [reduced[0]];
 	for (let i = 1; i < reduced.length; i++) {
 		const x = unreduceSingle(reduced[i], unreduced);
+		if (x === null) {
+			console.error(
+				"unreduceMulti: failed",
+				reduced.slice(i),
+				unreduced,
+				reduced[i],
+			);
+			throw new Error("unreduceMulti: failed");
+		}
 		unreduced.push(x);
 	}
 	return unreduced;

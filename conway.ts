@@ -1052,14 +1052,16 @@ export class Conway<IsOrd extends boolean = boolean> {
 			return 0;
 		}
 
-		if (!_noHash) {
-			if (this.ordHash > other.ordHash) {
-				return -1;
-			}
-			if (this.ordHash < other.ordHash) {
-				return 1;
-			}
-		}
+		// TODO bug in ordHash invariance detected
+		// w^[-w^[-w]] vs. w^[-w^-6]
+		// if (!_noHash) {
+		// 	if (this.ordHash > other.ordHash) {
+		// 		return -1;
+		// 	}
+		// 	if (this.ordHash < other.ordHash) {
+		// 		return 1;
+		// 	}
+		// }
 
 		let i = 0;
 		let j = 0;
