@@ -5,6 +5,38 @@ in Conway normal form and transfinite sequences.
 
 # Summary
 
+## Overview of features
+
+- Dyadic rationals
+  - Arbitrary precision based on `bigint`
+  - Equality and comparison
+  - Addition, subtraction, multiplication
+  - Converting from/to JavaScript `number`
+- Surreal numbers in Conway normal form
+  - Equality and comparison
+  - To JSON, string and laTeX
+  - Addition, subtraction, mulitplication
+  - Long division (quotient and remainder)
+  - Birthday
+  - Converting from/to sign expansions
+- Ordinal numbers in Cantor normal form
+  - Ordinal addition and multiplication
+  - Natural addition and multiplication
+  - Right subtraction
+  - Long division (quotient and remainder)
+- Transfinite sequences
+  - Indexing and length in ordinal numbers
+  - Cycle array or transfinite sequence
+  - Concatenate two sequences together
+  - Cartesian product
+
+## Missing featurs
+
+- Limit sequences to represent infinite series or true real numbers
+- Correct implementation of exp/log
+- Creating surreal numbers in the forms of $\{ L | R \}$
+- $L(\cdot)$ and $R(\cdot)$ sequences based on sign expansions
+
 ## Types
 
 ### Dyadic rational number: `Dyadic`
@@ -117,6 +149,7 @@ type Real = number | bigint | Dyadic
 
 This type is used by `Conway` to represent the coefficients.
 
+To avoid the loss of precision, use `bigint` or `Dyadic`.
 
 ### Unwrapped vs. wrapped
 
