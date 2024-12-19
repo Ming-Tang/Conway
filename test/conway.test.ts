@@ -772,7 +772,7 @@ describe("Conway", () => {
 				fc.property(arb, (a) => {
 					const a1 = a.mult(one);
 					const a2 = a.add(zero);
-					const a3 = create(a.getTerms());
+					const a3 = create([...a.getTerms()]);
 					return (
 						a.ordHash === a1.ordHash &&
 						a1.ordHash === a2.ordHash &&
@@ -914,9 +914,9 @@ describe("Conway", () => {
 					[0n, -3n],
 				]);
 				expected = [
-					[2n, 1],
-					[1n, 1],
-					[0n, 3],
+					[2n, 1n],
+					[1n, 1n],
+					[0n, 3n],
 				];
 			});
 
@@ -926,7 +926,9 @@ describe("Conway", () => {
 				}
 
 				const [q] = a.divRemIters(b, k);
-				expect([...ensure(q)]).toEqual(expected);
+				expect([...ensure(q)]).toEqual(
+					expected.map(([c, r]) => [expect.conwayEq(c), expect.conwayEq(r)]),
+				);
 			});
 		});
 

@@ -24,9 +24,7 @@ export const termAt = (x: Conway, i: number): Conway => {
 export const isMono = (x: Conway0) =>
 	x instanceof Conway ? x.length <= 1 : true;
 
-export const create = <T extends boolean>(
-	x: [Conway0<T>, Real][] | Iterable<[Conway0<T>, Real]> | null | undefined,
-) => new Conway(x);
+export const create = Conway.create;
 
 /**
  * If the argument represents a pure real number, return the real value.

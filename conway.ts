@@ -74,6 +74,11 @@ export const INSTANCE_IMPLS = {
 	birthday: (a: Conway): Ord0 => notImplemented(),
 };
 
+export type CreateParams<T extends boolean = boolean> =
+	| [Conway0<T>, Real][]
+	| null
+	| undefined;
+
 /**
  * Represents the Conway normal form of a surreal number.
  *
@@ -104,29 +109,9 @@ export class Conway<IsOrd extends boolean = boolean> {
 
 	readonly #terms: Readonly<[Conway0<IsOrd>, Real][]>;
 
-	/** 0 */
-	public static readonly zero: Ord = Conway.create();
-	/** 1 */
-	public static readonly one: Ord = Conway.create([[0n, 1n]]);
-	/** -1 */
-	public static readonly negOne: Ord = Conway.create([[0n, -1n]]);
-	/** omega */
-	public static readonly unit: Ord = Conway.create([[1n, 1n]]);
-	/** omega^-1 */
-	public static readonly inverseUnit: Conway = Conway.create([[-1n, 1n]]);
-	/** log(omega) = omega^(1/omega) */
-	public static readonly logUnit: Conway = Conway.create([
-		[Conway.inverseUnit, 1n],
-	]);
-	/** exp(omega) = omega^omega */
-	public static readonly expUnit: Conway = Conway.create([[Conway.unit, 1n]]);
-
 	// #region Creation
 
-	private constructor(
-		iter?: [Conway0<IsOrd>, Real][] | Iterable<[Conway0<IsOrd>, Real]> | null,
-		_unchecked = false,
-	) {
+	private constructor(iter?: CreateParams<IsOrd>, _unchecked = false) {
 		let terms = Array.isArray(iter) ? [...iter] : iter ? [...iter] : [];
 		if (_unchecked) {
 			this.#terms = freeze(
@@ -163,6 +148,13 @@ export class Conway<IsOrd extends boolean = boolean> {
 		);
 	}
 
+	private static sortTermsDescending(terms: [Conway0, Real][]) {
+		terms.sort(([e1, c1], [e2, c2]): number => {
+			const compExp = Conway.compare(e1, e2);
+			return compExp === 0 ? realCompare(c1, c2) : compExp;
+		});
+	}
+
 	/**
 	 * Creates a new surreal number in Conway normal form given an array or iterable
 	 * of tuple [exponent of omega, coefficient] for each element.
@@ -171,22 +163,57 @@ export class Conway<IsOrd extends boolean = boolean> {
 	 * @param iter The array or iterable of [exponent, coefficient] pairs.
 	 */
 	public static create<T extends boolean>(
-		iter?:
-			| [Conway0<T>, Real][]
-			| Iterable<[Conway0<T>, Real]>
-			| null
-			| undefined,
+		iter?: CreateParams<T>,
 		_unchecked = false,
-	) {
-		return new Conway(iter, _unchecked);
+	): Conway<T> {
+		if (Conway.zero && (!iter || iter.length === 0)) {
+			return Conway.zero as Conway<T>;
+		}
+
+		if (!(iter && iter.length === 1)) {
+			return new Conway<T>(iter, _unchecked);
+		}
+
+		const [p, c] = iter[0];
+		if (Conway.isZero(p)) {
+			if (Conway.zero && Conway.isZero(c)) {
+				return Conway.zero as Conway<T>;
+			}
+			if (Conway.one && Conway.isOne(c)) {
+				return Conway.one as Conway<T>;
+			}
+			if (Conway.negOne && Conway.isNegOne(c)) {
+				return Conway.negOne as Conway<T>;
+			}
+		} else if (Conway.isOne(p)) {
+			if (Conway.unit && Conway.isOne(c)) {
+				return Conway.unit as Conway<T>;
+			}
+		} /* else if (Conway.isNegOne(p)) {
+			if (Conway.inverseUnit && Conway.isOne(c)) {
+				return Conway.inverseUnit as Conway<T>;
+			}
+		} */
+
+		return new Conway<T>(iter, _unchecked);
 	}
 
-	private static sortTermsDescending(terms: [Conway0, Real][]) {
-		terms.sort(([e1, c1], [e2, c2]): number => {
-			const compExp = Conway.compare(e1, e2);
-			return compExp === 0 ? realCompare(c1, c2) : compExp;
-		});
-	}
+	/** 0 */
+	public static readonly zero: Ord = Conway.create<true>();
+	/** 1 */
+	public static readonly one: Ord = Conway.create<true>([[0n, 1n]]);
+	/** -1 */
+	public static readonly negOne: Ord = Conway.create<true>([[0n, -1n]]);
+	/** omega */
+	public static readonly unit: Ord = Conway.create<true>([[1n, 1n]]);
+	/** omega^-1 */
+	public static readonly inverseUnit: Conway = Conway.create([[-1n, 1n]]);
+	/** log(omega) = omega^(1/omega) */
+	public static readonly logUnit: Conway = Conway.create([
+		[Conway.inverseUnit, 1n],
+	]);
+	/** exp(omega) = omega^omega */
+	public static readonly expUnit: Conway = Conway.create([[Conway.unit, 1n]]);
 
 	/**
 	 * Creates a new surreal number based on a real number (no infinite parts).
