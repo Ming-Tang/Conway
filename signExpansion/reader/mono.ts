@@ -77,10 +77,8 @@ export function* readMono1(
 	while (true) {
 		let result: Entry | null = null;
 		let consumedSkipped = false;
-		// let skippedLen: Ord0 | null = null;
 		if (skip !== null) {
 			result = { sign: skip.sign, length: mono1<Ord0>(skip.exponent) };
-			// skippedLen = result.length;
 			consumedSkipped = true;
 			skip = null;
 		} else {
@@ -111,15 +109,6 @@ export function* readMono1(
 				length: addlPlus,
 			} as Entry;
 
-			// if (skippedLen !== null) {
-			// 	const m = mono1(p0);
-			// 	const mult = ordinalDivRem(skippedLen, m)[0];
-			// 	skippedLen = null;
-			// 	if (isZero(mult)) {
-			// 		throw new Error(`consumed too little: d=${m} tot=${skippedLen}`);
-			// 	}
-			// }
-
 			if (!consumedSkipped) {
 				reader.consume(mono1(p0));
 			}
@@ -134,20 +123,10 @@ export function* readMono1(
 
 		const d = mono1(b0);
 		const [q] = ordinalDivRem(length, d);
-		// console.log("divRem", `${d} * [${q}] + [${r}] = ${length}`);
 		yield {
 			sign: false,
 			length: q,
 		};
-
-		// if (skippedLen !== null) {
-		// 	const m = ordinalMult(d, q);
-		// 	const mult = ordinalDivRem(skippedLen, m)[0];
-		// 	skippedLen = null;
-		// 	if (isZero(mult)) {
-		// 		throw new Error(`consumed too little: d=${m} tot=${skippedLen}`);
-		// 	}
-		// }
 
 		if (!consumedSkipped) {
 			reader.consume(ordinalMult(d, q));

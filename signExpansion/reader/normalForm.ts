@@ -69,24 +69,6 @@ export const decomposeSignExpansion = (
 				) !== -1 &&
 					lastSign.sign !== nextSign)
 			) {
-				// if (lastSign.sign === nextSign) {
-				// 	console.error("invalid parser state", {
-				// 		prevMono1: mono1,
-				// 		nextMono1: [{sign: true, length: nextMono1 }],
-				// 		lastSign,
-				// 		nextSign,
-				// 	});
-				// 	throw new Error(
-				// 		"invalid parser state: [+^finite +^infinite] or [-^finite -^infinite]",
-				// 	);
-				// }
-
-				// console.log("skipping real part contribution", {
-				// 	mono1: mono1,
-				// 	nextMono1: [{ sign: true, length: nextMono1 }],
-				// 	nPlus,
-				// 	termIndex: termsReduced.length,
-				// });
 				termsReduced.push([mono1, lastSign.value]);
 				skipFirst = { sign: lastSign.sign, exponent: nPlus };
 				continue;
