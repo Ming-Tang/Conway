@@ -570,8 +570,7 @@ describe("repeatEach", () => {
 		);
 	});
 
-	// TODO doesn't work
-	it.skip("repeatEach(f, n)[n i + j] = f[i], where i < |f| and j < n and n > 0", () => {
+	it("repeatEach(f, n)[n i + j] = f[i], where i < |f| and j < n and n > 0", () => {
 		fc.assert(
 			fc.property(
 				arbSeq3,
