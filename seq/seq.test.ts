@@ -74,26 +74,6 @@ const arbSeq1Const = arbSeqNext(arbSeq0Const);
 const arbSeq2Const = arbSeqNext(arbSeq1Const);
 const arbSeq3Const = arbSeqNext(arbSeq2Const);
 
-describe.skip("sample", () => {
-	it("arbSeq0", () => {
-		for (const s of fc.sample(arbSeq0, 10)) {
-			console.log(s);
-		}
-	});
-
-	it("arbSeq1", () => {
-		for (const s of fc.sample(arbSeq1, 10)) {
-			console.log(s);
-		}
-	});
-
-	it("arbSeq2", () => {
-		for (const s of fc.sample(arbSeq2, 10)) {
-			console.log(s);
-		}
-	});
-});
-
 describe("fromArray", () => {
 	it("fromArray([]).length = 0", () => {
 		expect(isZero(fromArray([]).length)).toBe(true);
