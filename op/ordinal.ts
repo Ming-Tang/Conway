@@ -1,11 +1,5 @@
 import { create } from ".";
-import {
-	Conway,
-	INSTANCE_IMPLS,
-	type Conway0,
-	type Ord,
-	type Ord0,
-} from "../conway";
+import { Conway, type Conway0, type Ord, type Ord0 } from "../conway";
 import {
 	realAdd,
 	realGt,
@@ -442,16 +436,6 @@ export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 	return ordinalDivRem0(ensure(left), ensure(right));
 };
 
-INSTANCE_IMPLS.ordinalDivRem = (x, y) => {
-	const [a, b] = ordinalDivRem(x, y);
-	return [ensure(a), ensure(b)];
-};
-
-INSTANCE_IMPLS.ordinalPow = ordinalPow0;
-INSTANCE_IMPLS.ordinalRightSub = ordinalRightSub0;
-INSTANCE_IMPLS.ordinalAdd = ordinalAdd0;
-INSTANCE_IMPLS.ordinalMult = ordinalMult0;
-
 export const isLimit = (x: Ord0): x is Ord =>
 	x instanceof Conway && !isZero(x) && isZero(x.realPart);
 export const isSucc = (x: Ord0) =>
@@ -509,3 +493,34 @@ export const canon = (x: Ord, n: Real, limitCoeff = 1n): Ord0 => {
 	// ... + w^(p0 + 1) * (c0 + 1)
 	return create([...preTerms, [p, c0], [pred(p), n]]) as Ord;
 };
+
+Conway.prototype.ordinalDivRem = function (this: Ord, d: Ord0) {
+	const [a, b] = ordinalDivRem(this, d);
+	return [ensure(a), ensure(b)];
+};
+
+Conway.prototype.ordinalPow = function (this: Ord, p: Ord0) {
+	return ordinalPow0(this, p);
+};
+
+Conway.prototype.ordinalRightSub = function (this: Ord, other: Ord0) {
+	return ordinalRightSub0(this, other);
+};
+
+Conway.prototype.ordinalAdd = function (this: Ord, b: Ord0) {
+	return ordinalAdd0(this, b);
+};
+
+Conway.prototype.ordinalMult = function (this: Ord, b: Ord0) {
+	return ordinalMult0(this, b);
+};
+
+declare module "../conway" {
+	interface Conway {
+		ordinalDivRem(this: Ord, other: Ord0): [Ord, Ord];
+		ordinalPow(this: Ord, other: Ord0): Ord;
+		ordinalAdd(this: Ord, other: Ord0): Ord;
+		ordinalMult(this: Ord, other: Ord0): Ord;
+		ordinalRightSub(this: Ord, other: Ord0): Ord;
+	}
+}

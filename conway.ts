@@ -60,20 +60,6 @@ export type InferIsOrd<T extends Conway0> = Ord0 extends T
 			? true
 			: boolean;
 
-const notImplemented = () => {
-	throw new Error("Not implemented. Need to import the correct module.");
-};
-
-// For splitting up this Conway class into different modules
-export const INSTANCE_IMPLS = {
-	ordinalAdd: (a: Ord, b: Ord0): Ord => notImplemented(),
-	ordinalMult: (a: Ord, b: Ord0): Ord => notImplemented(),
-	ordinalRightSub: (a: Ord, b: Ord0): Ord => notImplemented(),
-	ordinalDivRem: (a: Ord, b: Ord0): [Ord, Ord] => notImplemented(),
-	ordinalPow: (a: Ord, b: Ord0): Ord => notImplemented(),
-	birthday: (a: Conway): Ord0 => notImplemented(),
-};
-
 export type CreateParams<T extends boolean = boolean> =
 	| [Conway0<T>, Real][]
 	| null
@@ -731,26 +717,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return Conway.create<never>(terms);
 	}
 
-	public ordinalAdd(this: Ord, other: Ord0): Ord {
-		return INSTANCE_IMPLS.ordinalAdd(this, other);
-	}
-
-	public ordinalMult(this: Ord, other: Ord0): Ord {
-		return INSTANCE_IMPLS.ordinalMult(this, other);
-	}
-
-	public ordinalRightSub(this: Ord, right: Ord0): Ord {
-		return INSTANCE_IMPLS.ordinalRightSub(this, right);
-	}
-
-	public ordinalDivRem(this: Ord, right: Ord0): [Ord, Ord] {
-		return INSTANCE_IMPLS.ordinalDivRem(this, right);
-	}
-
-	public ordinalPow(this: Ord, other: Ord0): Ord0 {
-		return INSTANCE_IMPLS.ordinalPow(this, other);
-	}
-
 	/**
 	 * Performs an iteration of long division that allows the leading term of this
 	 * number to be eliminated.
@@ -894,17 +860,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 
 	// #endregion
 	// #region Birthday
-
-	/**
-	 * Determines the birthday of this surreal number.
-	 */
-	public birthday(): Ord0 {
-		return INSTANCE_IMPLS.birthday(this);
-	}
-
-	public static birthday(value: Conway0): Ord0 {
-		return value instanceof Conway ? value.birthday() : realBirthday(value);
-	}
 
 	/**
 	 * Determines the birthday of a bigint or number.

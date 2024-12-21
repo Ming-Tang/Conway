@@ -5,6 +5,8 @@ import { concat, cycleArray, empty, type Seq } from "../seq";
 import { signExpansionFromConway } from "./reader/normalForm";
 import { realMinus, realPlus, type Sign } from "./real";
 
+export { birthday } from "./birthday";
+
 export const signExpansion = (value: Real | Conway): Seq<Sign> => {
 	const se = [...signExpansionFromConway(value)];
 	return se.reduce(
