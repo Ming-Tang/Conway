@@ -1,6 +1,6 @@
 import { Conway, type Ord } from "../conway";
 import { zero } from "../op";
-import { ge, isOne, isZero, lt, ne } from "../op/comparison";
+import { ge, isOne, isZero, lt, ne } from "../op";
 import { ordinalEnsure as ensure } from "../op/ordinal";
 import type { Cnf, CnfConcat, Seq } from "./types";
 

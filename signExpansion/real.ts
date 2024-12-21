@@ -9,7 +9,7 @@ import {
 	dyadicSignExpansionFrac,
 	dyadicToMixed,
 } from "../dyadic";
-import { isOne, isZero } from "../op/comparison";
+import { isOne, isZero } from "../op";
 import { ordinalEnsure as ensure } from "../op/ordinal";
 import type { Real } from "../real";
 import {

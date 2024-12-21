@@ -1,6 +1,6 @@
 import type { Conway, Ord } from "../conway";
 import { one, unit } from "../op";
-import { ge, isAboveReals, le } from "../op/comparison";
+import { ge, isAboveReals, le } from "../op";
 import { ordinalEnsure as ensure, ordinalDivRem } from "../op/ordinal";
 import { realIsNegative } from "../real";
 

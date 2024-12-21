@@ -10,16 +10,7 @@ import {
 	unit,
 	zero,
 } from "../op";
-import {
-	eq,
-	ge,
-	gt,
-	isAboveReals,
-	isPositive,
-	isZero,
-	le,
-	lt,
-} from "../op/comparison";
+import { eq, ge, gt, isAboveReals, isPositive, isZero, le, lt } from "../op";
 import {
 	canon,
 	ordinalEnsure as ensure,

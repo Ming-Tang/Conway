@@ -1,5 +1,5 @@
 import type { Ord0 } from "../../conway";
-import { eq, le, lt } from "../../op/comparison";
+import { eq, le, lt } from "../../op";
 import { ordinalAdd, ordinalRightSub } from "../../op/ordinal";
 import type { Entry, SignExpansionReader } from "./types";
 

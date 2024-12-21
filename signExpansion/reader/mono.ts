@@ -1,6 +1,6 @@
 import type { Ord0 } from "../../conway";
 import { ensure, mono1 } from "../../op";
-import { gt, isZero, le, lt } from "../../op/comparison";
+import { gt, isZero, le, lt } from "../../op";
 import {
 	ordinalAdd,
 	ordinalDivRem,

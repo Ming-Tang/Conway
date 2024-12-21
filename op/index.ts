@@ -1,6 +1,24 @@
 import { Conway, type Conway0 } from "../conway";
 import { type Real, hasRealType, realToDyadic, realZero } from "../real";
 
+export {
+	isZero,
+	isOne,
+	isNegOne,
+	isPositive,
+	isNegative,
+	isAboveReals,
+	isBelowNegativeReals,
+	eq,
+	compare,
+	sign,
+	ne,
+	lt,
+	gt,
+	le,
+	ge,
+} from "./comparison";
+
 export const {
 	zero,
 	one,

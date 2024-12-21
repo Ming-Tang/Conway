@@ -2,7 +2,7 @@ import fc from "fast-check";
 import "./expect.test";
 import type { Ord } from "../conway";
 import { one, zero } from "../op";
-import { isPositive, isZero, lt } from "../op/comparison";
+import { isPositive, isZero, lt } from "../op";
 import { ordinalEnsure as ensure, ordinalMult } from "../op/ordinal";
 import { concat, cycleArray, empty, fromArray } from "../seq";
 import { type ExpansionEntryConstructor, SeqExpansion } from "../seq/expansion";

@@ -9,7 +9,7 @@ import {
 } from "../../dyadic";
 import { dyadicPow2 } from "../../dyadic/arith";
 import { tryGetFiniteOrd } from "../../op";
-import { isAboveReals, isZero, lt } from "../../op/comparison";
+import { isAboveReals, isZero, lt } from "../../op";
 import { ordinalDivRem, ordinalMult } from "../../op/ordinal";
 import {
 	type Real,

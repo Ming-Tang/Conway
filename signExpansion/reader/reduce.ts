@@ -1,5 +1,5 @@
 import type { Ord0 } from "../../conway";
-import { gt, isZero, lt } from "../../op/comparison";
+import { gt, isZero, lt } from "../../op";
 import { ordinalRightSub } from "../../op/ordinal";
 import { commonPrefix, compareSignExpansions, countSigns } from "./split";
 import {

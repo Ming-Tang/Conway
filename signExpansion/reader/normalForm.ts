@@ -1,6 +1,6 @@
 import { Conway, type Conway0, type Ord, type Ord0 } from "../../conway";
 import { create, ensure, tryGetReal } from "../../op";
-import { gt, isAboveReals, isZero } from "../../op/comparison";
+import { gt, isAboveReals, isZero } from "../../op";
 import type { Real } from "../../real";
 import { type SkipFirst, genMono, readMono } from "./mono";
 import { genReal } from "./real";

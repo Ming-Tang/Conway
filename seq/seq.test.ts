@@ -16,15 +16,7 @@ import {
 } from ".";
 import { Conway, type Ord } from "../conway";
 import { create, one, unit, zero } from "../op";
-import {
-	eq,
-	ge,
-	isAboveReals,
-	isPositive,
-	isZero,
-	lt,
-	ne,
-} from "../op/comparison";
+import { eq, ge, isAboveReals, isPositive, isZero, lt, ne } from "../op";
 import {
 	ordinalEnsure as ensure,
 	isLimit,

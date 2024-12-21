@@ -18,7 +18,6 @@ import {
 	unit,
 	zero,
 } from "../op";
-import { add, mult, neg, sub } from "../op/arith";
 import {
 	compare,
 	eq,
@@ -30,7 +29,8 @@ import {
 	le,
 	lt,
 	ne,
-} from "../op/comparison";
+} from "../op";
+import { add, mult, neg, sub } from "../op/arith";
 import type { Real } from "../real";
 import {
 	arbConway1,

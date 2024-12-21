@@ -1,7 +1,7 @@
 import { cycle, cycleArray } from ".";
 import type { Ord } from "../conway";
 import { one, zero } from "../op";
-import { ge, gt, isOne, isZero, lt, ne } from "../op/comparison";
+import { ge, gt, isOne, isZero, lt, ne } from "../op";
 import { ordinalEnsure as ensure } from "../op/ordinal";
 import { assertLength, isConstantArray } from "./helpers";
 import type { Seq } from "./types";

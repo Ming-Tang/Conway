@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import type { Conway } from "../conway";
 import { birthday, ensure, mono, mono1, zero } from "../op";
+import { eq, ge, gt } from "../op";
 import { add } from "../op/arith";
-import { eq, ge, gt } from "../op/comparison";
 import { isOrdinal, ordinalAdd } from "../op/ordinal";
 import { arbConway3, arbFinite, arbFiniteBigint, arbOrd3 } from "./generators";
 

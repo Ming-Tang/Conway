@@ -3,8 +3,8 @@ import fc from "fast-check";
 import type { Ord0 } from "../conway";
 import { Dyadic, dyadicMinus, dyadicPlus } from "../dyadic";
 import { create, ensure, mono, mono1, unit } from "../op";
+import { ge, gt, isAboveReals, isZero, le, lt, ne } from "../op";
 import { neg } from "../op/arith";
-import { ge, gt, isAboveReals, isZero, le, lt, ne } from "../op/comparison";
 import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
 import { type Real, realAdd, realNeg } from "../real";
 import {

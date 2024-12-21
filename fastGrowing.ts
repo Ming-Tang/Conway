@@ -1,6 +1,6 @@
 import { Conway, type Conway0, type Ord0 } from "./conway";
 import { unit } from "./op";
-import { eq, isOne, isZero } from "./op/comparison";
+import { eq, isOne, isZero } from "./op";
 import { canon, isLimit, pred } from "./op/ordinal";
 import { type Real, realToBigint, realZero } from "./real";
 

@@ -1,17 +1,8 @@
 import fc from "fast-check";
 import type { Ord } from "../conway";
 import { birthday, ensure, mono, mono1, one, zero } from "../op";
+import { ge, gt, isNegative, isPositive, isZero, le, lt, ne } from "../op";
 import { add } from "../op/arith";
-import {
-	ge,
-	gt,
-	isNegative,
-	isPositive,
-	isZero,
-	le,
-	lt,
-	ne,
-} from "../op/comparison";
 import { isOrdinal, succ } from "../op/ordinal";
 import { right, roundToOrd } from "../op/range";
 import { signExpansion } from "../signExpansion";

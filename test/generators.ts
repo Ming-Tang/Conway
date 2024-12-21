@@ -2,7 +2,7 @@ import fc from "fast-check";
 import type { Conway, Ord } from "../conway";
 import { Dyadic, dyadicWithSign, dyadicZero } from "../dyadic";
 import { create, fromReal } from "../op";
-import { isAboveReals } from "../op/comparison";
+import { isAboveReals } from "../op";
 import { ordinalEnsure } from "../op/ordinal";
 import { type Real, realToNumber } from "../real";
 import type { Seq } from "../seq";

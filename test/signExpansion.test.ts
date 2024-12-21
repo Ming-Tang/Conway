@@ -10,8 +10,8 @@ import {
 	unit,
 	zero,
 } from "../op";
+import { eq, isZero, lt } from "../op";
 import { neg } from "../op/arith";
-import { eq, isZero, lt } from "../op/comparison";
 import type { Seq } from "../seq";
 import { signExpansion } from "../signExpansion";
 import {

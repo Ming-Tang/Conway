@@ -1,6 +1,6 @@
 import type { Ord } from "../conway";
 import { one, unit, zero } from "../op";
-import { isZero } from "../op/comparison";
+import { isZero } from "../op";
 import {
 	Concat,
 	Cycle,

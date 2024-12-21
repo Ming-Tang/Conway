@@ -1,7 +1,7 @@
 import { expect } from "bun:test";
 import type { Conway0 } from "../conway";
 import { isConway0 } from "../op";
-import { eq } from "../op/comparison";
+import { eq } from "../op";
 
 expect.extend({
 	byToString(received: unknown, other: unknown) {
