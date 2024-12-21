@@ -193,27 +193,4 @@ describe("right(x) = {x|}", () => {
 			}),
 		);
 	});
-
-	// TODO doesn't work
-	it.skip("if right(x) = k, then signExpansion(right(x)) has prefix of +^k & - & ... for non-ordinal x", () => {
-		fc.assert(
-			fc.property(
-				arbConway3(arbFiniteBigint).filter((x) => !isZero(x) && !isOrdinal(x)),
-				(x) => {
-					const rx = ensure(right(x)) as Ord;
-					fc.pre(isPositive(rx));
-					const se = signExpansion(x);
-					expect(se.index(zero)).toBe(true);
-					expect(se.index(rx)).toBe(false);
-				},
-			),
-		);
-	});
-
-	it.skip("finite values round to bigint", () => {
-		const arbFinite = arbConway3(arbFiniteBigint)
-			.map((x) => x.sub(x.infinitePart))
-			.filter((x) => !x.isAboveReals);
-		fc.assert(fc.property(arbFinite, (x) => {}));
-	});
 });

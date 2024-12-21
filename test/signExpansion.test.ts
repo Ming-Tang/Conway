@@ -30,36 +30,6 @@ fc.configureGlobal({ numRuns: 200 });
 const arbNum8 = arbDyadic(8);
 
 describe("signExpansion", () => {
-	it.skip("examples", () => {
-		const values = [
-			zero,
-			one,
-			unit,
-			mono(2, 1),
-			unit.mult(unit).mult(-4.25).add(unit.mult(2.5)),
-			mono(4, 0.5),
-			mono(4, mono1(unit)).add(mono(2, 1)).add(-3),
-			mono(1, -1),
-			mono(4, -1),
-			mono(4, -1).add(mono(3, -5)),
-			create([
-				[-1, 1],
-				[-3, -2],
-				[-5, 4],
-				[-7, -8],
-				[-9, 16],
-			]),
-			mono(1, 0.5),
-			mono(1, -0.5),
-		];
-
-		for (const v of values) {
-			console.log(`birthday(${v}) =`, birthday(v));
-			console.log(`signExpansion(${v}) =`, signExpansion(v));
-			console.log("");
-		}
-	});
-
 	const assertPropBirthday = (arb: fc.Arbitrary<Conway>) =>
 		it("|signExpansion(x)| = birthday(x)", () => {
 			fc.assert(

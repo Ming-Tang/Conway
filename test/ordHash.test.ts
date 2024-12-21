@@ -11,18 +11,6 @@ import { dyadicOrdHash, LOW_THRESHOLDS } from "../dyadic/ordHash";
 import { dyadicNew } from "../dyadic/class";
 
 describe("ordHashDyadic", () => {
-	it.skip("power sequence", () => {
-		console.log(LOW_THRESHOLDS);
-		for (let i = 64n; i >= 1; i--) {
-			const d = dyadicNew(1n, i);
-			console.log(d, dyadicOrdHash(d));
-		}
-		for (let i = 1n; i < 66n; i++) {
-			const d = dyadicNew(i, 0n);
-			console.log(d, dyadicOrdHash(d));
-		}
-	});
-
 	it("preserves ordering after halfing for positive", () => {
 		fc.assert(
 			fc.property(arbDyadic(64), (x) => {

@@ -34,17 +34,6 @@ describe("factorLeadLow", () => {
 			),
 		);
 	});
-
-	// TODO doesn't work
-	it.skip("factor positives", () => {
-		fc.assert(
-			fc.property(arb.filter(isPositive), (x) => {
-				const { inf, r, low } = factorLeadLow(x);
-				const lead = mono(r, inf);
-				return eq(mult(lead, low.add(one)), x);
-			}),
-		);
-	});
 });
 
 describe("log1pLow", () => {
@@ -154,7 +143,7 @@ describe("exp", () => {
 		);
 	});
 
-	it.skip("exp of sum", () => {
+	it("exp of sum", () => {
 		fc.assert(
 			fc.property(arb, arb, (a, b) =>
 				close(exp(add(a, b), terms), mult(exp(a, terms), exp(b, terms))),
