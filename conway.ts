@@ -188,17 +188,11 @@ export class Conway<IsOrd extends boolean = boolean> {
 	/** 1 */
 	public static readonly one: Ord = Conway.create<true>([[0n, 1n]]);
 	/** -1 */
-	public static readonly negOne: Ord = Conway.create<true>([[0n, -1n]]);
-	/** omega */
+	public static readonly negOne: Conway = Conway.create([[0n, -1n]]);
+	/** w */
 	public static readonly unit: Ord = Conway.create<true>([[1n, 1n]]);
-	/** omega^-1 */
+	/** w^-1 */
 	public static readonly inverseUnit: Conway = Conway.create([[-1n, 1n]]);
-	/** log(omega) = omega^(1/omega) */
-	public static readonly logUnit: Conway = Conway.create([
-		[Conway.inverseUnit, 1n],
-	]);
-	/** exp(omega) = omega^omega */
-	public static readonly expUnit: Conway = Conway.create([[Conway.unit, 1n]]);
 
 	/**
 	 * Creates a new surreal number based on a real number (no infinite parts).

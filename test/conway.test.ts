@@ -91,8 +91,6 @@ const ensureSimplified = (x: Conway) => {
 	return f(x, true);
 };
 
-const { inverseUnit, expUnit, logUnit } = Conway;
-
 describe("Conway", () => {
 	describe("constants", () => {
 		it("zero = itself", () => {
