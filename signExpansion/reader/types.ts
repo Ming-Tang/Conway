@@ -1,6 +1,5 @@
 import type { Ord0 } from "../../conway";
-import { ensure } from "../../op";
-import { eq, gt, isAboveReals, isZero, lt } from "../../op/comparison";
+import { eq, isZero, lt } from "../../op/comparison";
 import { ordinalAdd, ordinalRightSub } from "../../op/ordinal";
 
 export interface Entry<O extends Ord0 = Ord0> {

@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { signExpansion } from "../signExpansion";
+import type { Conway, Ord } from "../conway";
 import {
 	birthday,
 	create,
@@ -10,6 +10,10 @@ import {
 	unit,
 	zero,
 } from "../op";
+import { neg } from "../op/arith";
+import { eq, isZero, lt } from "../op/comparison";
+import type { Seq } from "../seq";
+import { signExpansion } from "../signExpansion";
 import {
 	arbConway1,
 	arbConway2,
@@ -20,10 +24,6 @@ import {
 	arbOrd2,
 	arbOrd3,
 } from "./generators";
-import type { Conway, Ord } from "../conway";
-import { eq, isZero, lt } from "../op/comparison";
-import { neg } from "../op/arith";
-import type { Seq } from "../seq";
 
 fc.configureGlobal({ numRuns: 200 });
 

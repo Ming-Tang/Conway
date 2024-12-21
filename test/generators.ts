@@ -1,12 +1,12 @@
 import fc from "fast-check";
-import { Conway, type Ord } from "../conway";
-import { realToNumber, type Real } from "../real";
-import { create, fromReal } from "../op";
+import type { Conway, Ord } from "../conway";
 import { Dyadic, dyadicWithSign, dyadicZero } from "../dyadic";
-import { signExpansionDyadic } from "../signExpansion/real";
+import { create, fromReal } from "../op";
 import { isAboveReals } from "../op/comparison";
 import { ordinalEnsure } from "../op/ordinal";
+import { type Real, realToNumber } from "../real";
 import type { Seq } from "../seq";
+import { signExpansionDyadic } from "../signExpansion/real";
 
 export const seqToArray = <T>(x: Seq<T>): T[] => {
 	const n = x.length;

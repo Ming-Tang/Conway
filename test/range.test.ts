@@ -1,9 +1,7 @@
 import fc from "fast-check";
-import { zero, one, birthday, ensure, mono1, mono } from "../op";
-import { right, roundToOrd } from "../op/range";
-import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
-import { isOrdinal, succ } from "../op/ordinal";
-import { signExpansion } from "../signExpansion";
+import type { Ord } from "../conway";
+import { birthday, ensure, mono, mono1, one, zero } from "../op";
+import { add } from "../op/arith";
 import {
 	ge,
 	gt,
@@ -14,8 +12,10 @@ import {
 	lt,
 	ne,
 } from "../op/comparison";
-import { add } from "../op/arith";
-import type { Ord } from "../conway";
+import { isOrdinal, succ } from "../op/ordinal";
+import { right, roundToOrd } from "../op/range";
+import { signExpansion } from "../signExpansion";
+import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
 
 fc.configureGlobal({ numRuns: 1000, verbose: true });
 

@@ -1,29 +1,32 @@
 import "../test/expect.test";
 import fc from "fast-check";
-import {
-	arbConway3,
-	arbDyadic,
-	arbFiniteBigintOrd,
-	arbOrd3,
-} from "./generators";
-import {
-	groupBySign,
-	IterReader,
-	type Entry,
-} from "../signExpansion/reader/types";
 import type { Ord0 } from "../conway";
+import { Dyadic, dyadicMinus, dyadicPlus } from "../dyadic";
+import { create, ensure, mono, mono1, unit } from "../op";
+import { neg } from "../op/arith";
 import { ge, gt, isAboveReals, isZero, le, lt, ne } from "../op/comparison";
+import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
+import { type Real, realAdd, realNeg } from "../real";
 import {
 	genMono,
 	genMono1,
 	readMono,
 	readMono1,
 } from "../signExpansion/reader/mono";
-import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
-import { create, ensure, mono, mono1, unit } from "../op";
+import {
+	type Term,
+	composeSignExpansion,
+	conwayFromSignExpansion,
+	decomposeSignExpansion,
+	signExpansionFromConway,
+} from "../signExpansion/reader/normalForm";
 import { genReal, readReal } from "../signExpansion/reader/real";
-import { realAdd, realNeg, type Real } from "../real";
-import { Dyadic, dyadicMinus, dyadicPlus } from "../dyadic";
+import {
+	reduceMulti,
+	reduceSignExpansion,
+	unreduceMulti,
+	unreduceSignExpansion,
+} from "../signExpansion/reader/reduce";
 import {
 	commonPrefix,
 	compareSign,
@@ -34,20 +37,17 @@ import {
 	truncate,
 } from "../signExpansion/reader/split";
 import {
-	reduceMulti,
-	reduceSignExpansion,
-	unreduceMulti,
-	unreduceSignExpansion,
-} from "../signExpansion/reader/reduce";
-import { propTotalOrder } from "./propsTest.test";
+	type Entry,
+	IterReader,
+	groupBySign,
+} from "../signExpansion/reader/types";
 import {
-	composeSignExpansion,
-	conwayFromSignExpansion,
-	decomposeSignExpansion,
-	signExpansionFromConway,
-	type Term,
-} from "../signExpansion/reader/normalForm";
-import { neg } from "../op/arith";
+	arbConway3,
+	arbDyadic,
+	arbFiniteBigintOrd,
+	arbOrd3,
+} from "./generators";
+import { propTotalOrder } from "./propsTest.test";
 
 fc.configureGlobal({ numRuns: 100 });
 

@@ -1,4 +1,4 @@
-import { one, ensure } from ".";
+import { ensure, one } from ".";
 import { Conway, type Conway0 } from "../conway";
 
 export const { neg, add, sub, mult } = Conway;

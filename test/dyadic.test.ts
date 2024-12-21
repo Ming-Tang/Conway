@@ -7,21 +7,6 @@ import {
 	dyadicToMixed,
 } from "../dyadic";
 import {
-	propCommAssoc,
-	propDist,
-	propIdentity,
-	propTotalOrder,
-	propZero,
-} from "./propsTest.test";
-import {
-	birthday,
-	lca,
-	minus,
-	plus,
-	signExpansionFrac,
-	toMixed,
-} from "../dyadic/birthday";
-import {
 	abs,
 	add,
 	half,
@@ -32,8 +17,23 @@ import {
 	sub,
 	zero,
 } from "../dyadic/arith";
-import { compare, eq, ge, le, lt, gt } from "../dyadic/comp";
+import {
+	birthday,
+	lca,
+	minus,
+	plus,
+	signExpansionFrac,
+	toMixed,
+} from "../dyadic/birthday";
 import { dyadicNew } from "../dyadic/class";
+import { compare, eq, ge, gt, le, lt } from "../dyadic/comp";
+import {
+	propCommAssoc,
+	propDist,
+	propIdentity,
+	propTotalOrder,
+	propZero,
+} from "./propsTest.test";
 
 fc.configureGlobal({ numRuns: 2000, verbose: false });
 

@@ -1,6 +1,7 @@
 import { create } from ".";
 import { Conway, type Conway0, type Ord, type Ord0 } from "../conway";
 import {
+	type Real,
 	realAdd,
 	realGt,
 	realIntegerDiv,
@@ -12,10 +13,9 @@ import {
 	realOne,
 	realSub,
 	realToBigint,
-	type Real,
 } from "../real";
-import { sub, add } from "./arith";
-import { isZero, isOne } from "./comparison";
+import { add, sub } from "./arith";
+import { isOne, isZero } from "./comparison";
 
 export const { isOrdinal } = Conway;
 

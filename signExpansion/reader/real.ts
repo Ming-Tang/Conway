@@ -9,14 +9,14 @@ import {
 } from "../../dyadic";
 import { dyadicPow2 } from "../../dyadic/arith";
 import { tryGetFiniteOrd } from "../../op";
-import { isZero, isAboveReals, lt } from "../../op/comparison";
+import { isAboveReals, isZero, lt } from "../../op/comparison";
 import { ordinalDivRem, ordinalMult } from "../../op/ordinal";
 import {
+	type Real,
 	realIsNegative,
 	realIsZero,
 	realNeg,
 	realToDyadic,
-	type Real,
 } from "../../real";
 import type { Entry, SignExpansionReader } from "./types";
 

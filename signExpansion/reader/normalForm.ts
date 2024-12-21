@@ -2,11 +2,11 @@ import { Conway, type Conway0, type Ord, type Ord0 } from "../../conway";
 import { create, ensure, tryGetReal } from "../../op";
 import { gt, isAboveReals, isZero } from "../../op/comparison";
 import type { Real } from "../../real";
-import { genMono, readMono, type SkipFirst } from "./mono";
+import { type SkipFirst, genMono, readMono } from "./mono";
 import { genReal } from "./real";
 import { reduceMulti, unreduceMulti, unreduceSingle } from "./reduce";
 import { compareSignExpansions, countSigns } from "./split";
-import { IterReader, type Entry, type SignExpansionReader } from "./types";
+import { type Entry, IterReader, type SignExpansionReader } from "./types";
 
 /**
  * A term in the monomial-list decomposition of a sigh expansion.

@@ -1,26 +1,26 @@
 import type { Ord } from "../conway";
-import { ordinalEnsure as ensure, ordinalMono1 as mono1 } from "../op/ordinal";
+import { unit, zero } from "../op";
 import { ge, gt, isAboveReals, isOne, isZero } from "../op/comparison";
+import { ordinalEnsure as ensure, ordinalMono1 as mono1 } from "../op/ordinal";
 import { realToBigint, realToNumber } from "../real";
 import { cnfOrDefault, defaultCnf, simplifyConcat, simplifyCycle } from "./cnf";
 import {
+	type ExpansionEntryConstructor,
+	NotExpanded,
+	SeqExpansion,
 	defaultExpansion,
 	expandOrDefault,
 	getFirst,
-	NotExpanded,
-	SeqExpansion,
-	type ExpansionEntryConstructor,
 } from "./expansion";
 import {
 	assertLength,
-	isConstantLength,
-	ordFromNumber,
-	isConstantArray,
 	ensureFinite,
+	isConstantArray,
+	isConstantLength,
 	modifiedDivRem,
+	ordFromNumber,
 } from "./helpers";
 import type { Cnf, Seq } from "./types";
-import { zero, unit } from "../op";
 
 const minus = (higher: Ord, lower: Ord) => lower.ordinalRightSub(higher);
 

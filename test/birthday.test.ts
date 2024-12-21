@@ -1,10 +1,10 @@
 import fc from "fast-check";
-import { arbFinite, arbOrd3, arbConway3, arbFiniteBigint } from "./generators";
+import type { Conway } from "../conway";
 import { birthday, ensure, mono, mono1, zero } from "../op";
+import { add } from "../op/arith";
 import { eq, ge, gt } from "../op/comparison";
 import { isOrdinal, ordinalAdd } from "../op/ordinal";
-import { add } from "../op/arith";
-import type { Conway } from "../conway";
+import { arbConway3, arbFinite, arbFiniteBigint, arbOrd3 } from "./generators";
 
 describe("birthday", () => {
 	describe("birthday of real numbers", () => {

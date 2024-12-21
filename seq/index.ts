@@ -1,20 +1,20 @@
 import type { Ord } from "../conway";
-import { unit, one, zero } from "../op";
+import { one, unit, zero } from "../op";
 import { isZero } from "../op/comparison";
 import {
-	FromArray,
 	Concat,
-	LeftTruncate,
-	CycleArray,
 	Cycle,
-	RepeatEach,
-	Product,
-	SeqMap,
-	MapNatural,
-	IndexByPower,
-	OverrideIsConstant,
-	Identity,
+	CycleArray,
 	Empty,
+	FromArray,
+	Identity,
+	IndexByPower,
+	LeftTruncate,
+	MapNatural,
+	OverrideIsConstant,
+	Product,
+	RepeatEach,
+	SeqMap,
 } from "./classes";
 import type { Seq } from "./types";
 export type { Seq } from "./types";

@@ -6,26 +6,19 @@ import {
 	type Ord,
 	type Ord0,
 } from "../conway";
-import type { Real } from "../real";
+import { dyadicPow2 } from "../dyadic/arith";
 import {
-	propCommAssoc,
-	propDist,
-	propIdentity,
-	propTotalOrder,
-	propZero,
-} from "./propsTest.test";
-import {
-	arbConway1,
-	arbConway2,
-	arbConway3,
-	arbConway4,
-	arbConway5,
-	arbConwayReal,
-	arbFiniteBigint,
-	arbRealGeneral,
-	arbFinite,
-	arbDyadic,
-} from "./generators";
+	create,
+	ensure,
+	maybeUnwrap,
+	mono,
+	mono1,
+	one,
+	fromReal as real,
+	unit,
+	zero,
+} from "../op";
+import { add, mult, neg, sub } from "../op/arith";
 import {
 	compare,
 	eq,
@@ -38,19 +31,26 @@ import {
 	lt,
 	ne,
 } from "../op/comparison";
+import type { Real } from "../real";
 import {
-	mono,
-	mono1,
-	one,
-	zero,
-	fromReal as real,
-	unit,
-	ensure,
-	maybeUnwrap,
-	create,
-} from "../op";
-import { add, mult, neg, sub } from "../op/arith";
-import { dyadicPow2 } from "../dyadic/arith";
+	arbConway1,
+	arbConway2,
+	arbConway3,
+	arbConway4,
+	arbConway5,
+	arbConwayReal,
+	arbDyadic,
+	arbFinite,
+	arbFiniteBigint,
+	arbRealGeneral,
+} from "./generators";
+import {
+	propCommAssoc,
+	propDist,
+	propIdentity,
+	propTotalOrder,
+	propZero,
+} from "./propsTest.test";
 
 const ensureIncreasing = (x: Conway) => {
 	const es = [...x].map((c) => c[0]);

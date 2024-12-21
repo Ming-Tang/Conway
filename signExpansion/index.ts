@@ -1,9 +1,9 @@
 import { Conway, type Conway0, type Ord, type Ord0 } from "../conway";
 import { create, ensure, one } from "../op";
 import type { Real } from "../real";
-import { concat, cycleArray, empty, type Seq } from "../seq";
+import { type Seq, concat, cycleArray, empty } from "../seq";
 import { signExpansionFromConway } from "./reader/normalForm";
-import { realMinus, realPlus, type Sign } from "./real";
+import { type Sign, realMinus, realPlus } from "./real";
 
 export { birthday } from "./birthday";
 

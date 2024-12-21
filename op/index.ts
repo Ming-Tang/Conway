@@ -1,5 +1,5 @@
 import { Conway, type Conway0 } from "../conway";
-import { hasRealType, realToDyadic, realZero, type Real } from "../real";
+import { type Real, hasRealType, realToDyadic, realZero } from "../real";
 
 export const {
 	zero,

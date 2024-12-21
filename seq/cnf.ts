@@ -1,8 +1,8 @@
 import { Conway, type Ord } from "../conway";
-import { ordinalEnsure as ensure } from "../op/ordinal";
-import { ge, isOne, isZero, lt, ne } from "../op/comparison";
-import type { Seq, CnfConcat, Cnf } from "./types";
 import { zero } from "../op";
+import { ge, isOne, isZero, lt, ne } from "../op/comparison";
+import { ordinalEnsure as ensure } from "../op/ordinal";
+import type { Cnf, CnfConcat, Seq } from "./types";
 
 export const defaultCnf = <T>(f: Seq<T>, terms: number) => {
 	const elems: T[] = [];

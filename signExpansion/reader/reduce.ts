@@ -3,10 +3,10 @@ import { gt, isZero, lt } from "../../op/comparison";
 import { ordinalRightSub } from "../../op/ordinal";
 import { commonPrefix, compareSignExpansions, countSigns } from "./split";
 import {
-	IterReader,
-	iterSignExpansionReader,
 	type Entry,
+	IterReader,
 	type SignExpansionReader,
+	iterSignExpansionReader,
 } from "./types";
 
 /**

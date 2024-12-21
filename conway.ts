@@ -1,6 +1,7 @@
 import { Dyadic, dyadicNeg } from "./dyadic";
 import { dyadicOrdHash } from "./dyadic/ordHash";
 import {
+	type Real,
 	realAdd,
 	realCompare,
 	realEq,
@@ -16,7 +17,6 @@ import {
 	realToDyadic,
 	realToJson,
 	realZero,
-	type Real,
 } from "./real";
 
 const customInspectSymbol = Symbol.for("nodejs.util.inspect.custom");

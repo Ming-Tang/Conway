@@ -1,38 +1,14 @@
 import fc from "fast-check";
 import "./expect.test";
 import { Conway, type Ord, type Ord0 } from "../conway";
-import { realToBigint, type Real } from "../real";
 import {
-	arbFiniteBigint,
-	arbFiniteBigintOrd,
-	arbOrd2,
-	arbOrd3,
-} from "./generators";
-import {
-	isOrdinal,
-	ordinalAdd,
-	ordinalMult,
-	ordinalDivRem,
-	isLimit,
-	canon,
-	ordinalRightSub,
-	isSucc,
-	succ,
-	pred,
-	ordinalPow,
-	noSucc,
-	ordinalEnsure as ensure,
-	ordinalMono as mono,
-	ordinalMono1 as mono1,
-} from "../op/ordinal";
-import {
+	ensure as conwayEnsure,
+	create,
 	fromReal,
 	isMono,
 	one,
 	unit,
 	zero,
-	ensure as conwayEnsure,
-	create,
 } from "../op";
 import {
 	eq,
@@ -44,6 +20,30 @@ import {
 	le,
 	lt,
 } from "../op/comparison";
+import {
+	canon,
+	ordinalEnsure as ensure,
+	isLimit,
+	isOrdinal,
+	isSucc,
+	ordinalMono as mono,
+	ordinalMono1 as mono1,
+	noSucc,
+	ordinalAdd,
+	ordinalDivRem,
+	ordinalMult,
+	ordinalPow,
+	ordinalRightSub,
+	pred,
+	succ,
+} from "../op/ordinal";
+import { type Real, realToBigint } from "../real";
+import {
+	arbFiniteBigint,
+	arbFiniteBigintOrd,
+	arbOrd2,
+	arbOrd3,
+} from "./generators";
 
 fc.configureGlobal({ numRuns: 1000, verbose: false });
 

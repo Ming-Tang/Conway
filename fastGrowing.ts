@@ -1,8 +1,8 @@
 import { Conway, type Conway0, type Ord0 } from "./conway";
-import { realToBigint, realZero, type Real } from "./real";
 import { unit } from "./op";
 import { eq, isOne, isZero } from "./op/comparison";
 import { canon, isLimit, pred } from "./op/ordinal";
+import { type Real, realToBigint, realZero } from "./real";
 
 /**
  * Evaluates the Wainer hierarchy function.

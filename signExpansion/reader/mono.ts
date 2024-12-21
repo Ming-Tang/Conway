@@ -8,9 +8,9 @@ import {
 	ordinalRightSub,
 	succ,
 } from "../../op/ordinal";
-import { realIsPositive, realIsZero, type Real } from "../../real";
+import { type Real, realIsPositive, realIsZero } from "../../real";
 import { genRealPart, readReal, readRealPartOmit } from "./real";
-import { IterReader, type Entry, type SignExpansionReader } from "./types";
+import { type Entry, IterReader, type SignExpansionReader } from "./types";
 
 const tryConsume = (
 	reader: SignExpansionReader,

@@ -1,13 +1,13 @@
 import fc from "fast-check";
 import "./expect.test";
-import { isPositive, isZero, lt } from "../op/comparison";
-import type { Seq } from "../seq/types";
-import { SeqExpansion, type ExpansionEntryConstructor } from "../seq/expansion";
-import { ordinalMult, ordinalEnsure as ensure } from "../op/ordinal";
-import { concat, cycleArray, empty, fromArray } from "../seq";
-import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "./generators";
 import type { Ord } from "../conway";
 import { one, zero } from "../op";
+import { isPositive, isZero, lt } from "../op/comparison";
+import { ordinalEnsure as ensure, ordinalMult } from "../op/ordinal";
+import { concat, cycleArray, empty, fromArray } from "../seq";
+import { type ExpansionEntryConstructor, SeqExpansion } from "../seq/expansion";
+import type { Seq } from "../seq/types";
+import { arbFiniteBigintOrd, arbOrd2, arbOrd3 } from "./generators";
 
 type Value = number;
 const arbValue: fc.Arbitrary<Value> = fc.integer({ min: 0, max: 1000 });

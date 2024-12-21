@@ -1,5 +1,4 @@
 import fc from "fast-check";
-import { arbDyadic, arbFiniteBigint } from "./generators";
 import {
 	Dyadic,
 	dyadicFromBigint,
@@ -7,8 +6,9 @@ import {
 	dyadicLt,
 	dyadicNeg,
 } from "../dyadic";
-import { dyadicOrdHash, LOW_THRESHOLDS } from "../dyadic/ordHash";
 import { dyadicNew } from "../dyadic/class";
+import { LOW_THRESHOLDS, dyadicOrdHash } from "../dyadic/ordHash";
+import { arbDyadic, arbFiniteBigint } from "./generators";
 
 describe("ordHashDyadic", () => {
 	it("preserves ordering after halfing for positive", () => {

@@ -1,10 +1,10 @@
 import { cycle, cycleArray } from ".";
 import type { Ord } from "../conway";
-import { ordinalEnsure as ensure } from "../op/ordinal";
+import { one, zero } from "../op";
 import { ge, gt, isOne, isZero, lt, ne } from "../op/comparison";
+import { ordinalEnsure as ensure } from "../op/ordinal";
 import { assertLength, isConstantArray } from "./helpers";
 import type { Seq } from "./types";
-import { zero, one } from "../op";
 
 export const NotExpanded = Symbol("NotExpanded");
 

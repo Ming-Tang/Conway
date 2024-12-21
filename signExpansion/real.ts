@@ -1,15 +1,4 @@
 import type { Ord } from "../conway";
-import type { Real } from "../real";
-import { ordinalEnsure as ensure } from "../op/ordinal";
-import { isOne, isZero } from "../op/comparison";
-import {
-	concat,
-	cycleArray,
-	empty,
-	fromArray,
-	maybeSimplifyConst,
-	type Seq,
-} from "../seq";
 import {
 	Dyadic,
 	dyadicAbs,
@@ -20,6 +9,17 @@ import {
 	dyadicSignExpansionFrac,
 	dyadicToMixed,
 } from "../dyadic";
+import { isOne, isZero } from "../op/comparison";
+import { ordinalEnsure as ensure } from "../op/ordinal";
+import type { Real } from "../real";
+import {
+	type Seq,
+	concat,
+	cycleArray,
+	empty,
+	fromArray,
+	maybeSimplifyConst,
+} from "../seq";
 
 const cycleArray0 = <T>(xs: T[], mult: Ord) => {
 	if (isZero(mult) || xs.length === 0) {

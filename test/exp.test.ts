@@ -1,11 +1,11 @@
 import fc from "fast-check";
-import { add, mult } from "../op/arith";
-import { exp, factorLeadLow, log, log1pLow } from "../op/exp";
-import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
-import { eq, isPositive, isZero } from "../op/comparison";
 import type { Conway0 } from "../conway";
-import { ensure, mono, zero, one, unit } from "../op";
+import { ensure, mono, one, unit, zero } from "../op";
+import { add, mult } from "../op/arith";
+import { eq, isPositive, isZero } from "../op/comparison";
+import { exp, factorLeadLow, log, log1pLow } from "../op/exp";
 import { realToDyadic } from "../real";
+import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
 
 const close = (a: Conway0, b: Conway0) => {
 	expect(ensure(a)).toEqual(ensure(b));

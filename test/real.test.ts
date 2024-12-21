@@ -1,5 +1,13 @@
 import fc from "fast-check";
 import {
+	Dyadic,
+	dyadicFromBigint,
+	dyadicFromNumber,
+	dyadicOne,
+	dyadicZero,
+} from "../dyadic";
+import {
+	type Real,
 	realCompare,
 	realEq,
 	realEqHash,
@@ -10,17 +18,9 @@ import {
 	realLt,
 	realNe,
 	realToString,
-	type Real,
 } from "../real";
 import { arbRealGeneral } from "./generators";
 import { propTotalOrder } from "./propsTest.test";
-import {
-	Dyadic,
-	dyadicFromBigint,
-	dyadicFromNumber,
-	dyadicOne,
-	dyadicZero,
-} from "../dyadic";
 
 const arbReal = arbRealGeneral;
 const arbZero = fc.constantFrom(dyadicZero, 0n, +0, -0, 0);

@@ -1,7 +1,7 @@
 import { create, ensure, mono, mono1, one, zero } from ".";
 import type { Conway, Conway0 } from "../conway";
-import { realMult, type Real } from "../real";
-import { sub, mult, add } from "./arith";
+import { type Real, realMult } from "../real";
+import { add, mult, sub } from "./arith";
 import { eq, isZero } from "./comparison";
 
 /**

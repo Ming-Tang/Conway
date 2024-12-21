@@ -1,6 +1,7 @@
 import { one, zero } from ".";
 import { Conway, type Conway0, type Ord0 } from "../conway";
 import {
+	type Real,
 	realAbs,
 	realCeilingToBigint,
 	realFloorToBigint,
@@ -13,7 +14,6 @@ import {
 	realOne,
 	realToBigint,
 	realZero,
-	type Real,
 } from "../real";
 import { signExpansionFromConway } from "../signExpansion/reader/normalForm";
 import { gt, isNegative, isZero } from "./comparison";

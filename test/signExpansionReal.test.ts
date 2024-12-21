@@ -1,11 +1,11 @@
 import fc from "fast-check";
 import { birthday, ensure, realBirthday } from "../op";
-import { concat, fromArray } from "../seq";
-import { realMinus, realPlus, signExpansionReal } from "../signExpansion/real";
 import { sub } from "../op/arith";
 import { succ } from "../op/ordinal";
-import { arbRealGeneral } from "./generators";
 import { realEq, realGt, realLt, realNeg } from "../real";
+import { concat, fromArray } from "../seq";
+import { realMinus, realPlus, signExpansionReal } from "../signExpansion/real";
+import { arbRealGeneral } from "./generators";
 import { seqToArray as toArray } from "./generators";
 
 fc.configureGlobal({ numRuns: 1000, verbose: false });
