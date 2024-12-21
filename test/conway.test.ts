@@ -223,107 +223,6 @@ describe("Conway", () => {
 		});
 	});
 
-	// TODO doesn't work
-	describe.skip("derivative", () => {
-		it("real' = 0", () => {
-			expect(zero.derivative().eq(zero)).toBe(true);
-			expect(one.derivative().eq(zero)).toBe(true);
-			expect(real(-4.0).derivative().eq(zero)).toBe(true);
-		});
-
-		it("w' = 1", () => {
-			expect(unit.derivative().eq(one)).toBe(true);
-		});
-
-		it("(w^2)' = 2w", () => {
-			expect(unit.mult(unit).derivative().eq(unit.mult(2))).toBe(true);
-		});
-
-		it("((w+1)^2)' = 2(w+1)", () => {
-			const a = unit.add(one);
-			expect(a.mult(a).derivative().eq(a.mult(2))).toBe(true);
-		});
-
-		it("(w^5)' = 5 w^4", () => {
-			expect(mono(1, 5).derivative().eq(mono(5, 4))).toBe(true);
-		});
-
-		it("(w^-3.5)' = -3.5 w^-4.5", () => {
-			expect(mono(1, -3.5).derivative().eq(mono(-3.5, -4.5))).toBe(true);
-		});
-
-		describe("exponential", () => {
-			for (const { x, expX } of [
-				{ x: mono(1, inverseUnit), expX: unit },
-				{ x: unit, expX: expUnit },
-				{
-					x: unit.mult(logUnit),
-					expX: mono(1, mono(1, add(one, inverseUnit))),
-				},
-			]) {
-				it(`x=${x}, exp(x)=${expX}`, () => {
-					// exp(w^x) = w^w^x for infinite x and below epsilon_0
-					const l = expX.derivative();
-					const r = expX.mult(x.derivative());
-					if (!l.eq(r)) {
-						throw new Error(
-							`not equal, x=${x}, exp(x)=${expX}, exp(x)'=${l}, exp(x) x'=${r}`,
-						);
-					}
-					expect(l.eq(r));
-				});
-			}
-		});
-	});
-
-	describe.skip("sample values", () => {
-		const arbSampleReal = fc.bigInt({ min: -5n, max: 5n });
-		it("No1 = R[[w^R]]", () => {
-			for (const s of fc.sample(arbConway1(arbSampleReal, { maxLength: 5 }), {
-				seed: 1,
-				numRuns: 10,
-			})) {
-				console.log(s.toString());
-			}
-		});
-
-		it("No2 = R[[w^No1]]", () => {
-			for (const s of fc.sample(arbConway2(arbSampleReal, { maxLength: 3 }), {
-				seed: 1,
-				numRuns: 10,
-			})) {
-				console.log(s.toString());
-			}
-		});
-
-		it("No3 = R[[w^No2]]", () => {
-			for (const s of fc.sample(arbConway3(arbSampleReal, { maxLength: 3 }), {
-				seed: 1,
-				numRuns: 10,
-			})) {
-				console.log(s.toString());
-			}
-		});
-
-		it("No4 = R[[w^No3]]", () => {
-			for (const s of fc.sample(arbConway4(arbSampleReal, { maxLength: 3 }), {
-				seed: 1,
-				numRuns: 10,
-			})) {
-				console.log(s.toString());
-			}
-		});
-
-		it("No5 = R[[w^No4]]", () => {
-			for (const s of fc.sample(arbConway5(arbSampleReal, { maxLength: 3 }), {
-				seed: 1,
-				numRuns: 10,
-			})) {
-				console.log(s.toString());
-			}
-		});
-	});
-
 	const arithProps = (
 		arb: fc.Arbitrary<Conway>,
 		skip = false,
@@ -424,37 +323,6 @@ describe("Conway", () => {
 
 			describe("distributive", () => {
 				propDist<Conway0>(it, arb, add, mult, eq, { numRuns });
-			});
-		});
-	};
-
-	const derivProps = (
-		arb: fc.Arbitrary<Conway>,
-		skip = false,
-		numRuns?: number,
-	) => {
-		(skip ? describe.skip : describe)("derivative", () => {
-			it("sum rule", () => {
-				fc.assert(
-					fc.property(arb, arb, (x, y) =>
-						x.add(y).derivative().eq(x.derivative().add(y.derivative())),
-					),
-					{ numRuns },
-				);
-			});
-
-			it("product rule", () => {
-				fc.assert(
-					fc.property(arb, arb, (x, y) => {
-						const l = x.mult(y).derivative();
-						const r = x.derivative().mult(y).add(x.mult(y.derivative()));
-						// if (!l.eq(r)) {
-						// 	throw new Error(`not equal, xy=${x.mult(y)}, xy'=${l}, pr=${r}`);
-						// }
-						return l.eq(r);
-					}),
-					{ numRuns },
-				);
 			});
 		});
 	};
@@ -671,7 +539,6 @@ describe("Conway", () => {
 		});
 
 		eqProps(arb);
-		//derivProps(arb);
 		arithProps(arb);
 	});
 
@@ -691,7 +558,6 @@ describe("Conway", () => {
 		});
 
 		eqProps(arb);
-		//derivProps(arb);
 		arithProps(arb, false, 100);
 	});
 
@@ -711,7 +577,6 @@ describe("Conway", () => {
 		});
 
 		eqProps(arb);
-		//derivProps(arb);
 		arithProps(arb, false, 100);
 	});
 

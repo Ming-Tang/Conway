@@ -820,45 +820,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 	}
 
 	// #endregion
-	// #region Exponential Field
-
-	public derivative(): Conway {
-		// TODO incomplete
-		if (this.realValue !== null) {
-			return Conway.zero;
-		}
-
-		if (this.isUnit) {
-			return Conway.one;
-		}
-
-		let sum: Conway = Conway.zero;
-		for (const [e, c] of this.#terms) {
-			if (Conway.isZero(e)) {
-				continue;
-			}
-
-			if (!(e instanceof Conway)) {
-				sum = sum.add(Conway.mono(realMult(e, c), realSub(e, realOne)));
-				continue;
-			}
-
-			const de = e.derivative();
-			if (de.isZero) {
-				sum = sum.add(Conway.mono(c, Conway.sub(e, 1n)).mult(e));
-				continue;
-			}
-
-			sum = sum.add(
-				Conway.mono(c, Conway.sub(e, 1n)).mult(
-					e.add(Conway.unit.mult(de).mult(Conway.logUnit)),
-				),
-			);
-		}
-		return sum;
-	}
-
-	// #endregion
 	// #region Birthday
 
 	/**
