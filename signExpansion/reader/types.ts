@@ -16,6 +16,10 @@ export interface SignExpansionReader<O extends Ord0 = Ord0> {
 export function* groupBySign<O extends Ord0 = Ord0>(
 	iter: Iterable<Entry<O>>,
 ): Generator<Entry<O>> {
+	if (Array.isArray(iter) && iter.length === 0) {
+		return;
+	}
+
 	let partialEntry: Entry<O> | null = null;
 	const it = iter[Symbol.iterator]();
 	while (true) {
