@@ -45,7 +45,12 @@ import {
 	arbOrd3,
 } from "./generators";
 
-fc.configureGlobal({ numRuns: 1000, verbose: false });
+fc.configureGlobal({ numRuns: 2000 });
+
+const propUnwrapPreserve =
+	(f: (a: Ord0, b: Ord0) => Ord0) =>
+	(a: bigint, b: bigint): boolean =>
+		typeof f(a, b) === "bigint";
 
 describe("ordinals", () => {
 	describe("ordinalAdd", () => {
@@ -363,6 +368,16 @@ describe("ordinals", () => {
 				}),
 			);
 		});
+
+		it("returns unwrapped if both parameters are unwrapped", () => {
+			fc.assert(
+				fc.property(
+					arbFiniteBigintOrd,
+					arbFiniteBigintOrd,
+					propUnwrapPreserve(ordinalMult),
+				),
+			);
+		});
 	});
 
 	describe("ordinalPow", () => {
@@ -582,6 +597,16 @@ describe("ordinals", () => {
 				{ numRuns: 50 },
 			);
 		});
+
+		it("returns unwrapped if both parameters are unwrapped", () => {
+			fc.assert(
+				fc.property(
+					arbFiniteBigintOrd,
+					arbFiniteBigintOrd,
+					propUnwrapPreserve(ordinalPow),
+				),
+			);
+		});
 	});
 
 	describe("ordinalDivRem", () => {
@@ -721,6 +746,16 @@ describe("ordinals", () => {
 			it("general", () => {
 				fc.assert(fc.property(arbOrd3, arbOrd3, propDivRem));
 			});
+		});
+
+		it("returns unwrapped if both parameters are unwrapped", () => {
+			fc.assert(
+				fc.property(arbFiniteBigintOrd, arbFiniteBigintOrd, (a, b) => {
+					fc.pre(!isZero(b));
+					const [p, q] = ordinalDivRem(a, b);
+					return typeof p === "bigint" && typeof q === "bigint";
+				}),
+			);
 		});
 	});
 
@@ -900,6 +935,23 @@ describe("ordinals", () => {
 				fc.property(arbOrd3, (n) => {
 					fc.pre(isSucc(n));
 					return isOrdinal(pred(n));
+				}),
+			);
+		});
+
+		it("succ: preserves unwrapped", () => {
+			fc.assert(
+				fc.property(arbFiniteBigintOrd, (n) => {
+					return typeof succ(n) === "bigint";
+				}),
+			);
+		});
+
+		it("pred: preserves unwrapped", () => {
+			fc.assert(
+				fc.property(arbFiniteBigintOrd, (n) => {
+					fc.pre(n > 0n);
+					return typeof pred(n) === "bigint";
 				}),
 			);
 		});
