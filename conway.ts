@@ -232,6 +232,10 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return value instanceof Conway ? value : (Conway.real(value) as never);
 	}
 
+	public mono1(): Conway<IsOrd> {
+		return Conway.mono1(this) as Conway<never> as Conway<IsOrd>;
+	}
+
 	/**
 	 * If this surreal number represents a pure real number, return the real number,
 	 * otherwise return the surreal itself.
