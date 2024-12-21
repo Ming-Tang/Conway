@@ -824,7 +824,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	/**
 	 * Get a frozen view of the terms, which is an array of `[power, coeff]` tuples.
 	 */
-	public getTerms() {
+	public get terms() {
 		return this.#terms;
 	}
 

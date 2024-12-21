@@ -95,7 +95,7 @@ export function* readMono1(
 		}
 
 		const len1 = ensure(length);
-		const [p0] = len1.getTerms()[0] as [Ord0, unknown];
+		const [p0] = len1.terms[0] as [Ord0, unknown];
 		if (sign === plus) {
 			// length = w^(nPlus + ...) + ...
 			// or else the plus does not belong to mono1

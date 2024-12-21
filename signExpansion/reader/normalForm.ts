@@ -50,7 +50,7 @@ export const decomposeSignExpansion = (
 		const next = reader.lookahead();
 		if (next !== null && lastSign !== null) {
 			const { sign: nextSign, length: nextLen } = next;
-			const terms1 = ensure<Ord0>(nextLen).getTerms();
+			const terms1 = ensure<Ord0>(nextLen).terms;
 			const nextMono1 = terms1.length === 0 ? 0n : (terms1[0][0] as Ord0);
 
 			const proposedReduced: Entry[] = [{ sign: true, length: nextMono1 }];
@@ -107,9 +107,7 @@ export function* composeSignExpansion(terms: Iterable<Term>, reduce = true) {
 }
 
 export const decomposeSignExpansionFromConway = (conway: Conway): Term[] => {
-	return conway
-		.getTerms()
-		.map(([p, r]) => [[...signExpansionFromConway(p)], r]);
+	return conway.terms.map(([p, r]) => [[...signExpansionFromConway(p)], r]);
 };
 
 export function* signExpansionFromConway(conway: Conway0) {

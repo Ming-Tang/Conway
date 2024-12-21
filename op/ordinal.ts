@@ -174,8 +174,8 @@ const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
 	let left: Ord = ord;
 	let right = other1;
 	while (left.length > 0 && right.length > 0) {
-		const leftTerms = left.getTerms();
-		const rightTerms = right.getTerms();
+		const leftTerms = left.terms;
+		const rightTerms = right.terms;
 		const [p2, c2] = rightTerms[0];
 		const [p1, c1] = leftTerms[0];
 		if (!eq(p1, p2)) {

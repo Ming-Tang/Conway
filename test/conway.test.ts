@@ -637,7 +637,7 @@ describe("Conway", () => {
 				fc.property(arb, (a) => {
 					const a1 = a.mult(one);
 					const a2 = a.add(zero);
-					const a3 = create([...a.getTerms()]);
+					const a3 = create([...a.terms]);
 					return (
 						a.ordHash === a1.ordHash &&
 						a1.ordHash === a2.ordHash &&

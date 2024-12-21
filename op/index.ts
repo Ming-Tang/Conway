@@ -17,7 +17,7 @@ export { realBirthday } from "../real";
 export { birthday } from "../signExpansion/birthday";
 
 export const termAt = (x: Conway, i: number): Conway => {
-	const terms = x.getTerms();
+	const terms = x.terms;
 	const [p, c] = terms[i] ?? [zero, realZero];
 	return mono(c, p);
 };

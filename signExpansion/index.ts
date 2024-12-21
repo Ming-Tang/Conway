@@ -21,7 +21,7 @@ export const conwayPlus = (x: Conway0) => {
 		return realPlus(x);
 	}
 
-	const terms = x.getTerms();
+	const terms = x.terms;
 	const n = terms.length;
 	if (terms.length === 0) {
 		return one;
@@ -38,7 +38,7 @@ export const conwayMinus = (x: Conway0) => {
 		return realMinus(x);
 	}
 
-	const terms = x.getTerms();
+	const terms = x.terms;
 	const n = terms.length;
 	if (terms.length === 0) {
 		return one;
