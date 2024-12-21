@@ -164,7 +164,7 @@ either wrapped or unwrapped form.
 The exponents in the array of tuple representations of Conway/Cantor
 normal forms area always unwrapped reals if possible.
 
-The `maybeDowngrade` function takes a `Conway` and returns an
+The `maybeUnwrap` function takes a `Conway` and returns an
 unwrapped `Real` if possible, otherwise the argument itself is
 returned.
 

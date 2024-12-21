@@ -9,7 +9,7 @@ export const {
 	mono,
 	mono1,
 	ensure,
-	maybeDowngrade,
+	maybeUnwrap,
 	real: fromReal,
 } = Conway;
 

@@ -110,7 +110,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 		Conway.sortTermsDescending(terms);
 
 		const newTerms = [] as typeof terms;
-		terms = terms.map(([p, c]) => [Conway.maybeDowngrade(p), c]);
+		terms = terms.map(([p, c]) => [Conway.maybeUnwrap(p), c]);
 		for (const [p, c] of terms) {
 			if (Conway.isZero(c)) {
 				continue;
@@ -221,17 +221,11 @@ export class Conway<IsOrd extends boolean = boolean> {
 		if (realIsZero(value)) {
 			return Conway.zero;
 		}
-		return Conway.create(
-			[[Conway.maybeDowngrade(power), value]],
-			true,
-		) as never;
+		return Conway.create([[Conway.maybeUnwrap(power), value]], true) as never;
 	}
 
 	public static mono1<P extends Conway0>(power: P): Conway<InferIsOrd<P>> {
-		return Conway.create(
-			[[Conway.maybeDowngrade(power), realOne]],
-			true,
-		) as never;
+		return Conway.create([[Conway.maybeUnwrap(power), realOne]], true) as never;
 	}
 
 	public static ensure<V extends Conway0>(value: V): V & Conway<boolean> {
@@ -242,7 +236,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	 * If this surreal number represents a pure real number, return the real number,
 	 * otherwise return the surreal itself.
 	 */
-	public static maybeDowngrade<IsOrd extends boolean = boolean>(
+	public static maybeUnwrap<IsOrd extends boolean = boolean>(
 		value: Conway0<IsOrd>,
 	): Conway0<IsOrd> {
 		if (!(value instanceof Conway)) {

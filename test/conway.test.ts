@@ -46,7 +46,7 @@ import {
 	fromReal as real,
 	unit,
 	ensure,
-	maybeDowngrade,
+	maybeUnwrap,
 	create,
 } from "../op";
 import { add, mult, neg, sub } from "../op/arith";
@@ -991,7 +991,7 @@ function testOrdinalInference() {
 	const mono1Ord: Ord = mono1(unit);
 	const monoOrd: Ord = mono(1n, unit);
 	const ensureOrd: Ord = ensure(mono1Ord);
-	const maybeDowngradeOrd0: Ord0 = maybeDowngrade(mono1Ord);
+	const maybeUnwrapOrd0: Ord0 = maybeUnwrap(mono1Ord);
 	const addOrdLiteral: Ord0 = add(unit, 3n);
 	const addOrd1: Ord0 = add(unit, monoOrd);
 	// @ts-expect-error Not an ordinal
@@ -1007,7 +1007,7 @@ function testOrdinalInference() {
 		monoOrd,
 		mono1Ord,
 		ensureOrd,
-		maybeDowngradeOrd0,
+		maybeUnwrapOrd0,
 		addOrdLiteral,
 		addOrd1,
 		addNonOrdLiteral,
