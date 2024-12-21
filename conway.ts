@@ -2,7 +2,6 @@ import { Dyadic, dyadicNeg } from "./dyadic";
 import { dyadicOrdHash } from "./dyadic/ordHash";
 import {
 	realAdd,
-	realBirthday,
 	realCompare,
 	realEq,
 	realEqHash,
@@ -820,19 +819,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 	}
 
 	// #endregion
-	// #region Birthday
-
-	/**
-	 * Determines the birthday of a bigint or number.
-	 * Floating point numbers are treated as exact values and since they
-	 * are in the form of (integer * 2^exponent), floating point numbers
-	 * have a finite birthday.
-	 */
-	public static realBirthday(real: Real): Real {
-		return realBirthday(real);
-	}
-
-	// #endregion Birthday
 	// #region Collection
 
 	/**

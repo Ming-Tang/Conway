@@ -239,6 +239,12 @@ export const realToBigint = (value: Real): bigint => {
 };
 export const realToNumber = (value: Real): number => Number(value);
 
+/**
+ * Determines the birthday of a bigint or number.
+ * Floating point numbers are treated as exact values and since they
+ * are in the form of (integer * 2^exponent), floating point numbers
+ * have a finite birthday.
+ */
 export const realBirthday = (value: Real): bigint => {
 	if (value instanceof Dyadic) {
 		return dyadicBirthday(value);

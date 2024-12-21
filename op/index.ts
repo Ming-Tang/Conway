@@ -6,7 +6,6 @@ export const {
 	one,
 	negOne,
 	unit,
-	realBirthday,
 	mono,
 	mono1,
 	ensure,
@@ -14,6 +13,7 @@ export const {
 	real: fromReal,
 } = Conway;
 
+export { realBirthday } from "../real";
 export { birthday } from "../signExpansion/birthday";
 
 export const termAt = (x: Conway, i: number): Conway => {
