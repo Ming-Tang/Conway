@@ -1,11 +1,12 @@
 import fc from "fast-check";
 import type { Ord } from "../conway";
-import { birthday, ensure, mono, mono1, one, zero } from "../op";
+import { birthday, create, ensure, eq, mono, mono1, one, zero } from "../op";
 import { ge, gt, isNegative, isPositive, isZero, le, lt, ne } from "../op";
 import { add } from "../op/arith";
 import { isOrdinal, succ } from "../op/ordinal";
 import { right, roundToOrd } from "../op/range";
 import { signExpansion } from "../signExpansion";
+import { commonAncestor, isSimpler } from "../signExpansion/simplicity";
 import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
 
 fc.configureGlobal({ numRuns: 1000, verbose: true });

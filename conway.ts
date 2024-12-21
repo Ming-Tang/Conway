@@ -477,6 +477,7 @@ export class Conway<IsOrd extends boolean = boolean> {
 	 * Get the ordering hash code, which is a number.
 	 */
 	public get ordHash(): bigint {
+		// return 0n;
 		if (typeof this.#ordHash === "bigint") {
 			return this.#ordHash;
 		}
