@@ -24,7 +24,6 @@ export {
 	truncate,
 } from "./split";
 
-// TODO refactor to use this instead
 export const makeReader = <O extends Ord0 = Ord0>(x: Iterable<Entry<O>>) => {
 	return new IterReader(x);
 };

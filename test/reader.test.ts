@@ -7,6 +7,7 @@ import { ge, gt, isAboveReals, isZero, le, lt, ne } from "../op";
 import { neg } from "../op/arith";
 import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
 import { type Real, realAdd, realNeg } from "../real";
+import { makeReader } from "../signExpansion/reader";
 import {
 	genMono,
 	genMono1,
@@ -215,7 +216,7 @@ describe("IterReader", () => {
 	it("consuming 1 if allowed", () => {
 		fc.assert(
 			fc.property(fc.array(arbEntry()), (xs) => {
-				const reader = new IterReader(xs);
+				const reader = makeReader(xs);
 				const result1 = reader.lookahead();
 				fc.pre(result1 !== null && gt(result1.length, 1n));
 				reader.consume(1n);
@@ -228,7 +229,7 @@ describe("IterReader", () => {
 	it("consecutive calls of lookahead preserves state", () => {
 		fc.assert(
 			fc.property(fc.array(arbEntry()), (xs) => {
-				const reader = new IterReader(xs);
+				const reader = makeReader(xs);
 				while (true) {
 					const result1 = reader.lookahead();
 					const result2 = reader.lookahead();
@@ -247,7 +248,7 @@ describe("IterReader", () => {
 	it("alternating signs when consuming entire lookahead", () => {
 		fc.assert(
 			fc.property(fc.array(arbEntry()), (xs) => {
-				const reader = new IterReader(xs);
+				const reader = makeReader(xs);
 				let lastSign = null as boolean | null;
 				while (true) {
 					const result = reader.lookahead();
@@ -269,10 +270,10 @@ describe("genMono1/readMono1", () => {
 		fc.assert(
 			fc.property(arbGroupedSigns, (xs) => {
 				const sign = true;
-				const r1 = new IterReader(xs);
+				const r1 = makeReader(xs);
 				const m1 = [...genMono1(r1, sign)];
 				expect(r1.isDone).toBe(true);
-				const r2 = new IterReader(m1);
+				const r2 = makeReader(m1);
 				const xs1 = [...readMono1(r2, sign)];
 				expect(r2.isDone).toBe(true);
 				signExpansionEq(xs, xs1);
@@ -283,11 +284,11 @@ describe("genMono1/readMono1", () => {
 	it("readMono1 negation symmetry", () => {
 		fc.assert(
 			fc.property(arbGroupedSigns, (xs) => {
-				const m1p = [...genMono1(new IterReader(xs))];
-				const m1n = [...genMono1(new IterReader(xs))].map(flipSign);
+				const m1p = [...genMono1(makeReader(xs))];
+				const m1n = [...genMono1(makeReader(xs))].map(flipSign);
 				signExpansionEq(
-					[...readMono1(new IterReader(m1p), true)],
-					[...readMono1(new IterReader(m1n), false)],
+					[...readMono1(makeReader(m1p), true)],
+					[...readMono1(makeReader(m1n), false)],
 				);
 			}),
 		);
@@ -355,7 +356,7 @@ describe("readReal", () => {
 		fc.assert(
 			fc.property(fc.boolean(), arbDyadic(4), (sign, x) => {
 				const xp = sign ? dyadicPlus(x) : dyadicMinus(x);
-				const [lastSign, real] = readReal(new IterReader(genReal(xp)));
+				const [lastSign, real] = readReal(makeReader(genReal(xp)));
 				expect(real).conwayEq(xp);
 				expect(lastSign).toStrictEqual({
 					value: expect.conwayEq(x),
@@ -371,7 +372,7 @@ describe("genReal", () => {
 		fc.assert(
 			fc.property(arbDyadic(4), (x) => {
 				const sx = [...genReal(x)];
-				const rx = readReal(new IterReader(sx))[1];
+				const rx = readReal(makeReader(sx))[1];
 				expect(rx).conwayEq(x);
 			}),
 		);
@@ -382,8 +383,8 @@ describe("genMono/readMono", () => {
 	it("returns original real given zero exponent and real", () => {
 		fc.assert(
 			fc.property(arbDyadic(4), (r) => {
-				const se = [...genMono({ mono1: new IterReader([]), real: r })];
-				const res = readMono(new IterReader(se));
+				const se = [...genMono({ mono1: makeReader([]), real: r })];
+				const res = readMono(makeReader(se));
 				if (res === null) {
 					expect(r).conwayEq(0n);
 					return;
@@ -399,9 +400,9 @@ describe("genMono/readMono", () => {
 	it("negation symmetry over real", () => {
 		fc.assert(
 			fc.property(arbGroupedSigns, arbDyadic(4), (xs, real) => {
-				const se1 = [...genMono({ mono1: new IterReader(xs), real })];
+				const se1 = [...genMono({ mono1: makeReader(xs), real })];
 				const se2 = [
-					...genMono({ mono1: new IterReader(xs), real: realNeg(real) }),
+					...genMono({ mono1: makeReader(xs), real: realNeg(real) }),
 				];
 				signExpansionEq(se1, se2.map(flipSign));
 			}),
@@ -411,7 +412,7 @@ describe("genMono/readMono", () => {
 	it("parses zero real", () => {
 		fc.assert(
 			fc.property(arbGroupedSigns, (xs) => {
-				const se = [...genMono({ mono1: new IterReader(xs), real: 0n })];
+				const se = [...genMono({ mono1: makeReader(xs), real: 0n })];
 				expect(se).toStrictEqual([]);
 			}),
 		);
@@ -420,9 +421,7 @@ describe("genMono/readMono", () => {
 	it("parses zero exponent", () => {
 		fc.assert(
 			fc.property(arbDyadic(4), (real) => {
-				const se = [
-					...groupBySign(genMono({ mono1: new IterReader([]), real })),
-				];
+				const se = [...groupBySign(genMono({ mono1: makeReader([]), real }))];
 				signExpansionEq(se, [...genReal(real)]);
 			}),
 		);
@@ -434,7 +433,7 @@ describe("genMono/readMono", () => {
 				const se = [
 					...groupBySign(
 						genMono({
-							mono1: new IterReader([
+							mono1: makeReader([
 								{
 									sign: true,
 									length: ord,
@@ -463,8 +462,8 @@ describe("genMono/readMono", () => {
 			mono1,
 			real,
 		}: { mono1: Entry[]; real: Real }) => {
-			const se = [...genMono({ mono1: new IterReader(mono1), real })];
-			const res = readMono(new IterReader(se));
+			const se = [...genMono({ mono1: makeReader(mono1), real })];
+			const res = readMono(makeReader(se));
 			if (res === null) {
 				expect(real).conwayEq(0n);
 				return;
@@ -498,19 +497,19 @@ describe("genMono/readMono", () => {
 
 describe("countSigns", () => {
 	it("zero for empty signs", () => {
-		expect(countSigns(new IterReader([]), null)).conwayEq(0n);
-		expect(countSigns(new IterReader([]), true)).conwayEq(0n);
-		expect(countSigns(new IterReader([]), false)).conwayEq(0n);
+		expect(countSigns(makeReader([]), null)).conwayEq(0n);
+		expect(countSigns(makeReader([]), true)).conwayEq(0n);
+		expect(countSigns(makeReader([]), false)).conwayEq(0n);
 	});
 
 	const arbSignOrNull = fc.oneof(fc.boolean(), fc.constant(null));
 	it("append property: countSigns(xs ++ ys, s) = countSigns(xs, s) + countSigns(ys, s)", () => {
 		fc.assert(
 			fc.property(arbSigns, arbSigns, arbSignOrNull, (xs, ys, s) => {
-				const c1 = countSigns(new IterReader([...xs, ...ys]), s);
+				const c1 = countSigns(makeReader([...xs, ...ys]), s);
 				const c2 = ordinalAdd(
-					countSigns(new IterReader(xs), s),
-					countSigns(new IterReader(ys), s),
+					countSigns(makeReader(xs), s),
+					countSigns(makeReader(ys), s),
 				);
 				expect(c1).conwayEq(c2);
 			}),
@@ -520,11 +519,8 @@ describe("countSigns", () => {
 	it("left addition property: countSigns([{ sign, length }] ++ xs, sign) = length + countSigns(xs, sign)", () => {
 		fc.assert(
 			fc.property(arbSigns, fc.boolean(), arbOrd3, (xs, sign, length) => {
-				const c1 = countSigns(new IterReader(xs), sign);
-				const actual = countSigns(
-					new IterReader([{ sign, length }, ...xs]),
-					sign,
-				);
+				const c1 = countSigns(makeReader(xs), sign);
+				const actual = countSigns(makeReader([{ sign, length }, ...xs]), sign);
 				expect(actual).conwayEq(ordinalAdd(length, c1));
 			}),
 		);
@@ -533,11 +529,8 @@ describe("countSigns", () => {
 	it("right addition property: countSigns(xs ++ [{ sign, length }], sign) = countSigns(xs, sign) + length", () => {
 		fc.assert(
 			fc.property(arbSigns, fc.boolean(), arbOrd3, (xs, sign, length) => {
-				const c1 = countSigns(new IterReader(xs), sign);
-				const actual = countSigns(
-					new IterReader([...xs, { sign, length }]),
-					sign,
-				);
+				const c1 = countSigns(makeReader(xs), sign);
+				const actual = countSigns(makeReader([...xs, { sign, length }]), sign);
 				expect(actual).conwayEq(ordinalAdd(c1, length));
 			}),
 		);
@@ -546,8 +539,8 @@ describe("countSigns", () => {
 	it("negation symmetry: countSigns(xs, s) = countSigns(!xs, !s)", () => {
 		fc.assert(
 			fc.property(arbSigns, fc.boolean(), (xs, sign) => {
-				const c1 = countSigns(new IterReader(xs), sign);
-				const c2 = countSigns(new IterReader(xs.map(flipSign)), !sign);
+				const c1 = countSigns(makeReader(xs), sign);
+				const c2 = countSigns(makeReader(xs.map(flipSign)), !sign);
 				expect(c2).conwayEq(c1);
 			}),
 		);
@@ -556,9 +549,9 @@ describe("countSigns", () => {
 
 describe("index", () => {
 	it("returns null for empty sequences", () => {
-		expect(index(new IterReader([]), 0n)).toBeNull();
-		expect(index(new IterReader([]), 1n)).toBeNull();
-		expect(index(new IterReader([]), unit)).toBeNull();
+		expect(index(makeReader([]), 0n)).toBeNull();
+		expect(index(makeReader([]), 1n)).toBeNull();
+		expect(index(makeReader([]), unit)).toBeNull();
 	});
 
 	it("returns the sign of the first entry for zero index", () => {
@@ -566,7 +559,7 @@ describe("index", () => {
 			fc.property(
 				arbSigns.filter((xs) => xs.length > 0 && !isZero(xs[0].length)),
 				(xs) => {
-					return xs[0].sign === index(new IterReader(xs), 0n);
+					return xs[0].sign === index(makeReader(xs), 0n);
 				},
 			),
 		);
@@ -576,7 +569,7 @@ describe("index", () => {
 		fc.assert(
 			fc.property(fc.boolean(), arbOrd3, arbOrd3, (sign, length, i) => {
 				fc.pre(lt(i, length));
-				return index(new IterReader([{ sign, length }]), i) === sign;
+				return index(makeReader([{ sign, length }]), i) === sign;
 			}),
 		);
 	});
@@ -587,7 +580,7 @@ describe("index", () => {
 				fc.boolean(),
 				arbOrd3,
 				(sign, length) =>
-					index(new IterReader([{ sign, length }]), length) === null,
+					index(makeReader([{ sign, length }]), length) === null,
 			),
 		);
 	});
@@ -600,7 +593,7 @@ describe("index", () => {
 				arbOrd3.filter((x) => !isZero(x)),
 				(sign, length, len1) =>
 					index(
-						new IterReader([
+						makeReader([
 							{ sign, length },
 							{ sign: !sign, length: len1 },
 						]),
@@ -618,13 +611,10 @@ describe("index", () => {
 				fc.boolean(),
 				arbOrd3,
 				(xs, i, sign, length) => {
-					fc.pre(index(new IterReader(xs), i) !== null);
+					fc.pre(index(makeReader(xs), i) !== null);
 					return (
-						index(new IterReader(xs), i) ===
-						index(
-							new IterReader([{ length, sign }, ...xs]),
-							ordinalAdd(length, i),
-						)
+						index(makeReader(xs), i) ===
+						index(makeReader([{ length, sign }, ...xs]), ordinalAdd(length, i))
 					);
 				},
 			),
@@ -634,10 +624,9 @@ describe("index", () => {
 	it("right concat property: index(xs, i) = index(xs ++ ys, i)", () => {
 		fc.assert(
 			fc.property(arbSigns, arbSigns, arbOrd3, (xs, ys, i) => {
-				fc.pre(index(new IterReader(xs), i) !== null);
+				fc.pre(index(makeReader(xs), i) !== null);
 				return (
-					index(new IterReader(xs), i) ===
-					index(new IterReader([...xs, ...ys]), i)
+					index(makeReader(xs), i) === index(makeReader([...xs, ...ys]), i)
 				);
 			}),
 		);
@@ -648,8 +637,8 @@ describe("truncate", () => {
 	it("length of truncated: |truncate(S, n)| = min(|S|, n)", () => {
 		fc.assert(
 			fc.property(arbSigns, arbOrd3, (xs, n) => {
-				const truncated = [...truncate(new IterReader(xs), n)];
-				const len = countSigns(new IterReader(truncated));
+				const truncated = [...truncate(makeReader(xs), n)];
+				const len = countSigns(makeReader(truncated));
 				expect(len).conwayEq(lt(n, len) ? n : len);
 			}),
 		);
@@ -658,8 +647,8 @@ describe("truncate", () => {
 	it("excessive length: truncate(S, n) = S if n = |S|", () => {
 		fc.assert(
 			fc.property(arbSigns, (xs) => {
-				const len = countSigns(new IterReader(xs));
-				groupedEq([...truncate(new IterReader(xs), len)], xs);
+				const len = countSigns(makeReader(xs));
+				groupedEq([...truncate(makeReader(xs), len)], xs);
 			}),
 		);
 	});
@@ -667,9 +656,9 @@ describe("truncate", () => {
 	it("excessive length: truncate(S, n) = S if n >= |S|", () => {
 		fc.assert(
 			fc.property(arbSigns, arbOrd3, (xs, n) => {
-				const len = countSigns(new IterReader(xs));
+				const len = countSigns(makeReader(xs));
 				fc.pre(ge(n, len));
-				groupedEq([...truncate(new IterReader(xs), n)], xs);
+				groupedEq([...truncate(makeReader(xs), n)], xs);
 			}),
 		);
 	});
@@ -678,8 +667,8 @@ describe("truncate", () => {
 		fc.assert(
 			fc.property(arbSigns, arbOrd3, arbOrd3, (xs, i, n) => {
 				fc.pre(lt(i, n));
-				expect(index(new IterReader(truncate(new IterReader(xs), n)), i)).toBe(
-					index(new IterReader(xs), i),
+				expect(index(makeReader(truncate(makeReader(xs), n)), i)).toBe(
+					index(makeReader(xs), i),
 				);
 			}),
 		);
@@ -689,9 +678,7 @@ describe("truncate", () => {
 		fc.assert(
 			fc.property(arbSigns, arbOrd3, arbOrd3, (xs, i, n) => {
 				fc.pre(ge(i, n));
-				expect(
-					index(new IterReader(truncate(new IterReader(xs), n)), i),
-				).toBeNull();
+				expect(index(makeReader(truncate(makeReader(xs), n)), i)).toBeNull();
 			}),
 		);
 	});
@@ -702,11 +689,7 @@ describe("findIndexToSign", () => {
 		fc.assert(
 			fc.property(arbOrd3, arbOrd3, fc.boolean(), (length, i, sign) => {
 				fc.pre(lt(i, length));
-				const idx = findIndexToSign(
-					new IterReader([{ sign, length }]),
-					i,
-					!sign,
-				);
+				const idx = findIndexToSign(makeReader([{ sign, length }]), i, !sign);
 				expect(idx).toBeNull();
 			}),
 		);
@@ -716,11 +699,7 @@ describe("findIndexToSign", () => {
 		fc.assert(
 			fc.property(arbOrd3, arbOrd3, fc.boolean(), (length, i, sign) => {
 				fc.pre(lt(i, length));
-				const idx = findIndexToSign(
-					new IterReader([{ sign, length }]),
-					i,
-					sign,
-				);
+				const idx = findIndexToSign(makeReader([{ sign, length }]), i, sign);
 				expect(idx).conwayEq(i);
 			}),
 		);
@@ -736,7 +715,7 @@ describe("findIndexToSign", () => {
 				(len1, len2, i, sign) => {
 					fc.pre(lt(i, len2));
 					const idx = findIndexToSign(
-						new IterReader([
+						makeReader([
 							{ sign: !sign, length: len1 },
 							{ sign, length: len2 },
 						]),
@@ -752,10 +731,10 @@ describe("findIndexToSign", () => {
 	it("index(S, findIndexToSign(S, i, sign)) = sign if defined", () => {
 		fc.assert(
 			fc.property(arbSigns, arbOrd3, fc.boolean(), (xs, i, sign) => {
-				const idx = findIndexToSign(new IterReader(xs), i, sign);
-				const length = countSigns(new IterReader(xs));
+				const idx = findIndexToSign(makeReader(xs), i, sign);
+				const length = countSigns(makeReader(xs));
 				fc.pre(idx !== null && ne(length, idx));
-				expect(index(new IterReader(xs), idx)).toBe(sign);
+				expect(index(makeReader(xs), idx)).toBe(sign);
 			}),
 		);
 	});
@@ -763,12 +742,12 @@ describe("findIndexToSign", () => {
 	it("countSigns(truncate(S, findIndexToSign(S, i, sign)), sign) = i", () => {
 		fc.assert(
 			fc.property(arbSigns, arbOrd3, fc.boolean(), (xs, i, sign) => {
-				const length = countSigns(new IterReader(xs));
+				const length = countSigns(makeReader(xs));
 				fc.pre(lt(i, length));
-				const idx = findIndexToSign(new IterReader(xs), i, sign);
+				const idx = findIndexToSign(makeReader(xs), i, sign);
 				fc.pre(idx !== null);
-				const trunc = [...truncate(new IterReader(xs), idx)];
-				expect(countSigns(new IterReader(trunc), sign)).conwayEq(i);
+				const trunc = [...truncate(makeReader(xs), idx)];
+				expect(countSigns(makeReader(trunc), sign)).conwayEq(i);
 			}),
 		);
 	});
@@ -778,7 +757,7 @@ describe("commonPrefix", () => {
 	it("with self: commonPrefix(S, S) = S", () => {
 		fc.assert(
 			fc.property(arbSigns, (xs) => {
-				groupedEq(commonPrefix(new IterReader(xs), new IterReader(xs)), xs);
+				groupedEq(commonPrefix(makeReader(xs), makeReader(xs)), xs);
 			}),
 		);
 	});
@@ -786,8 +765,8 @@ describe("commonPrefix", () => {
 	it("zero: commonPrefix(S, empty) = commonPrefix(empty, S) = empty", () => {
 		fc.assert(
 			fc.property(arbSigns, (xs) => {
-				groupedEq(commonPrefix(new IterReader(xs), new IterReader([])), []);
-				groupedEq(commonPrefix(new IterReader([]), new IterReader(xs)), []);
+				groupedEq(commonPrefix(makeReader(xs), makeReader([])), []);
+				groupedEq(commonPrefix(makeReader([]), makeReader(xs)), []);
 			}),
 		);
 	});
@@ -796,8 +775,8 @@ describe("commonPrefix", () => {
 		fc.assert(
 			fc.property(arbSigns, arbSigns, (xs, ys) => {
 				groupedEq(
-					commonPrefix(new IterReader(xs), new IterReader(ys)),
-					commonPrefix(new IterReader(ys), new IterReader(xs)),
+					commonPrefix(makeReader(xs), makeReader(ys)),
+					commonPrefix(makeReader(ys), makeReader(xs)),
 				);
 			}),
 		);
@@ -808,16 +787,12 @@ describe("commonPrefix", () => {
 			fc.property(arbSigns, arbSigns, arbSigns, (xs, ys, zs) => {
 				groupedEq(
 					commonPrefix(
-						new IterReader(
-							commonPrefix(new IterReader(xs), new IterReader(ys)),
-						),
-						new IterReader(zs),
+						makeReader(commonPrefix(makeReader(xs), makeReader(ys))),
+						makeReader(zs),
 					),
 					commonPrefix(
-						new IterReader(xs),
-						new IterReader(
-							commonPrefix(new IterReader(ys), new IterReader(zs)),
-						),
+						makeReader(xs),
+						makeReader(commonPrefix(makeReader(ys), makeReader(zs))),
 					),
 				);
 			}),
@@ -827,12 +802,10 @@ describe("commonPrefix", () => {
 	it("does not increase length", () => {
 		fc.assert(
 			fc.property(arbSigns, arbSigns, (xs, ys) => {
-				const lenX = countSigns(new IterReader(xs));
-				const lenY = countSigns(new IterReader(xs));
+				const lenX = countSigns(makeReader(xs));
+				const lenY = countSigns(makeReader(xs));
 				const lenZ = countSigns(
-					new IterReader([
-						...commonPrefix(new IterReader(xs), new IterReader(ys)),
-					]),
+					makeReader([...commonPrefix(makeReader(xs), makeReader(ys))]),
 				);
 				return le(lenZ, lenX) && le(lenZ, lenY);
 			}),
@@ -842,12 +815,12 @@ describe("commonPrefix", () => {
 	it("agreement: index(S, i) = index(T, i) = index(commonPrefix(S, T), i) for i < |commonPrefix(S, T)|", () => {
 		fc.assert(
 			fc.property(arbSigns, arbSigns, arbOrd3, (xs, ys, i) => {
-				const cp = [...commonPrefix(new IterReader(xs), new IterReader(ys))];
-				const len = countSigns(new IterReader(cp));
+				const cp = [...commonPrefix(makeReader(xs), makeReader(ys))];
+				const len = countSigns(makeReader(cp));
 				fc.pre(lt(i, len));
 				return (
-					index(new IterReader(xs), i) === index(new IterReader(ys), i) &&
-					index(new IterReader(xs), i) === index(new IterReader(cp), i)
+					index(makeReader(xs), i) === index(makeReader(ys), i) &&
+					index(makeReader(xs), i) === index(makeReader(cp), i)
 				);
 			}),
 		);
@@ -856,12 +829,12 @@ describe("commonPrefix", () => {
 	it("divergence: index(S, |commonPrefix(S, T)|) != index(T, |commonPrefix(S, T)|) ", () => {
 		fc.assert(
 			fc.property(arbSigns, arbSigns, (xs, ys) => {
-				const cp = [...commonPrefix(new IterReader(xs), new IterReader(ys))];
-				const i = countSigns(new IterReader(cp));
-				const lenX = countSigns(new IterReader(xs));
-				const lenY = countSigns(new IterReader(ys));
+				const cp = [...commonPrefix(makeReader(xs), makeReader(ys))];
+				const i = countSigns(makeReader(cp));
+				const lenX = countSigns(makeReader(xs));
+				const lenY = countSigns(makeReader(ys));
 				fc.pre(lt(i, lenX) && lt(i, lenY));
-				return index(new IterReader(xs), i) !== index(new IterReader(ys), i);
+				return index(makeReader(xs), i) !== index(makeReader(ys), i);
 			}),
 		);
 	});
@@ -897,8 +870,8 @@ describe("compareSignExpansions", () => {
 	propTotalOrder(
 		it,
 		arbSigns,
-		(a, b) => compareSignExpansions(new IterReader(a), new IterReader(b)),
-		(a, b) => compareSignExpansions(new IterReader(a), new IterReader(b)) === 0,
+		(a, b) => compareSignExpansions(makeReader(a), makeReader(b)),
+		(a, b) => compareSignExpansions(makeReader(a), makeReader(b)) === 0,
 	);
 });
 
@@ -906,9 +879,7 @@ describe("reduceSignExpansion/unreduceSignExpansion", () => {
 	it("empty parent: reduceSignExpansion(x, []) = x", () => {
 		fc.assert(
 			fc.property(arbSigns, (x) => {
-				const xo = [
-					...reduceSignExpansion(new IterReader(x), new IterReader([])),
-				];
+				const xo = [...reduceSignExpansion(makeReader(x), makeReader([]))];
 				groupedEq(x, xo);
 			}),
 		);
@@ -917,9 +888,7 @@ describe("reduceSignExpansion/unreduceSignExpansion", () => {
 	it("empty parent: unreduceSignExpansion(x, []) = x", () => {
 		fc.assert(
 			fc.property(arbSigns, (x) => {
-				const xo = [
-					...unreduceSignExpansion(new IterReader(x), new IterReader([])),
-				];
+				const xo = [...unreduceSignExpansion(makeReader(x), makeReader([]))];
 				groupedEq(x, xo);
 			}),
 		);
@@ -930,12 +899,10 @@ describe("reduceSignExpansion/unreduceSignExpansion", () => {
 	it("unreduce does not decrease length", () => {
 		fc.assert(
 			fc.property(arbPair, ([xo, p]) => {
-				const x = [
-					...unreduceSignExpansion(new IterReader(xo), new IterReader(p)),
-				];
-				expect(
-					ge(countSigns(new IterReader(x)), countSigns(new IterReader(xo))),
-				).toBe(true);
+				const x = [...unreduceSignExpansion(makeReader(xo), makeReader(p))];
+				expect(ge(countSigns(makeReader(x)), countSigns(makeReader(xo)))).toBe(
+					true,
+				);
 			}),
 		);
 	});
@@ -943,12 +910,8 @@ describe("reduceSignExpansion/unreduceSignExpansion", () => {
 	it("invertible: xo = reduceSignExpansion(unreduceSignExpansion(xo), p)", () => {
 		fc.assert(
 			fc.property(arbPair, ([xo, p]) => {
-				const x = [
-					...unreduceSignExpansion(new IterReader(xo), new IterReader(p)),
-				];
-				const xo1 = [
-					...reduceSignExpansion(new IterReader(x), new IterReader(p)),
-				];
+				const x = [...unreduceSignExpansion(makeReader(xo), makeReader(p))];
+				const xo1 = [...reduceSignExpansion(makeReader(x), makeReader(p))];
 				groupedEq(xo1, xo);
 			}),
 		);
@@ -959,15 +922,13 @@ describe("reduceSignExpansion/unreduceSignExpansion", () => {
 			.tuple(arbSigns, arbSigns)
 			.filter(
 				([xs, ys]) =>
-					compareSignExpansions(new IterReader(xs), new IterReader(ys)) === 1,
+					compareSignExpansions(makeReader(xs), makeReader(ys)) === 1,
 			);
 		fc.assert(
 			fc.property(arbPair, ([x, p]) => {
-				const reduced = [
-					...reduceSignExpansion(new IterReader(x), new IterReader(p)),
-				];
+				const reduced = [...reduceSignExpansion(makeReader(x), makeReader(p))];
 				const x1 = [
-					...unreduceSignExpansion(new IterReader(reduced), new IterReader(p)),
+					...unreduceSignExpansion(makeReader(reduced), makeReader(p)),
 				];
 				groupedEq(x1, x);
 			}),
@@ -987,10 +948,7 @@ describe("reduceMulti/unreduceMulti", () => {
 			for (let i = 0; i < n; i++) {
 				for (let j = 0; j < i; j++) {
 					if (
-						compareSignExpansions(
-							new IterReader(xs[i]),
-							new IterReader(xs[j]),
-						) !== -1
+						compareSignExpansions(makeReader(xs[i]), makeReader(xs[j])) !== -1
 					) {
 						return false;
 					}
@@ -1000,7 +958,7 @@ describe("reduceMulti/unreduceMulti", () => {
 		})
 		.map((xs) =>
 			[...xs].sort((a, b) =>
-				compareSignExpansions(new IterReader(a), new IterReader(b)),
+				compareSignExpansions(makeReader(a), makeReader(b)),
 			),
 		);
 
@@ -1034,7 +992,7 @@ describe("reduceMulti/unreduceMulti", () => {
 					.map((xs) => [xs[0], xs[1]]),
 				([p, x]) => {
 					const xs = reduceMulti([p, x]);
-					const xo = reduceSignExpansion(new IterReader(x), new IterReader(p));
+					const xo = reduceSignExpansion(makeReader(x), makeReader(p));
 					expect(xs).toHaveLength(2);
 					groupedEq(xs[0], p);
 					groupedEq(xs[1], xo);
@@ -1051,10 +1009,7 @@ describe("reduceMulti/unreduceMulti", () => {
 					.map((xs) => [xs[0], xs[1]]),
 				([p, xo]) => {
 					const xs = unreduceMulti([p, xo]);
-					const x1 = unreduceSignExpansion(
-						new IterReader(xo),
-						new IterReader(p),
-					);
+					const x1 = unreduceSignExpansion(makeReader(xo), makeReader(p));
 					expect(xs).toHaveLength(2);
 					groupedEq(xs[0], p);
 					groupedEq(xs[1], x1);
@@ -1070,10 +1025,7 @@ describe("reduceMulti/unreduceMulti", () => {
 				for (let i = 0; i < x1.length; i++) {
 					for (let j = 0; j < i; j++) {
 						expect(
-							compareSignExpansions(
-								new IterReader(x1[i]),
-								new IterReader(x1[j]),
-							),
+							compareSignExpansions(makeReader(x1[i]), makeReader(x1[j])),
 						).not.toBe(0);
 					}
 				}
@@ -1087,10 +1039,7 @@ describe("reduceMulti/unreduceMulti", () => {
 				const x1 = unreduceMulti(xs);
 				for (let i = 0; i < x1.length - 1; i++) {
 					expect(
-						compareSignExpansions(
-							new IterReader(x1[i]),
-							new IterReader(x1[i + 1]),
-						),
+						compareSignExpansions(makeReader(x1[i]), makeReader(x1[i + 1])),
 					).toBe(-1);
 				}
 			}),
@@ -1215,7 +1164,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 		it("reads to the end", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
-					const reader = new IterReader(xs);
+					const reader = makeReader(xs);
 					decomposeSignExpansion(reader);
 					return reader.isDone;
 				}),
@@ -1225,7 +1174,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 		it("generates no zero real parts", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
-					const terms = decomposeSignExpansion(new IterReader(xs));
+					const terms = decomposeSignExpansion(makeReader(xs));
 					for (const term of terms) {
 						expect(term[1]).not.conwayEq(0n);
 					}
@@ -1236,14 +1185,14 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 		it("generates a list of exponents that does not repeat", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
-					const terms = decomposeSignExpansion(new IterReader(xs));
+					const terms = decomposeSignExpansion(makeReader(xs));
 					fc.pre(terms.length >= 2);
 					for (let i = 0; i < terms.length; i++) {
 						for (let j = 0; j < i; j++) {
 							expect(
 								compareSignExpansions(
-									new IterReader(terms[j][0]),
-									new IterReader(terms[i][0]),
+									makeReader(terms[j][0]),
+									makeReader(terms[i][0]),
 								),
 							).not.toBe(0);
 						}
@@ -1256,13 +1205,13 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 		it("generates a decreasing list of exponents", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
-					const terms = decomposeSignExpansion(new IterReader(xs));
+					const terms = decomposeSignExpansion(makeReader(xs));
 					fc.pre(terms.length >= 2);
 					for (let i = 1; i < terms.length; i++) {
 						expect(
 							compareSignExpansions(
-								new IterReader(terms[i - 1][0]),
-								new IterReader(terms[i][0]),
+								makeReader(terms[i - 1][0]),
+								makeReader(terms[i][0]),
 							),
 						).toBe(-1);
 					}
@@ -1273,10 +1222,8 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 		it("negation symmetry on real parts only", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
-					const terms = decomposeSignExpansion(new IterReader(xs));
-					const termsNeg = decomposeSignExpansion(
-						new IterReader(xs.map(flipSign)),
-					);
+					const terms = decomposeSignExpansion(makeReader(xs));
+					const termsNeg = decomposeSignExpansion(makeReader(xs.map(flipSign)));
 					expect(termsNeg).toHaveLength(terms.length);
 					for (let i = 0; i < terms.length; i++) {
 						const r0 = terms[i][1];
@@ -1309,7 +1256,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 				fc.boolean(),
 				arbOrd3.filter(isAboveReals),
 				(signsReal, lastSign, p) => {
-					const realValue = readReal(new IterReader(signsReal))[1];
+					const realValue = readReal(makeReader(signsReal))[1];
 					const xs: Entry[] = [
 						...(signsReal as Entry[]),
 						{ sign: lastSign, length: 1n },
@@ -1318,7 +1265,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 							length: mono1(p),
 						},
 					];
-					const reader = new IterReader(xs);
+					const reader = makeReader(xs);
 					const decomposed = decomposeSignExpansion(reader);
 					expect(decomposed.map(([p, r]) => ({ p, r }))).toStrictEqual([
 						{ p: [], r: expect.conwayEq(realValue) },
@@ -1356,7 +1303,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 				it("composeSignExpansion on decomposeSignExpansion without reducing", () => {
 					fc.assert(
 						fc.property(gen, (xs) => {
-							const reader = new IterReader(xs);
+							const reader = makeReader(xs);
 							const decomposed = decomposeSignExpansion(reader, false);
 							const composed = composeSignExpansion(decomposed, false);
 							groupedEq(composed, xs);
@@ -1368,7 +1315,7 @@ describe("decomposeSignExpansion/composeSignExpansion", () => {
 					fc.assert(
 						fc.property(gen, (xs) => {
 							// console.log(xs);
-							const reader = new IterReader(xs);
+							const reader = makeReader(xs);
 							const decomposed = decomposeSignExpansion(reader);
 							const composed = composeSignExpansion(decomposed);
 							groupedEq(composed, xs);
@@ -1385,7 +1332,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		it("signExpansionFromConway(conwayFromSignExpansion(x)) = x", () => {
 			fc.assert(
 				fc.property(arbSigns, (xs) => {
-					const reader = new IterReader(xs);
+					const reader = makeReader(xs);
 					const a = conwayFromSignExpansion(reader);
 					groupedEq(signExpansionFromConway(a), xs);
 					expect(reader.isDone).toBe(true);
@@ -1396,7 +1343,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		it("conwayFromSignExpansion(signExpansionFromConway(x)) = x", () => {
 			fc.assert(
 				fc.property(arbConway3(arbDyadic(3)), (x) => {
-					const reader = new IterReader(signExpansionFromConway(x));
+					const reader = makeReader(signExpansionFromConway(x));
 					expect(conwayFromSignExpansion(reader)).conwayEq(x);
 					expect(reader.isDone).toBe(true);
 				}),
@@ -1408,7 +1355,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 				fc.property(arbConway3(arbDyadic(3)), (x) => {
 					fc.pre(!x.isZero);
 					const a = [...signExpansionFromConway(x)];
-					const reader = new IterReader(a);
+					const reader = makeReader(a);
 					expect(ensure(conwayFromSignExpansion(reader))).toHaveLength(
 						x.length,
 					);
@@ -1426,7 +1373,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			{ sign: true, length: mono(2n, 1n) },
 			{ sign: false, length: mono1(2n) },
 		];
-		expect(conwayFromSignExpansion(new IterReader(se))).conwayEq(
+		expect(conwayFromSignExpansion(makeReader(se))).conwayEq(
 			create([
 				[1n, 1n],
 				[0.5, 1n],
@@ -1441,7 +1388,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			[-1n, 1n],
 		]);
 		const se = [...signExpansionFromConway(conway)];
-		const conway1 = conwayFromSignExpansion(new IterReader(se));
+		const conway1 = conwayFromSignExpansion(makeReader(se));
 		expect(conway1).conwayEq(conway);
 	});
 
@@ -1455,7 +1402,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			{ sign: false, length: mono1(1n) },
 			{ sign: true, length: mono1(2n).add(mono1(1n)) },
 		];
-		const conway = conwayFromSignExpansion(new IterReader(se));
+		const conway = conwayFromSignExpansion(makeReader(se));
 		const se1 = [...signExpansionFromConway(conway)];
 	});
 
@@ -1468,7 +1415,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			[0.5, 1],
 		]);
 		const se = [...signExpansionFromConway(conway)];
-		const conway1 = conwayFromSignExpansion(new IterReader(se));
+		const conway1 = conwayFromSignExpansion(makeReader(se));
 		expect(conway1).conwayEq(conway);
 	});
 
@@ -1483,7 +1430,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		]);
 		//console.log(conway);
 		const se = [...signExpansionFromConway(conway)];
-		const conway1 = conwayFromSignExpansion(new IterReader(se));
+		const conway1 = conwayFromSignExpansion(makeReader(se));
 		expect(conway1).conwayEq(conway);
 	});
 
@@ -1498,7 +1445,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			{ sign: false, length: mono1(1n) },
 			{ sign: true, length: mono1(mono1(2n)).add(mono1(mono(6n, 1n))) },
 		];
-		const conway = conwayFromSignExpansion(new IterReader(se));
+		const conway = conwayFromSignExpansion(makeReader(se));
 
 		const se1 = [...signExpansionFromConway(conway)];
 		groupedEq(se1, se);
@@ -1508,7 +1455,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		const exponent = neg(mono1(mono(-1n, 1n)));
 		expect(
 			conwayFromSignExpansion(
-				new IterReader([
+				makeReader([
 					{ sign: false, length: 1n as Ord0 },
 					{ sign: true, length: mono1(2n) },
 				]),
@@ -1520,7 +1467,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			{ sign: false, length: mono1(1n) },
 			{ sign: true, length: mono1(mono1(2n)) },
 		];
-		const conway = conwayFromSignExpansion(new IterReader(se));
+		const conway = conwayFromSignExpansion(makeReader(se));
 		// w^[-w^[-w]]
 		expect(conway).conwayEq(mono1(exponent));
 		const se1 = [...signExpansionFromConway(conway)];
@@ -1545,7 +1492,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			},
 		];
 		const unreduced = [
-			...unreduceSignExpansion(new IterReader(reduced), new IterReader(parent)),
+			...unreduceSignExpansion(makeReader(reduced), makeReader(parent)),
 		];
 		groupedEq(unreduced, [
 			{
@@ -1558,7 +1505,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			},
 		]);
 		const reduced1 = [
-			...reduceSignExpansion(new IterReader(unreduced), new IterReader(parent)),
+			...reduceSignExpansion(makeReader(unreduced), makeReader(parent)),
 		];
 		groupedEq(reduced1, reduced);
 	});
@@ -1569,7 +1516,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			{ sign: true, length: mono(2n, 1n) },
 			{ sign: false, length: mono(1n, 2n) },
 		];
-		const reader = new IterReader(xs);
+		const reader = makeReader(xs);
 		const decomposed = decomposeSignExpansion(reader);
 		const composed = composeSignExpansion(decomposed);
 		groupedEq(composed, xs);

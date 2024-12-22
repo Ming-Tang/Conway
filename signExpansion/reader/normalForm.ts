@@ -1,12 +1,13 @@
-import { Conway, type Conway0, type Ord, type Ord0 } from "../../conway";
+import { makeReader } from ".";
+import { Conway, type Conway0, type Ord0 } from "../../conway";
 import { create, ensure, tryGetReal } from "../../op";
-import { gt, isAboveReals, isZero } from "../../op";
+import { isZero } from "../../op";
 import type { Real } from "../../real";
 import { type SkipFirst, genMono, readMono } from "./mono";
 import { genReal } from "./real";
-import { reduceMulti, unreduceMulti, unreduceSingle } from "./reduce";
-import { compareSignExpansions, countSigns } from "./split";
-import { type Entry, IterReader, type SignExpansionReader } from "./types";
+import { reduceMulti, unreduceSingle } from "./reduce";
+import { countSigns } from "./split";
+import type { Entry, SignExpansionReader } from "./types";
 
 /**
  * A term in the monomial-list decomposition of a sigh expansion.
@@ -91,7 +92,7 @@ export const decomposeSignExpansion = (
 export function* composeSignExpansion(terms: Iterable<Term>, reduce = true) {
 	if (!reduce) {
 		for (const [mono1, real] of terms) {
-			yield* genMono({ mono1: new IterReader(mono1), real });
+			yield* genMono({ mono1: makeReader(mono1), real });
 		}
 		return;
 	}
@@ -100,7 +101,7 @@ export function* composeSignExpansion(terms: Iterable<Term>, reduce = true) {
 	const prev: Entry[][] = [];
 	for (const [m1, real] of terms) {
 		const reduced = i === 0 ? m1 : reduceMulti([...prev, m1])[i];
-		yield* genMono({ mono1: new IterReader(reduced), real });
+		yield* genMono({ mono1: makeReader(reduced), real });
 		prev.push(m1);
 		i++;
 	}
@@ -134,10 +135,10 @@ export const conwayFromSignExpansion = (
 
 	const decomposed = decomposeSignExpansion(reader);
 	const terms: [Conway0, Real][] = decomposed.map(([p, r]) => {
-		return [conwayFromSignExpansion(new IterReader(p)), r];
+		return [conwayFromSignExpansion(makeReader(p)), r];
 	});
 	return create(terms);
 };
 
 export const birthdayConway = (conway: Conway0) =>
-	countSigns(new IterReader(signExpansionFromConway(conway)), null);
+	countSigns(makeReader(signExpansionFromConway(conway)), null);

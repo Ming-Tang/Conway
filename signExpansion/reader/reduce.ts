@@ -1,10 +1,10 @@
+import { makeReader } from ".";
 import type { Ord0 } from "../../conway";
 import { gt, isZero, lt } from "../../op";
 import { ordinalRightSub } from "../../op/ordinal";
 import { commonPrefix, compareSignExpansions, countSigns } from "./split";
 import {
 	type Entry,
-	IterReader,
 	type SignExpansionReader,
 	iterSignExpansionReader,
 } from "./types";
@@ -30,7 +30,7 @@ export function* reduceSignExpansion<O extends Ord0 = Ord0>(
 	parent: SignExpansionReader<O>,
 ) {
 	const shared = commonPrefix(parent, child);
-	const reader = new IterReader(shared);
+	const reader = makeReader(shared);
 	const nPlus = countSigns(reader, true);
 	if (typeof reader.returnValue !== "undefined" && reader.returnValue !== 1) {
 		throw new RangeError("child < parent must be true");
@@ -126,21 +126,14 @@ export const reduceSingle = <O extends Ord0 = Ord0>(
 	let xo: Entry<O>[] = [];
 	for (let j = 0; j < unreduced.length; j++) {
 		const prefixLen = countSigns(
-			new IterReader(
-				commonPrefix(new IterReader(x), new IterReader(unreduced[j])),
-			),
+			makeReader(commonPrefix(makeReader(x), makeReader(unreduced[j]))),
 		) as O;
 		if (lt(prefixLen, longest)) {
 			continue;
 		}
 
 		longest = prefixLen;
-		xo = [
-			...reduceSignExpansion<O>(
-				new IterReader(x),
-				new IterReader(unreduced[j]),
-			),
-		];
+		xo = [...reduceSignExpansion<O>(makeReader(x), makeReader(unreduced[j]))];
 	}
 	return xo;
 };
@@ -184,24 +177,18 @@ export const unreduceSingle = <O extends Ord0 = Ord0>(
 	let x: Entry<O>[] | null = null;
 	for (let j = 0; j < unreduced.length; j++) {
 		const x1 = [
-			...unreduceSignExpansion<O>(
-				new IterReader(xo),
-				new IterReader(unreduced[j]),
-			),
+			...unreduceSignExpansion<O>(makeReader(xo), makeReader(unreduced[j])),
 		];
 
 		const preservesDescOrder = unreduced.every(
-			(xj) =>
-				compareSignExpansions(new IterReader(xj), new IterReader(x1)) === -1,
+			(xj) => compareSignExpansions(makeReader(xj), makeReader(x1)) === -1,
 		);
 		if (!preservesDescOrder) {
 			continue;
 		}
 
 		const prefixLen = countSigns(
-			new IterReader(
-				commonPrefix(new IterReader(x1), new IterReader(unreduced[j])),
-			),
+			makeReader(commonPrefix(makeReader(x1), makeReader(unreduced[j]))),
 		) as O;
 		if (lt(prefixLen, longest)) {
 			continue;

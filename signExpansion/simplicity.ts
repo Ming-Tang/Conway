@@ -142,7 +142,8 @@ export const appendPlus = <IsOrd extends boolean = boolean>(
  * Create a new surreal number with a certain number of minuses in
  * its sign expansion in the end.
  */
-export const appendMinus = (x: Conway0, length: Ord0): Conway0 => appendSign(x, false, length);
+export const appendMinus = (x: Conway0, length: Ord0): Conway0 =>
+	appendSign(x, false, length);
 
 /**
  * Given two surreal numbers `a`, `b` and `a` < `b`, returns

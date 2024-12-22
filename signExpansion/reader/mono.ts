@@ -1,3 +1,4 @@
+import { makeReader } from ".";
 import type { Ord0 } from "../../conway";
 import { ensure, mono1 } from "../../op";
 import { gt, isZero, le, lt } from "../../op";
@@ -10,7 +11,7 @@ import {
 } from "../../op/ordinal";
 import { type Real, realIsPositive, realIsZero } from "../../real";
 import { genRealPart, readReal, readRealPartOmit } from "./real";
-import { type Entry, IterReader, type SignExpansionReader } from "./types";
+import type { Entry, SignExpansionReader } from "./types";
 
 const tryConsume = (
 	reader: SignExpansionReader,
@@ -203,7 +204,7 @@ export const readMono = (
 		{ sign: plus, length: 1n } as Entry<bigint>,
 		...readRealPartOmit(reader, mono1(nPlus)),
 	];
-	const [lastSign, realValue] = readReal(new IterReader(real));
+	const [lastSign, realValue] = readReal(makeReader(real));
 	return { mono1: mono1Part, real: realValue, nPlus, lastSign };
 };
 
