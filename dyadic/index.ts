@@ -17,6 +17,7 @@ export {
 	minus as dyadicMinus,
 	withSign as dyadicWithSign,
 	commonAncestor as dyadicCommonAncestor,
+	simplestBetween as dyadicSimplestBetween,
 	signExpansionFrac as dyadicSignExpansionFrac,
 } from "./birthday";
 

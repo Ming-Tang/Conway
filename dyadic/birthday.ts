@@ -1,3 +1,4 @@
+import { dyadicCommonAncestor } from ".";
 import { abs, add, fromBigint, half, neg, one, sub, zero } from "./arith";
 import { type Dyadic, dyadicNew } from "./class";
 import { eq, ge, gt, lt, ne } from "./comp";
@@ -102,7 +103,7 @@ const commonAncestorFrac = (af: Dyadic, bf: Dyadic): Dyadic => {
 };
 
 /**
- * Given two `Dyadic`s, return the minimum birthday `Dyadic` between them inclusive.
+ * Given two `Dyadic`s, return the simplest `Dyadic` between [a, b] inclusive.
  */
 export const commonAncestor = (a: Dyadic, b: Dyadic): Dyadic => {
 	if (eq(a, b)) {
@@ -110,7 +111,7 @@ export const commonAncestor = (a: Dyadic, b: Dyadic): Dyadic => {
 	}
 
 	if (gt(a, b)) {
-		throw new RangeError(`lca: out of order: ${a} > ${b}`);
+		return commonAncestor(b, a);
 	}
 
 	// a <= 0 && b >= 0
@@ -138,4 +139,36 @@ export const commonAncestor = (a: Dyadic, b: Dyadic): Dyadic => {
 	}
 	// a = aq + af, b = aq + 1 + ...
 	return fromBigint(aq + 1n);
+};
+
+export const simplestBetween = (a: Dyadic, b: Dyadic): Dyadic => {
+	if (!lt(a, b)) {
+		throw new RangeError("dyadicSimplestBetween: (a < b) must be true");
+	}
+	const c = dyadicCommonAncestor(a, b);
+	if (lt(a, c) && lt(c, b)) {
+		return c;
+	}
+
+	if (eq(c, a)) {
+		// c = a < b
+		let pc = plus(c);
+		if (lt(pc, b)) {
+			return pc;
+		}
+		while (!lt(pc, b)) {
+			pc = minus(pc);
+		}
+		return pc;
+	}
+
+	// a < b = b
+	let pc = minus(c);
+	if (lt(a, pc)) {
+		return pc;
+	}
+	while (!lt(a, pc)) {
+		pc = plus(pc);
+	}
+	return pc;
 };

@@ -1,6 +1,7 @@
 import "./expect.test";
 import fc from "fast-check";
 import type { Conway0, Ord } from "../conway";
+import { dyadicCommonAncestor, dyadicSimplestBetween } from "../dyadic";
 import { dyadicNew } from "../dyadic/class";
 import {
 	birthday,
@@ -30,6 +31,7 @@ import {
 } from "../signExpansion/simplicity";
 import {
 	arbConway3,
+	arbDyadic,
 	arbFiniteBigint,
 	arbFiniteBigintOrd,
 	arbOrd3,
@@ -96,6 +98,15 @@ describe("commonAncestor", () => {
 				arbOrd3,
 				(a, b) => ensure(commonAncestor(a, b)).isOrdinal,
 			),
+		);
+	});
+
+	it("same as dyadicCommonAncestor for dyadics", () => {
+		fc.assert(
+			fc.property(arbDyadic(), arbDyadic(), (a, b) => {
+				fc.pre(lt(a, b));
+				return eq(commonAncestor(a, b), dyadicCommonAncestor(a, b));
+			}),
 		);
 	});
 });
@@ -177,6 +188,15 @@ describe("simplestBetween", () => {
 					throw new Error(`found a new simpler in-between: ${c1}`);
 				}
 				return true;
+			}),
+		);
+	});
+
+	it("same as dyadicSimplestBetween for dyadics", () => {
+		fc.assert(
+			fc.property(arbDyadic(32), arbDyadic(32), (a, b) => {
+				fc.pre(lt(a, b));
+				return eq(simplestBetween(a, b), dyadicSimplestBetween(a, b));
 			}),
 		);
 	});
