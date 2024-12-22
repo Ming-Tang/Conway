@@ -1,4 +1,3 @@
-import { dyadicCommonAncestor } from ".";
 import {
 	abs,
 	add,
@@ -165,7 +164,7 @@ export const simplestBetween = (a: Dyadic, b: Dyadic): Dyadic => {
 	if (!lt(a, b)) {
 		throw new RangeError("dyadicSimplestBetween: (a < b) must be true");
 	}
-	const c = dyadicCommonAncestor(a, b);
+	const c = commonAncestor(a, b);
 	if (lt(a, c) && lt(c, b)) {
 		return c;
 	}
