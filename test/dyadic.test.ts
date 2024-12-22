@@ -102,6 +102,28 @@ describe("fromNumber", () => {
 	});
 });
 
+describe("Number", () => {
+	it("should be convertible to from integers to integers", () => {
+		fc.assert(
+			fc.property(fc.integer(), (x) => Number(dyadicFromNumber(x)) === x),
+		);
+	});
+
+	it("should be convertible to from finite floats to floats", () => {
+		fc.assert(
+			fc.property(
+				fc.float({ noNaN: true, noDefaultInfinity: true }),
+				(x) => Number(dyadicFromNumber(x)) === x,
+			),
+		);
+	});
+
+	it("arithmetic with Number", () => {
+		expect(+dyadicNew(3n, 1n) + 1.5).toBe(3);
+		expect(+dyadicNew(5n, 1n) / -4).toBe(-0.625);
+	});
+});
+
 describe("dyadicNew interning", () => {
 	it("dyadicNew returns interned value within range (-128, 128), (0, 4)", () => {
 		fc.assert(
