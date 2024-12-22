@@ -61,21 +61,22 @@ export const truncateConway = (x: Conway0, length: Ord0): Conway0 => {
  * or `a` equals `b`. `false` otherwise.
  */
 export const isSimpler = (a: Conway0, b: Conway0) => {
-	const sa = [...signExpansionFromConway(a)];
-	const n1 = countSigns(makeReader(sa));
-	const sb = [...signExpansionFromConway(b)];
-	const n2 = countSigns(makeReader(sb));
-	if (gt(n1, n2)) {
-		return false;
+	const ra = makeReader(signExpansionFromConway(a));
+	const rb = makeReader(signExpansionFromConway(b));
+	for (const _ of commonPrefix(ra, rb)) {
+		// noop
 	}
-
-	const sc = commonPrefix(makeReader(sa), makeReader(sb));
-	const n3 = countSigns(makeReader(sc));
-	return eq(n1, n3);
+	return ra.lookahead() === null;
 };
 
-export const isStrictSimpler = (a: Conway0, b: Conway0) =>
-	ne(a, b) && isSimpler(a, b);
+export const isStrictSimpler = (a: Conway0, b: Conway0) => {
+	const ra = makeReader(signExpansionFromConway(a));
+	const rb = makeReader(signExpansionFromConway(b));
+	for (const _ of commonPrefix(ra, rb)) {
+		// noop
+	}
+	return ra.lookahead() === null && rb.lookahead() !== null;
+};
 
 export interface SimplicitySeq<IsOrd extends boolean = boolean>
 	extends Seq<Conway0<IsOrd>> {
