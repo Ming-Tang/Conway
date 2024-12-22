@@ -1,6 +1,7 @@
 import "./expect.test";
 import fc from "fast-check";
-import type { Ord } from "../conway";
+import type { Conway0, Ord } from "../conway";
+import { dyadicNew } from "../dyadic/class";
 import {
 	birthday,
 	create,
@@ -13,8 +14,9 @@ import {
 	mono,
 	mono1,
 	ne,
+	zero,
 } from "../op";
-import { neg } from "../op/arith";
+import { add, mult, neg, sub } from "../op/arith";
 import { signExpansion } from "../signExpansion";
 import {
 	commonAncestor,
@@ -26,7 +28,12 @@ import {
 	simplicitySeq,
 	truncateConway,
 } from "../signExpansion/simplicity";
-import { arbConway3, arbFiniteBigint, arbOrd3 } from "./generators";
+import {
+	arbConway3,
+	arbFiniteBigint,
+	arbFiniteBigintOrd,
+	arbOrd3,
+} from "./generators";
 
 fc.configureGlobal({ numRuns: 200 });
 
@@ -373,6 +380,111 @@ describe("simplicitySeq", () => {
 				const x0 = ensure(birthday(seq.index(i)));
 				return signExpansion(x).index(x0 as Ord) === sign;
 			}),
+		);
+	});
+});
+
+describe("arithmetic in terms of left/right", () => {
+	const within = ({
+		mid,
+		left,
+		right,
+	}: {
+		mid: Conway0;
+		left: Conway0[];
+		right: Conway0[];
+	}) => {
+		for (const l of left) {
+			if (!lt(l, mid)) {
+				throw new Error(`!(left < mid): left=${left}, mid=${mid}`);
+			}
+		}
+
+		for (const r of right) {
+			if (!lt(mid, r)) {
+				throw new Error(`!(mid < right): mid=${mid}, right=${right}`);
+			}
+		}
+	};
+
+	const arb = arbConway3(arbFiniteBigint);
+	const arbLR = fc
+		.tuple(
+			arb.map((x) => ({ x, left: leftSeq(x), right: rightSeq(x) })),
+			arbOrd3,
+			arbOrd3,
+		)
+		.map(([{ x, left, right }, i, j]) => ({
+			x,
+			left: isZero(left.length)
+				? sub(x, 1n)
+				: left.index(lt(i, left.length) ? i : zero),
+			right: isZero(right.length)
+				? add(x, 1n)
+				: right.index(lt(j, right.length) ? j : zero),
+		}));
+
+	it("addition", () => {
+		fc.assert(
+			fc.property(
+				arbLR,
+				arbLR,
+				({ x, left: xl, right: xr }, { x: y, left: yl, right: yr }) =>
+					within({
+						mid: add(x, y),
+						left: [add(x, yl), add(xl, y)],
+						right: [add(x, yr), add(xr, y)],
+					}),
+			),
+		);
+	});
+
+	it("additive inverse", () => {
+		fc.assert(
+			fc.property(arbLR, ({ x, left: xl, right: xr }) =>
+				within({
+					mid: neg(x),
+					left: [neg(xr)],
+					right: [neg(xl)],
+				}),
+			),
+		);
+	});
+
+	it("multiplication", () => {
+		fc.assert(
+			fc.property(
+				arbLR,
+				arbLR,
+				({ x, left: xl, right: xr }, { x: y, left: yl, right: yr }) =>
+					within({
+						mid: mult(x, y),
+						left: [
+							[xl, yl],
+							[xr, yr],
+						].map(([xo, yo]) =>
+							sub(add(mult(xo, y), mult(x, yo)), mult(xo, yo)),
+						),
+						right: [
+							[xl, yr],
+							[xr, yl],
+						].map(([xo, yo]) =>
+							sub(add(mult(xo, y), mult(x, yo)), mult(xo, yo)),
+						),
+					}),
+			),
+		);
+	});
+
+	it("mono1(x) = {0, mono(k, x) | mono(1/2^k, x)}", () => {
+		fc.assert(
+			fc.property(arbLR, arbFiniteBigintOrd, ({ x, left: xl, right: xr }, k) =>
+				within({
+					mid: mono1(x),
+					left: [0n, mono(k, xl)],
+					right: [mono(dyadicNew(1n, k), xr)],
+				}),
+			),
 		);
 	});
 });
