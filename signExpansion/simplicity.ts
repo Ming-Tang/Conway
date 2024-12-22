@@ -158,14 +158,11 @@ export const simplestBetween = (a: Conway0, b: Conway0): Conway0 => {
 	}
 	let ra = makeReader(signExpansionFromConway(a));
 	let rb = makeReader(signExpansionFromConway(b));
-	const entries: Entry[] = [];
-	for (const entry of commonPrefix(ra, rb)) {
-		entries.push(entry);
-	}
+	const sc = [...commonPrefix(ra, rb)];
 
 	if (ra.lookahead() !== null && rb.lookahead() !== null) {
 		// a < c < b
-		return conwayFromSignExpansion(makeReader(entries));
+		return conwayFromSignExpansion(makeReader(sc));
 	}
 
 	let plus = true;
