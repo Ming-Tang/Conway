@@ -1,22 +1,5 @@
-import { signExpansion } from ".";
 import type { Conway, Conway0, Ord, Ord0 } from "../conway";
-import {
-	birthday,
-	ensure,
-	eq,
-	ge,
-	gt,
-	isNegative,
-	isOne,
-	isZero,
-	le,
-	lt,
-	maybeUnwrap,
-	ne,
-	one,
-	zero,
-} from "../op";
-import { neg } from "../op/arith";
+import { ensure, isOne, isZero, lt, maybeUnwrap } from "../op";
 import { succ } from "../op/ordinal";
 import type { Seq } from "../seq";
 import { assertLength } from "../seq/helpers";
@@ -125,6 +108,14 @@ export const leftSeq = <IsOrd extends boolean = boolean>(x: Conway0<IsOrd>) =>
 export const rightSeq = <IsOrd extends boolean = boolean>(x: Conway0<IsOrd>) =>
 	simplicitySeq(x, false);
 
+/**
+ * Given a surreal number, creates a new surreal number
+ * based on the original surreal number with a certain number of signs after
+ * its sign expansion.
+ * @param x The surreal number to append signs to
+ * @param sign The sign to append
+ * @param length Number of signs to append
+ */
 export const appendSign = (
 	x: Conway0,
 	sign: boolean,
@@ -138,15 +129,20 @@ export const appendSign = (
 	);
 };
 
+/**
+ * Create a new ordinal or surreal number with a certain number of pluses in
+ * its sign expansion in the end.
+ */
 export const appendPlus = <IsOrd extends boolean = boolean>(
 	x: Conway0<IsOrd>,
 	length: Ord0,
-): Conway0<IsOrd> => {
-	return appendSign(x, true, length) as Conway0<never>;
-};
-export const appendMinus = (x: Conway0, length: Ord0): Conway0 => {
-	return appendSign(x, false, length);
-};
+): Conway0<IsOrd> => appendSign(x, true, length) as Conway0<never>;
+
+/**
+ * Create a new surreal number with a certain number of minuses in
+ * its sign expansion in the end.
+ */
+export const appendMinus = (x: Conway0, length: Ord0): Conway0 => appendSign(x, false, length);
 
 /**
  * Given two surreal numbers `a`, `b` and `a` < `b`, returns
