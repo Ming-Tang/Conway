@@ -65,11 +65,6 @@ const flipSign = ({ sign, length }: Entry) => ({
 	length,
 });
 
-const lengthToString = ({ sign, length }: Entry) => ({
-	sign,
-	length: `${length}`,
-});
-
 const signExpansionEq = (
 	actual: Iterable<Entry>,
 	expected: Iterable<Entry>,
@@ -443,13 +438,14 @@ describe("genMono/readMono", () => {
 						}),
 					),
 				];
-				expect([...groupBySign(se)].map(lengthToString)).toStrictEqual(
+				groupedEq(
+					se,
 					real === 0n
 						? []
 						: [
 								{
 									sign: true,
-									length: `${mono(real, ord)}`,
+									length: mono(real, ord) as Ord0,
 								},
 							],
 				);
