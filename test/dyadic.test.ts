@@ -9,8 +9,12 @@ import {
 import {
 	abs,
 	add,
+	fromBigint,
 	half,
 	isSafeNumber,
+	longDivision,
+	longDivisionIters,
+	mult,
 	neg,
 	negOne,
 	one,
@@ -25,7 +29,7 @@ import {
 	signExpansionFrac,
 	toMixed,
 } from "../dyadic/birthday";
-import { dyadicNew } from "../dyadic/class";
+import { Dyadic, dyadicNew } from "../dyadic/class";
 import { compare, eq, ge, gt, le, lt } from "../dyadic/comp";
 import {
 	propCommAssoc,
@@ -320,6 +324,149 @@ describe("minus", () => {
 
 	it("minus(x) < x", () => {
 		fc.assert(fc.property(arbDyadic, (x) => lt(minus(x), x)));
+	});
+});
+
+describe("longDivision", () => {
+	it("17 div 3 = 5 R 2", () => {
+		const [q, r] = longDivision(fromBigint(17n), fromBigint(3n));
+		expect(q.toString()).toBe("5");
+		expect(r.toString()).toBe("2");
+	});
+
+	describe("zero remainder guarantee", () => {
+		const arbZeroRemainder = fc
+			.record({
+				m: fc.bigInt({ min: 1n, max: 1n << 256n }),
+				n: fc.bigInt({ min: 1n, max: 1n << 256n }),
+				p1: fc.bigInt({ min: -64n, max: 64n }),
+				p2: fc.bigInt({ min: -64n, max: 64n }),
+			})
+			.map(({ m, n, p1, p2 }) => ({
+				n: dyadicNew(m * n, p1),
+				d: dyadicNew(n, p2),
+			}));
+
+		it("numerators are divisible", () => {
+			fc.assert(
+				fc.property(
+					arbZeroRemainder,
+					({ n, d }) => longDivision(n, d)[1].isZero,
+				),
+			);
+		});
+
+		it("numerators are divisible, invariant under multiplication", () => {
+			fc.assert(
+				fc.property(
+					arbZeroRemainder,
+					arbDyadic.filter((x) => !x.isZero),
+					({ n, d }, k) => {
+						const [q1, r1] = longDivision(n, d);
+						const [q2, r2] = longDivision(mult(n, k), mult(d, k));
+						return r1.isZero && r2.isZero && eq(q1, q2);
+					},
+				),
+			);
+		});
+
+		it("divide by powers of 2", () => {
+			fc.assert(
+				fc.property(
+					arbDyadic,
+					fc.bigInt({ min: -32n, max: 32n }).map((n) => dyadicNew(1n, n)),
+					(n, d) => longDivision(n, d)[1].isZero,
+				),
+			);
+		});
+	});
+
+	it("absolute value of remainder does not increase for non-zero remainders", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic,
+				arbDyadic.filter((x) => x.isPositive),
+				(n, d) => {
+					const r = longDivision(n, d)[1];
+					return n.isZero || lt(abs(r), abs(n));
+				},
+			),
+		);
+	});
+
+	it("divide by 0 throws error", () => {
+		fc.assert(
+			fc.property(arbDyadic, (n) => {
+				expect(() => longDivision(n, zero)).toThrowError(RangeError);
+			}),
+		);
+	});
+
+	it("divide by 1", () => {
+		fc.assert(
+			fc.property(arbDyadic, (n) => {
+				const [q, r] = longDivision(n, one);
+				return r.isZero && eq(q, n);
+			}),
+		);
+	});
+
+	it("add back", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic,
+				arbDyadic.filter((x) => x.isPositive),
+				(n, d) => {
+					const [q, r] = longDivision(n, d);
+					return eq(add(r, mult(q, d)), n);
+				},
+			),
+		);
+	});
+
+	it("negation symmetry", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic,
+				arbDyadic.filter((x) => x.isPositive),
+				(n, d) => {
+					const [q1, r1] = longDivision(n, d);
+					const [q2, r2] = longDivision(neg(n), d);
+					return eq(q1, neg(q2)) && eq(r1, neg(r2));
+				},
+			),
+		);
+	});
+});
+
+describe("longDivisionIters", () => {
+	it("zero iterations", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic,
+				arbDyadic.filter((x) => x.isPositive),
+				(n, d) => {
+					const [q, r] = longDivisionIters(n, d, 0n);
+					return q.isZero && eq(r, n);
+				},
+			),
+		);
+	});
+
+	it("absolute value of remainder does not increase with more iterations", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic,
+				arbDyadic.filter((x) => x.isPositive),
+				fc.bigInt({ min: 1n, max: 30n }),
+				fc.bigInt({ min: 1n, max: 30n }),
+				(n, d, k, m) => {
+					const [, r1] = longDivisionIters(n, d, k);
+					const [, r2] = longDivisionIters(n, d, k + m);
+					return le(abs(r2), abs(r1));
+				},
+			),
+		);
 	});
 });
 

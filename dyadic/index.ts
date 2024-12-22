@@ -35,4 +35,6 @@ export {
 	sub as dyadicSub,
 	mult as dyadicMult,
 	isSafeNumber as dyadicIsSafeNumber,
+	longDivision as dyadicLongDivision,
+	longDivisionIters as dyadicLongDivisionIters,
 } from "./arith";
