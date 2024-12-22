@@ -85,7 +85,7 @@ export const signExpansionFrac = function* (f: Dyadic) {
 	}
 };
 
-const lcaFrac = (af: Dyadic, bf: Dyadic): Dyadic => {
+const commonAncestorFrac = (af: Dyadic, bf: Dyadic): Dyadic => {
 	let mid = half;
 	while (true) {
 		if (lt(mid, af) && lt(mid, bf)) {
@@ -104,7 +104,7 @@ const lcaFrac = (af: Dyadic, bf: Dyadic): Dyadic => {
 /**
  * Given two `Dyadic`s, return the minimum birthday `Dyadic` between them inclusive.
  */
-export const lca = (a: Dyadic, b: Dyadic): Dyadic => {
+export const commonAncestor = (a: Dyadic, b: Dyadic): Dyadic => {
 	if (eq(a, b)) {
 		return a;
 	}
@@ -120,7 +120,7 @@ export const lca = (a: Dyadic, b: Dyadic): Dyadic => {
 
 	// a < 0 && b < 0
 	if (a.isNegative && b.isNegative) {
-		return neg(lca(neg(b), neg(a)));
+		return neg(commonAncestor(neg(b), neg(a)));
 	}
 
 	// a > 0 && b > 0
@@ -134,7 +134,7 @@ export const lca = (a: Dyadic, b: Dyadic): Dyadic => {
 	const [bq, bf] = toMixed(b);
 	if (aq === bq) {
 		// a = aq + af, b = aq + bf
-		return add(fromBigint(aq), lcaFrac(af, bf));
+		return add(fromBigint(aq), commonAncestorFrac(af, bf));
 	}
 	// a = aq + af, b = aq + 1 + ...
 	return fromBigint(aq + 1n);

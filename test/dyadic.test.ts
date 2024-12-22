@@ -19,7 +19,7 @@ import {
 } from "../dyadic/arith";
 import {
 	birthday,
-	lca,
+	commonAncestor,
 	minus,
 	plus,
 	signExpansionFrac,
@@ -35,7 +35,7 @@ import {
 	propZero,
 } from "./propsTest.test";
 
-fc.configureGlobal({ numRuns: 2000, verbose: false });
+fc.configureGlobal({ numRuns: 2000 });
 
 const arbBigint = fc.bigInt({ min: -1n << 32n, max: 1n << 32n });
 
@@ -323,101 +323,111 @@ describe("minus", () => {
 	});
 });
 
-describe("lca", () => {
+describe("commonAncestor", () => {
 	const arbPair = fc.tuple(arbDyadic, arbDyadic).filter(([a, b]) => le(a, b));
 
 	it("constants (integers)", () => {
-		expect(lca(zero, zero)).toEqual(zero);
-		expect(lca(zero, one)).toEqual(zero);
-		expect(lca(dyadicFromBigint(-2n), dyadicFromBigint(5n))).toEqual(zero);
-		expect(lca(dyadicFromBigint(2n), dyadicFromBigint(5n))).toEqual(
+		expect(commonAncestor(zero, zero)).toEqual(zero);
+		expect(commonAncestor(zero, one)).toEqual(zero);
+		expect(commonAncestor(dyadicFromBigint(-2n), dyadicFromBigint(5n))).toEqual(
+			zero,
+		);
+		expect(commonAncestor(dyadicFromBigint(2n), dyadicFromBigint(5n))).toEqual(
 			dyadicFromBigint(2n),
 		);
-		expect(lca(dyadicFromBigint(-5n), zero)).toEqual(zero);
-		expect(lca(dyadicFromBigint(-5n), dyadicFromBigint(-2n))).toEqual(
-			dyadicFromBigint(-2n),
-		);
+		expect(commonAncestor(dyadicFromBigint(-5n), zero)).toEqual(zero);
+		expect(
+			commonAncestor(dyadicFromBigint(-5n), dyadicFromBigint(-2n)),
+		).toEqual(dyadicFromBigint(-2n));
 	});
 
 	it("constants (fractions 1)", () => {
-		// 0.5 = [+-], 1.5 = [++-], lca(0.5, 1.5) = 1
-		expect(lca(dyadicNew(1n, 2n), dyadicNew(3n, 1n))).toEqual(one);
-		// lca(1.5, 2) = 2
-		expect(lca(dyadicNew(3n, 1n), dyadicFromBigint(2n))).toEqual(
+		// 0.5 = [+-], 1.5 = [++-], commonAncestor(0.5, 1.5) = 1
+		expect(commonAncestor(dyadicNew(1n, 2n), dyadicNew(3n, 1n))).toEqual(one);
+		// commonAncestor(1.5, 2) = 2
+		expect(commonAncestor(dyadicNew(3n, 1n), dyadicFromBigint(2n))).toEqual(
 			dyadicFromBigint(2n),
 		);
-		// lca(0.5, 2) = 1
-		expect(lca(half, dyadicFromBigint(2n))).toEqual(one);
-		// lca(0.5, 1) = 1
-		expect(lca(half, one)).toEqual(one);
+		// commonAncestor(0.5, 2) = 1
+		expect(commonAncestor(half, dyadicFromBigint(2n))).toEqual(one);
+		// commonAncestor(0.5, 1) = 1
+		expect(commonAncestor(half, one)).toEqual(one);
 	});
 
 	it("constants (fractions 2)", () => {
-		// lca(0.25, 0.75) = 0.5
-		expect(lca(dyadicNew(1n, 2n), dyadicNew(3n, 2n))).toEqual(half);
-		// lca(0.25, 1) = 1
-		expect(lca(dyadicNew(1n, 2n), dyadicFromBigint(1n))).toEqual(one);
-		// lca(0.25, 2) = 1
-		expect(lca(dyadicNew(1n, 2n), dyadicFromBigint(2n))).toEqual(one);
+		// commonAncestor(0.25, 0.75) = 0.5
+		expect(commonAncestor(dyadicNew(1n, 2n), dyadicNew(3n, 2n))).toEqual(half);
+		// commonAncestor(0.25, 1) = 1
+		expect(commonAncestor(dyadicNew(1n, 2n), dyadicFromBigint(1n))).toEqual(
+			one,
+		);
+		// commonAncestor(0.25, 2) = 1
+		expect(commonAncestor(dyadicNew(1n, 2n), dyadicFromBigint(2n))).toEqual(
+			one,
+		);
 	});
 
-	it("a <= lca(a, b) <= b", () => {
+	it("a <= commonAncestor(a, b) <= b", () => {
 		fc.assert(
 			fc.property(arbPair, ([a, b]) => {
-				const c = lca(a, b);
+				const c = commonAncestor(a, b);
 				return le(a, c) && le(c, b);
 			}),
 		);
 	});
 
-	it("birthday(lca(a, b)) <= birthday(a) && birthday(lca(a, b)) <= birthday(b)", () => {
+	it("birthday(commonAncestor(a, b)) <= birthday(a) && birthday(commonAncestor(a, b)) <= birthday(b)", () => {
 		fc.assert(
 			fc.property(arbPair, ([a, b]) => {
-				const bc = birthday(lca(a, b));
+				const bc = birthday(commonAncestor(a, b));
 				return bc <= birthday(a) && bc <= birthday(b);
 			}),
 		);
 	});
 
-	it("lca(a, a) = a", () => {
-		fc.assert(fc.property(arbDyadic, (a) => eq(a, lca(a, a))));
+	it("commonAncestor(a, a) = a", () => {
+		fc.assert(fc.property(arbDyadic, (a) => eq(a, commonAncestor(a, a))));
 	});
 
-	it("lca(0, a) = 0", () => {
+	it("commonAncestor(0, a) = 0", () => {
 		fc.assert(
 			fc.property(
 				arbDyadic.filter((x) => x.isPositive),
-				(a) => lca(zero, a).isZero,
+				(a) => commonAncestor(zero, a).isZero,
 			),
 		);
 	});
 
-	it("lca(a, b) = 0 for a < 0 and b > 0", () => {
+	it("commonAncestor(a, b) = 0 for a < 0 and b > 0", () => {
 		fc.assert(
 			fc.property(
 				arbPair.filter(([a, b]) => a.isNegative && b.isPositive),
-				([a, b]) => lca(a, b).isZero,
+				([a, b]) => commonAncestor(a, b).isZero,
 			),
 		);
 	});
 
-	it("lca(a, plus(a)) = a", () => {
-		fc.assert(fc.property(arbDyadic, (a) => eq(a, lca(a, plus(a)))));
+	it("commonAncestor(a, plus(a)) = a", () => {
+		fc.assert(fc.property(arbDyadic, (a) => eq(a, commonAncestor(a, plus(a)))));
 	});
 
-	it("lca(minus(a), a) = a", () => {
-		fc.assert(fc.property(arbDyadic, (a) => eq(a, lca(minus(a), a))));
+	it("commonAncestor(minus(a), a) = a", () => {
+		fc.assert(
+			fc.property(arbDyadic, (a) => eq(a, commonAncestor(minus(a), a))),
+		);
 	});
 
-	it("lca(minus(a), plus(a)) = a", () => {
-		fc.assert(fc.property(arbDyadic, (a) => eq(a, lca(minus(a), plus(a)))));
+	it("commonAncestor(minus(a), plus(a)) = a", () => {
+		fc.assert(
+			fc.property(arbDyadic, (a) => eq(a, commonAncestor(minus(a), plus(a)))),
+		);
 	});
 
-	it("lca(p, q) = p for integer p >= 0", () => {
+	it("commonAncestor(p, q) = p for integer p >= 0", () => {
 		fc.assert(
 			fc.property(
 				arbPair.filter(([a]) => a.isInteger && !a.isNegative),
-				([a, b]) => eq(a, lca(a, b)),
+				([a, b]) => eq(a, commonAncestor(a, b)),
 			),
 		);
 	});
