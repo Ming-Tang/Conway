@@ -1,5 +1,15 @@
 import { dyadicCommonAncestor } from ".";
-import { abs, add, fromBigint, half, neg, one, sub, zero } from "./arith";
+import {
+	abs,
+	add,
+	fromBigint,
+	half,
+	neg,
+	negOne,
+	one,
+	sub,
+	zero,
+} from "./arith";
 import { type Dyadic, dyadicNew } from "./class";
 import { eq, ge, gt, lt, ne } from "./comp";
 
@@ -48,7 +58,17 @@ export const plus = (p: Dyadic): Dyadic => {
 /**
  * Given a dyadic, returns a new dyadic with minus appended to its sign expansion.
  */
-export const minus = (p: Dyadic): Dyadic => neg(plus(neg(p)));
+export const minus = (p: Dyadic): Dyadic => {
+	if (p.isZero) {
+		return negOne;
+	}
+
+	if (p.isPositive || !p.isInteger) {
+		return dyadicNew((p.numerator << 1n) - 1n, p.power + 1n);
+	}
+
+	return dyadicNew(p.numerator - (1n << p.power), p.power);
+};
 
 export const withSign = (p: Dyadic, sign: boolean) =>
 	sign ? plus(p) : minus(p);
