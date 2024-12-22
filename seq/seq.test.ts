@@ -14,7 +14,7 @@ import {
 	prod,
 	repeatEach,
 } from ".";
-import { Conway, type Ord } from "../conway";
+import type { Ord } from "../conway";
 import { create, one, unit, zero } from "../op";
 import { eq, ge, isAboveReals, isPositive, isZero, lt, ne } from "../op";
 import {
@@ -27,7 +27,7 @@ import {
 } from "../op/ordinal";
 import { arbFiniteBigintOrd, arbOrd3 } from "../test/generators";
 
-// fc.configureGlobal({ numRuns: 2000, verbose: false });
+fc.configureGlobal({ numRuns: 500 });
 
 const arbFiniteOrUnit = fc.oneof(
 	fc.constant(unit),
@@ -593,33 +593,36 @@ describe("indexByPower", () => {
 });
 
 describe("isConstant", () => {
-	const checkConstant = <T>(x: Seq<T>, i: Ord, j: Ord) => {
+	const checkConstant = <T>([x, i, j]: [Seq<T>, Ord, Ord]) => {
 		fc.pre(x.isConstant && !isZero(x.length));
 		fc.pre(lt(i, x.length) && lt(j, x.length));
 		return x.index(i) === x.index(j);
 	};
 
-	it("invariant correct for empty sequences", () => {
-		fc.assert(fc.property(arbSeq1Const, arbOrd3, arbOrd3, checkConstant), {
-			numRuns: 200,
-		});
-	});
+	const arbArgs = <T>(arbSeq: fc.Arbitrary<Seq<T>>) =>
+		arbSeq
+			.filter((s) => !isZero(s.length))
+			.chain((s) =>
+				fc.tuple(
+					fc.constant(s),
+					arbOrd3.map((i) => (lt(i, s.length) ? i : zero)),
+					arbOrd3.map((i) => (lt(i, s.length) ? i : zero)),
+				),
+			);
+
+	// it("all empty sequences are constants", () => {
+	// 	fc.assert(fc.property(arbSeq3.filter(x => x.length.isZero), (s) => s.isConstant));
+	// });
 
 	it("invariant correct for arbSeq1Const", () => {
-		fc.assert(fc.property(arbSeq1Const, arbOrd3, arbOrd3, checkConstant), {
-			numRuns: 200,
-		});
+		fc.assert(fc.property(arbArgs(arbSeq1Const), checkConstant));
 	});
 
 	it("invariant correct for arbSeq2Const", () => {
-		fc.assert(fc.property(arbSeq2Const, arbOrd3, arbOrd3, checkConstant), {
-			numRuns: 200,
-		});
+		fc.assert(fc.property(arbArgs(arbSeq2Const), checkConstant));
 	});
 
 	it("invariant correct for arbSeq3Const", () => {
-		fc.assert(fc.property(arbSeq3Const, arbOrd3, arbOrd3, checkConstant), {
-			numRuns: 200,
-		});
+		fc.assert(fc.property(arbArgs(arbSeq3Const), checkConstant));
 	});
 });
