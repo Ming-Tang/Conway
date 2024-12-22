@@ -97,20 +97,6 @@ const groupedEqMulti = (
 	);
 };
 
-const termsEq = (actual: Iterable<Term>, expected: Iterable<Term>) => {
-	expect(
-		[...actual].map(([m1, r]) => ({
-			mono1: [...groupBySign(m1)],
-			realPart: r,
-		})),
-	).toStrictEqual(
-		[...expected].map(([m1, r]) => ({
-			mono1: [...groupBySign(m1)].map(mapEntryToMatcher),
-			realPart: expect.conwayEq(r),
-		})),
-	);
-};
-
 describe("groupBySign", () => {
 	it("empty -> empty", () => {
 		expect([...groupBySign([])]).toStrictEqual([]);
