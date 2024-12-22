@@ -31,6 +31,7 @@ import {
 	ne,
 } from "../op";
 import { add, mult, neg, sub } from "../op/arith";
+import { longDivision, longDivisionIters } from "../op/longDivision";
 import type { Real } from "../real";
 import {
 	arbConway1,
@@ -973,6 +974,44 @@ describe("Conway", () => {
 				arbConway3(arbFinite),
 				(x) => !(x.isPositiveInfinitesimal && x.isNegativeInfinitesimal),
 			);
+		});
+	});
+
+	describe("longDivision", () => {
+		it("zero remainder between two mono1", () => {
+			fc.assert(
+				fc.property(
+					arbConway3(arbDyadic()).map(mono1),
+					arbConway3(arbDyadic()).map(mono1),
+					(x, y) => {
+						expect(longDivision(x, y)[1]).conwayEq(0n);
+					},
+				),
+			);
+		});
+
+		// TODO fill in tests
+
+		it.skip("example (real remainder)", () => {
+			const n = create([
+				[1n, 1n],
+				[0n, 1n],
+			]);
+			const d = ensure(3n);
+			for (let i = 0; i < 10; i++) {
+				console.log(longDivisionIters(n, d, i));
+			}
+		});
+
+		it.skip("example (no real remainder)", () => {
+			const n = create([
+				[1n, 1.0],
+				[0n, 1.0],
+			]);
+			const d = ensure(3.0);
+			for (let i = 0; i < 10; i++) {
+				console.log(longDivisionIters(n, d, i));
+			}
 		});
 	});
 });

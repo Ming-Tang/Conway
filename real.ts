@@ -9,6 +9,8 @@ import {
 	dyadicGe,
 	dyadicGt,
 	dyadicLe,
+	dyadicLongDivision,
+	dyadicLongDivisionIters,
 	dyadicLt,
 	dyadicMult,
 	dyadicNe,
@@ -114,6 +116,26 @@ export const realIntegerPow = (left: Real, right: Real): Real => {
 	}
 	return Number(left) ** Number(right);
 };
+
+export const realLongDivision = (left: Real, right: Real): [Real, Real] =>
+	dyadicLongDivision(realToDyadic(left), realToDyadic(right));
+
+export const realLongDivisionLossy = (
+	left: Real,
+	right: Real,
+): [Real, Real] => {
+	if (typeof left === "number" || typeof right === "number") {
+		return [Number(left) / Number(right), 0];
+	}
+	return dyadicLongDivision(realToDyadic(left), realToDyadic(right));
+};
+
+export const realLongDivisionIters = (
+	left: Real,
+	right: Real,
+	iters = 1n as number | bigint,
+): [Real, Real] =>
+	dyadicLongDivisionIters(realToDyadic(left), realToDyadic(right), iters);
 
 export const realCompare = (left: Real, right: Real): -1 | 0 | 1 => {
 	if (left === right) {

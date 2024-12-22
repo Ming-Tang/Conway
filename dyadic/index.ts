@@ -8,6 +8,11 @@ export {
 	lt as dyadicLt,
 	le as dyadicLe,
 	compare as dyadicCompare,
+	isZero as dyadicIsZero,
+	isOne as dyadicIsOne,
+	isNegOne as dyadicIsNegOne,
+	isPositive as dyadicIsPositive,
+	isNegative as dyadicIsNegative,
 } from "./comp";
 
 export {

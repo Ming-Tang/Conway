@@ -147,7 +147,7 @@ export const longDivision = (n: Dyadic, d: Dyadic): [Dyadic, Dyadic] => {
 export const longDivisionIters = (
 	n: Dyadic,
 	d: Dyadic,
-	iters: number | bigint,
+	iters = 1n as number | bigint,
 ): [Dyadic, Dyadic] => {
 	let q = zero;
 	let r = n;
