@@ -1,13 +1,16 @@
 import type { Ord } from "../conway";
 import { unit, zero } from "../op";
 import { ge, gt, isAboveReals, isOne, isZero } from "../op";
-import { add } from "../op/arith";
+import { add, add0 } from "../op/arith";
 import {
 	ordinalEnsure as ensure,
 	ordinalMono1 as mono1,
 	ordinalAdd,
+	ordinalAdd0,
 	ordinalMult,
+	ordinalMult0,
 	ordinalRightSub,
+	ordinalRightSub0,
 } from "../op/ordinal";
 import { realToBigint, realToNumber } from "../real";
 import { cnfOrDefault, defaultCnf, simplifyConcat, simplifyCycle } from "./cnf";
@@ -29,8 +32,7 @@ import {
 } from "./helpers";
 import type { Cnf, Seq } from "./types";
 
-const minus = (higher: Ord, lower: Ord): Ord =>
-	ensure(ordinalRightSub(lower, higher));
+const minus = (higher: Ord, lower: Ord): Ord => ordinalRightSub0(lower, higher);
 
 export class Empty<T = unknown> implements Seq<T> {
 	readonly _type = "Empty";
@@ -191,7 +193,7 @@ export class Concat<T> implements Seq<T> {
 		private readonly left: Seq<T>,
 		private readonly right: Seq<T>,
 	) {
-		this.length = ensure(ordinalAdd(left.length, right.length));
+		this.length = ordinalAdd0(left.length, right.length);
 		if (isZero(left.length)) {
 			this.isConstant = right.isConstant;
 		} else if (isZero(right.length)) {
@@ -249,14 +251,14 @@ export class LeftTruncate<T> implements Seq<T> {
 		private readonly trunc: Ord,
 		private readonly seq: Seq<T>,
 	) {
-		this.length = ensure(ordinalRightSub(this.trunc, seq.length));
+		this.length = ordinalRightSub0(this.trunc, seq.length);
 		// Will not check the truncated sequence
 		this.isConstant = isConstantLength(this.length) || this.seq.isConstant;
 	}
 
 	index(i: Ord) {
 		assertLength(i, this.length);
-		return this.seq.index(ensure(ordinalAdd(this.trunc, i)));
+		return this.seq.index(ordinalAdd0(this.trunc, i));
 	}
 }
 
@@ -273,7 +275,7 @@ export class Cycle<T> implements Seq<T> {
 		if (isZero(n) || isZero(this.multiplier)) {
 			this.length = zero;
 		} else {
-			this.length = ensure(ordinalMult(n, this.multiplier));
+			this.length = ordinalMult0(n, this.multiplier);
 		}
 		this.isConstant = seq.isConstant;
 	}
@@ -340,7 +342,7 @@ export class Product<A, B> implements Seq<[A, B]> {
 		if (isZero(ll) || isZero(lr)) {
 			this.length = zero;
 		} else {
-			this.length = ensure(ordinalMult(ll, lr));
+			this.length = ordinalMult0(ll, lr);
 		}
 		this.isConstant = left.isConstant && right.isConstant;
 	}
@@ -418,7 +420,7 @@ const indexByPowerPrefix = <T>(
 		}
 		const dLen: Ord = mono1(i);
 		concat.push([[seq.index(index)], dLen]);
-		index = ensure(add(index, dLen));
+		index = add0(index, dLen);
 	}
 	return new SeqExpansion<T>(concat, mono1(seq.length));
 };
@@ -458,7 +460,7 @@ export class IndexByPower<T> implements Seq<T> {
 					length: dLen,
 				}),
 			);
-			index = ensure(add(index, dLen));
+			index = add0(index, dLen);
 		}
 
 		return simplifyConcat({ concat, length: this.length });
@@ -510,7 +512,7 @@ export class RepeatEach<T> implements Seq<T> {
 		private seq: Seq<T>,
 		private multiplier = unit,
 	) {
-		this.length = ensure(ordinalMult(this.multiplier, seq.length));
+		this.length = ordinalMult0(this.multiplier, seq.length);
 		this.isConstant = seq.isConstant;
 	}
 

@@ -7,6 +7,7 @@ import {
 	ordinalEnsure as ensure,
 	ordinalAdd,
 	ordinalMult,
+	ordinalMult0,
 } from "../op/ordinal";
 import { concat, cycleArray, empty, fromArray } from "../seq";
 import { type ExpansionEntryConstructor, SeqExpansion } from "../seq/expansion";
@@ -184,7 +185,7 @@ describe("rep of multi arrays", () => {
 				({ arrays, seq }, i) => {
 					const reduced = arrays.reduce(
 						(s, [a, r]) =>
-							concat(s, cycleArray(a, ensure(ordinalMult(a.length, r)))),
+							concat(s, cycleArray(a, ordinalMult0(ensure(a.length), r))),
 						empty as Seq<Value>,
 					);
 					return ensureSeqEquiv(reduced, seq, i);

@@ -55,7 +55,7 @@ export const ordinalEnsure = (v: Ord0): Ord => {
 };
 
 // TODO rename away 0 suffix
-const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
+export const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
 		return add0(ord, other as Ord0);
 	}
@@ -106,7 +106,7 @@ const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord0 => {
 	return ordinalMultInfiniteFinite(inf, realToBigint(i));
 };
 
-const ordinalMult0 = (ord: Ord, other: Ord0): Ord0 => {
+export const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
 		return mult0(ord, other) as Ord;
 	}
@@ -129,7 +129,7 @@ const ordinalMult0 = (ord: Ord, other: Ord0): Ord0 => {
 	}
 	// (...) * i2
 	if (!other.isAboveReals) {
-		return ordinalMultInfiniteFinite(ord, i2);
+		return ensure(ordinalMultInfiniteFinite(ord, i2));
 	}
 	if (!ord.isAboveReals) {
 		const { infinitePart: inf2 } = other;
@@ -145,7 +145,7 @@ const ordinalMult0 = (ord: Ord, other: Ord0): Ord0 => {
 		}
 		tot = ordinalAdd(tot, mono(c, ordinalAdd(p0, p)));
 	}
-	return tot;
+	return ensure(tot);
 };
 
 /**
@@ -161,7 +161,7 @@ export const ordinalMult = (left: Ord0, right: Ord0): Ord0 => {
 	return ordinalMult0(l1, r1);
 };
 
-const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
+export const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
 	const c = Conway.compare(ord, other);
 	if (c < 0) {
 		throw new RangeError(`No solution: ${ord} > ${other.toString()}`);
