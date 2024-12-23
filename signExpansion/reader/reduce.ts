@@ -1,13 +1,9 @@
-import { makeReader } from ".";
+import { iterSignExpansionReader, makeReader } from ".";
 import type { Ord0 } from "../../conway";
 import { gt, isZero, lt } from "../../op";
 import { ordinalRightSub } from "../../op/ordinal";
 import { commonPrefix, compareSignExpansions, countSigns } from "./split";
-import {
-	type Entry,
-	type SignExpansionReader,
-	iterSignExpansionReader,
-} from "./types";
+import type { Entry, SignExpansionReader } from "./types";
 
 /**
  * Given an unreduced sign expansion (`child`) and a sign expansion

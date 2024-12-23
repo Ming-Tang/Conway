@@ -8,6 +8,7 @@ import { add, neg } from "../op/arith";
 import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
 import { type Real, realAdd, realNeg } from "../real";
 import { makeReader } from "../signExpansion/reader";
+import { type Entry, IterReader, groupBySign } from "../signExpansion/reader";
 import {
 	genMono,
 	genMono1,
@@ -15,7 +16,6 @@ import {
 	readMono1,
 } from "../signExpansion/reader/mono";
 import {
-	type Term,
 	composeSignExpansion,
 	conwayFromSignExpansion,
 	decomposeSignExpansion,
@@ -37,11 +37,6 @@ import {
 	index,
 	truncate,
 } from "../signExpansion/reader/split";
-import {
-	type Entry,
-	IterReader,
-	groupBySign,
-} from "../signExpansion/reader/types";
 import {
 	arbConway3,
 	arbDyadic,

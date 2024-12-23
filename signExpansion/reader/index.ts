@@ -1,6 +1,3 @@
-import type { Ord0 } from "../../conway";
-import { type Entry, IterReader } from "./types";
-
 export type {
 	Entry,
 	SignExpansionReader,
@@ -10,7 +7,8 @@ export {
 	groupBySign,
 	IterReader,
 	iterSignExpansionReader,
-} from "./types";
+	makeReader,
+} from "./iterReader";
 
 export { signExpansionFromConway, conwayFromSignExpansion } from "./normalForm";
 
@@ -23,7 +21,3 @@ export {
 	findIndexToSign,
 	truncate,
 } from "./split";
-
-export const makeReader = <O extends Ord0 = Ord0>(x: Iterable<Entry<O>>) => {
-	return new IterReader(x);
-};
