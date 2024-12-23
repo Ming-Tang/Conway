@@ -1,8 +1,13 @@
 import { cycle, cycleArray } from ".";
-import type { Ord } from "../conway";
+import type { Ord, Ord0 } from "../conway";
 import { one, zero } from "../op";
 import { ge, gt, isOne, isZero, lt, ne } from "../op";
-import { ordinalEnsure as ensure } from "../op/ordinal";
+import {
+	ordinalEnsure as ensure,
+	ordinalAdd,
+	ordinalMult,
+	ordinalRightSub,
+} from "../op/ordinal";
 import { assertLength, isConstantArray } from "./helpers";
 import type { Seq } from "./types";
 
@@ -49,7 +54,7 @@ export const inspectEntry = <T>([subseq, cr]: ExpansionEntryConstructor<T>): {
 	isConstant: boolean;
 	first: T | typeof NotExpanded;
 } => {
-	const len = ensure(subseq.length).ordinalMult(cr);
+	const len = ensure(ordinalMult(subseq.length, cr));
 	const hasPartial = Array.isArray(subseq) ? false : subseq.isPartial;
 	const first: T | typeof NotExpanded = getFirst<T>(subseq);
 	const isConstant =
@@ -169,7 +174,7 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 	) {
 		this.isConstant = false;
 		this.entries = [];
-		let totalLen = zero;
+		let totalLen = 0n as Ord0;
 		let hasPartial = false;
 		let hasNonConstant = false;
 		const entriesMerged: ExpansionEntryConstructor<T>[] = [];
@@ -187,15 +192,15 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 			}
 
 			let j = i + 1;
-			let totalLen = len;
+			let totalLen: Ord0 = len;
 			while (j < entriesArr.length) {
 				if (!canMergeEntry(first, entriesArr[j])) {
 					break;
 				}
-				totalLen = totalLen.ordinalAdd(inspectEntry(entriesArr[j]).len);
+				totalLen = ordinalAdd(totalLen, inspectEntry(entriesArr[j]).len);
 				j++;
 			}
-			entriesMerged.push([[first], totalLen]);
+			entriesMerged.push([[first], ensure(totalLen)]);
 			i = j;
 		}
 
@@ -213,10 +218,10 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 					repeat: len,
 					isConstant: true,
 					length: len,
-					partialLen: totalLen,
-					partialUpper: totalLen.ordinalAdd(len),
+					partialLen: ensure(totalLen),
+					partialUpper: ensure(ordinalAdd(totalLen, len)),
 				});
-				totalLen = totalLen.ordinalAdd(len);
+				totalLen = ordinalAdd(totalLen, len);
 				continue;
 			}
 
@@ -226,14 +231,14 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 				repeat: cr,
 				isConstant: false,
 				length: ensure(len),
-				partialLen: totalLen,
-				partialUpper: totalLen.ordinalAdd(len),
+				partialLen: ensure(totalLen),
+				partialUpper: ensure(ordinalAdd(totalLen, len)),
 			});
-			totalLen = totalLen.ordinalAdd(len);
+			totalLen = ordinalAdd(totalLen, len);
 		}
 
-		this.length = length ?? totalLen;
-		this.totalLength = totalLen;
+		this.length = ensure(length ?? totalLen);
+		this.totalLength = ensure(totalLen);
 		if (gt(this.totalLength, this.length)) {
 			throw new RangeError(
 				`Total length of the constructed sequence is greater than the provided length.: ${this.totalLength} > ${this.length}`,
@@ -287,9 +292,8 @@ export class SeqExpansion<T> implements Seq<T | typeof NotExpanded> {
 				continue;
 			}
 
-			const partialIndex = e.partialLen.ordinalRightSub(index);
-			const s = ensureSeq(e);
-			return s.index(partialIndex);
+			const partialIndex = ordinalRightSub(e.partialLen, index);
+			return ensureSeq(e).index(ensure(partialIndex));
 		}
 		throw new Error("index: out of range");
 	}
@@ -331,8 +335,8 @@ export const summarizeExpansionLaTeX = <T>(
 	const { totalLength, length } = f;
 	const dLen = lt(f.length, totalLength)
 		? zero
-		: totalLength.ordinalRightSub(length);
-	const el = isZero(dLen) ? "" : ` \\ldots^{${dLen.toLaTeX()}}`;
+		: ordinalRightSub(totalLength, length);
+	const el = isZero(dLen) ? "" : ` \\ldots^{${ensure(dLen).toLaTeX()}}`;
 	if (parts.length === 1 && !el) {
 		return parts[0];
 	}

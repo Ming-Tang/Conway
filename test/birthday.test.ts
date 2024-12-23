@@ -85,7 +85,7 @@ describe("birthday", () => {
 						fc.pre(b > a);
 						const pa = mono1(-a);
 						const pb = mono1(-b);
-						return eq(pb.birthday(), pa.add(pb).birthday());
+						return eq(birthday(pb), birthday(pa.add(pb)));
 					},
 				),
 				{ numRuns: 300 },
@@ -102,8 +102,8 @@ describe("birthday", () => {
 						const db = mono1(-b);
 						const pb = mono1(mono1(a).neg().add(-b));
 						return eq(
-							ordinalAdd(pa.birthday(), db.birthday()),
-							pa.add(pb).birthday(),
+							ordinalAdd(birthday(pa), birthday(db)),
+							birthday(pa.add(pb)),
 						);
 					},
 				),
@@ -115,7 +115,7 @@ describe("birthday", () => {
 	describe("birthday of surreal numbers in general", () => {
 		it("ordinal numbers have themselves as birthdays", () => {
 			fc.assert(
-				fc.property(arbOrd3, (x) => eq(x.birthday(), x)),
+				fc.property(arbOrd3, (x) => eq(birthday(x), x)),
 				{ numRuns: 300 },
 			);
 		});
@@ -137,7 +137,7 @@ describe("birthday", () => {
 		it("static method is equivalent to instance method", () => {
 			fc.assert(
 				fc.property(arbConway3(arbFiniteBigint), (x) =>
-					eq(birthday(x), x.birthday()),
+					eq(birthday(x), birthday(x)),
 				),
 				{ numRuns: 300 },
 			);
@@ -164,7 +164,7 @@ describe("birthday", () => {
 					const partialBirthdays = [];
 					for (const [p, c] of x) {
 						partialSum = partialSum.add(mono(c, p));
-						partialBirthdays.push(partialSum.birthday());
+						partialBirthdays.push(birthday(partialSum));
 					}
 
 					if (partialBirthdays.length <= 1) {

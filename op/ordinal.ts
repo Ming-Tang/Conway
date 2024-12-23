@@ -80,7 +80,7 @@ export const ordinalAdd = (left: Ord0, right: Ord0): Ord0 => {
 	return ordinalAdd0(l1, r1);
 };
 
-const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord => {
+const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord0 => {
 	if (isZero(i)) {
 		return zero;
 	}
@@ -93,16 +93,16 @@ const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord => {
 
 	if (typeof i === "bigint") {
 		if (i === 2n) {
-			return inf.ordinalAdd(inf);
+			return ordinalAdd(inf, inf);
 		}
 		const pred = i - 1n;
 		const { leadingPower: p0, leadingCoeff: c0 } = inf;
-		return mono(realMult(c0, pred), p0 ?? zero).ordinalAdd(inf);
+		return ordinalAdd(mono(realMult(c0, pred), p0 ?? zero), inf);
 	}
 	return ordinalMultInfiniteFinite(inf, realToBigint(i));
 };
 
-const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
+const ordinalMult0 = (ord: Ord, other: Ord0): Ord0 => {
 	if (!(other instanceof Conway)) {
 		return ord.mult(other) as Ord;
 	}
@@ -133,13 +133,13 @@ const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
 		return isZero(i1) ? zero : (inf2.add(realMult(i1, i2)) as Ord);
 	}
 	const p0 = ord.leadingPower ?? zero;
-	let tot = zero;
+	let tot = 0n as Ord0;
 	for (const [p, c] of other) {
 		if (isZero(p)) {
-			tot = tot.ordinalAdd(ordinalMultInfiniteFinite(ord, c));
+			tot = ordinalAdd(tot, ordinalMultInfiniteFinite(ord, c));
 			continue;
 		}
-		tot = tot.ordinalAdd(mono(c, ordinalAdd(p0, p)));
+		tot = ordinalAdd(tot, mono(c, ordinalAdd(p0, p)));
 	}
 	return tot;
 };
@@ -196,7 +196,7 @@ const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
 };
 
 /**
- * Find the solution `x` such that `left.ordinalAdd(x).eq(right)`.
+ * Find the solution `x` such that `ordinalAdd(left, x).eq(right)`.
  */
 export const ordinalRightSub = (left: Ord0, right: Ord0): Ord0 => {
 	if (!(left instanceof Conway) && !(right instanceof Conway)) {
@@ -210,7 +210,7 @@ export const ordinalRightSub = (left: Ord0, right: Ord0): Ord0 => {
 	return ordinalRightSub0(l1, right);
 };
 
-const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
+const ordinalPowFinite = (base: Ord, other: bigint): Ord0 => {
 	if (other === 0n) {
 		return one;
 	}
@@ -228,25 +228,25 @@ const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 
 	// infinite^finite
 	if (other === 2n) {
-		return base.ordinalMult(base);
+		return ordinalMult(base, base);
 	}
 
 	if (other === 3n) {
-		return base.ordinalMult(base).ordinalMult(base);
+		return ordinalMult(ordinalMult(base, base), base);
 	}
 
 	const m = ordinalPowFinite(base, other >> 2n);
-	const m2 = m.ordinalMult(m);
-	const m4 = m2.ordinalMult(m2);
+	const m2 = ordinalMult(m, m);
+	const m4 = ordinalMult(m2, m2);
 	let prod = m4;
 	const mod = other % 4n;
 	for (let i = 0n; i < mod; i += 1n) {
-		prod = prod.ordinalMult(base);
+		prod = ordinalMult(prod, base);
 	}
 	return prod;
 };
 
-const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
+const ordinalPow0 = (base: Ord, other: Ord0): Ord0 => {
 	if (!(other instanceof Conway)) {
 		return ordinalPowFinite(base, realToBigint(other));
 	}
@@ -273,7 +273,7 @@ const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 	}
 
 	const thisFinite = base.realValue;
-	let prod = one;
+	let prod = 1n as Ord0;
 	if (thisFinite !== null) {
 		for (const [p, c] of other) {
 			if (isZero(p)) {
@@ -282,13 +282,13 @@ const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 					typeof thisFinite === "bigint" && typeof c === "bigint"
 						? thisFinite ** c
 						: Number(thisFinite) ** Number(c);
-				prod = prod.ordinalMult(coeff1);
+				prod = ordinalMult(prod, coeff1);
 				continue;
 			}
 
 			if (isOne(p)) {
 				// finite^(w.c) = (finite^w)^c = w^c
-				prod = prod.ordinalMult(mono1(c));
+				prod = ordinalMult(prod, mono1(c));
 				continue;
 			}
 
@@ -308,9 +308,9 @@ const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 			const prv = ensure(p).realValue;
 			if (prv !== null) {
 				const exponent = ordinalMult(mono1(realSub(prv, realOne)), c);
-				prod = prod.ordinalMult(mono1(exponent));
+				prod = ordinalMult(prod, mono1(exponent));
 			} else {
-				prod = prod.ordinalMult(mono1(ordinalMult(mono1(p), c)));
+				prod = ordinalMult(prod, mono1(ordinalMult(mono1(p), c)));
 			}
 		}
 
@@ -321,14 +321,14 @@ const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 	for (const [p, c] of other) {
 		if (isZero(p)) {
 			// x^finite
-			prod = prod.ordinalMult(ordinalPowFinite(base, realToBigint(c)));
+			prod = ordinalMult(prod, ordinalPowFinite(base, realToBigint(c)));
 			continue;
 		}
 		// x^(w^p . c)
 		// = (w^leadPow)^(w^p . c)
 		// = w^(leadPow . (w^p . c))
 		const prodPow = mono(1n, ordinalMult(leadPow, mono(c, p)));
-		prod = prod.ordinalMult(prodPow);
+		prod = ordinalMult(prod, prodPow);
 	}
 
 	return prod;
@@ -412,7 +412,7 @@ const ordinalDivRem0 = (num: Ord, div: Ord0): [Ord, Ord] => {
 			}
 		}
 		quotient = ordinalAdd0(quotient, dq);
-		remainder = ordinalRightSub0(toSub, remainder);
+		remainder = ordinalRightSub0(ensure(toSub), remainder);
 	}
 
 	return [quotient, remainder];
@@ -493,34 +493,3 @@ export const canon = (x: Ord, n: Real, limitCoeff = 1n): Ord0 => {
 	// ... + w^(p0 + 1) * (c0 + 1)
 	return create([...preTerms, [p, c0], [pred(p), n]]) as Ord;
 };
-
-Conway.prototype.ordinalDivRem = function (this: Ord, d: Ord0) {
-	const [a, b] = ordinalDivRem(this, d);
-	return [ensure(a), ensure(b)];
-};
-
-Conway.prototype.ordinalPow = function (this: Ord, p: Ord0) {
-	return ordinalPow0(this, p);
-};
-
-Conway.prototype.ordinalRightSub = function (this: Ord, other: Ord0) {
-	return ordinalRightSub0(this, other);
-};
-
-Conway.prototype.ordinalAdd = function (this: Ord, b: Ord0) {
-	return ordinalAdd0(this, b);
-};
-
-Conway.prototype.ordinalMult = function (this: Ord, b: Ord0) {
-	return ordinalMult0(this, b);
-};
-
-declare module "../conway" {
-	interface Conway {
-		ordinalDivRem(this: Ord, other: Ord0): [Ord, Ord];
-		ordinalPow(this: Ord, other: Ord0): Ord;
-		ordinalAdd(this: Ord, other: Ord0): Ord;
-		ordinalMult(this: Ord, other: Ord0): Ord;
-		ordinalRightSub(this: Ord, other: Ord0): Ord;
-	}
-}

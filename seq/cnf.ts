@@ -1,7 +1,11 @@
-import { Conway, type Ord } from "../conway";
+import { Conway, type Ord, type Ord0 } from "../conway";
 import { zero } from "../op";
 import { ge, isOne, isZero, lt, ne } from "../op";
-import { ordinalEnsure as ensure } from "../op/ordinal";
+import {
+	ordinalEnsure as ensure,
+	ordinalAdd,
+	ordinalRightSub,
+} from "../op/ordinal";
 import type { Cnf, CnfConcat, Seq } from "./types";
 
 export const defaultCnf = <T>(f: Seq<T>, terms: number) => {
@@ -76,7 +80,7 @@ export const simplifyConcat = <T>(cnf: {
 
 		const j0 = cnfToJson(el) ?? `?${i}`;
 		let j = i + 1;
-		let totalLen = ensure(el.length);
+		let totalLen: Ord0 = el.length;
 		while (j < xs.length) {
 			if (ne(xs[j].length, el.length)) {
 				// console.log('diff len', xs[j].length, el.length);
@@ -87,7 +91,7 @@ export const simplifyConcat = <T>(cnf: {
 				// console.log('diffJ', j0, j1);
 				break;
 			}
-			totalLen = totalLen.ordinalAdd(j1.length);
+			totalLen = ordinalAdd(totalLen, j1.length);
 			j++;
 		}
 
@@ -96,7 +100,7 @@ export const simplifyConcat = <T>(cnf: {
 			concat.push({
 				cycle: el,
 				times,
-				length: totalLen,
+				length: ensure(totalLen),
 			});
 		} else {
 			concat.push(el);
@@ -127,14 +131,14 @@ export const summarizeCnf = <T>(
 	}
 	if ("concat" in cnf) {
 		const parts: string[] = [];
-		let totalLen = zero;
+		let totalLen = 0n as Ord0;
 		for (const child of cnf.concat) {
 			parts.push(summarizeCnf(child, arrayToString));
-			totalLen = totalLen.ordinalAdd(child.length);
+			totalLen = ordinalAdd(totalLen, child.length);
 		}
 		const dLen = lt(cnf.length, totalLen)
 			? zero
-			: totalLen.ordinalRightSub(cnf.length);
+			: ordinalRightSub(totalLen, cnf.length);
 		const el = isZero(dLen) ? "" : ` ...[${dLen}]`;
 		return `(${parts.join(" & ")}${el})`;
 	}
@@ -158,14 +162,14 @@ export const summarizeCnfLaTeX = <T>(
 	}
 	if ("concat" in cnf) {
 		const parts: string[] = [];
-		let totalLen = zero;
+		let totalLen = 0n as Ord0;
 		for (const child of cnf.concat) {
 			parts.push(summarizeCnfLaTeX(child, arrayToString));
-			totalLen = totalLen.ordinalAdd(child.length);
+			totalLen = ordinalAdd(totalLen, child.length);
 		}
 		const dLen = lt(cnf.length, totalLen)
 			? zero
-			: totalLen.ordinalRightSub(cnf.length);
+			: ensure(ordinalRightSub(totalLen, cnf.length));
 		const el = isZero(dLen) ? "" : ` \\ldots^{${ordToLaTeX(dLen)}}`;
 		if (parts.length === 1 && !el) {
 			return parts[0];

@@ -171,7 +171,7 @@ describe("IterReader", () => {
 	it("lookahead/consume example", () => {
 		const reader = new IterReader<Ord0>([
 			{ sign: false, length: 1n },
-			{ sign: true, length: mono(3n, 2n).ordinalAdd(5n) },
+			{ sign: true, length: ordinalAdd(mono(3n, 2n), 5n) },
 		]);
 
 		const res1 = reader.lookahead();
@@ -183,7 +183,7 @@ describe("IterReader", () => {
 		const res2 = reader.lookahead();
 		expect(res2).not.toBeNull();
 		expect(res2?.sign).toBe(true);
-		expect(res2?.length).conwayEq(mono(3n, 2n).ordinalAdd(5n));
+		expect(res2?.length).conwayEq(ordinalAdd(mono(3n, 2n), 5n));
 		reader.consume(mono(3n, 2n));
 
 		const res3 = reader.lookahead();

@@ -793,15 +793,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return Conway.create(this.#terms.filter(([p, c]) => f(p, c)));
 	}
 
-	public ordSumTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Ord0): Ord0 {
-		return this.#terms
-			.map(([p, c]) => f(p, c))
-			.reduce(
-				(a, b) => (Conway.ensure(a) as Ord).ordinalAdd(b as Ord),
-				Conway.zero as Ord,
-			);
-	}
-
 	public sumTerms(
 		f: (pow: Conway0<IsOrd>, coeff: Real, index: number) => Conway0,
 	): Conway0 {

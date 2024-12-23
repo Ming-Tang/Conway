@@ -3,22 +3,16 @@ import { ordinalAdd } from "../op/ordinal";
 import { realBirthday } from "../real";
 import { signExpansionFromConway } from "./reader/normalForm";
 
-/**
- * Determines the birthday of this surreal number.
- */
-Conway.prototype.birthday = function (this: Conway) {
+export const conwayBirthday = (x: Conway) => {
 	let sum: Ord0 = 0n;
-	for (const { length } of signExpansionFromConway(this)) {
+	for (const { length } of signExpansionFromConway(x)) {
 		sum = ordinalAdd(sum, length);
 	}
 	return sum;
 };
 
+/**
+ * Determines the birthday of a surreal number.
+ */
 export const birthday = (value: Conway0) =>
-	value instanceof Conway ? value.birthday() : realBirthday(value);
-
-declare module "../conway" {
-	interface Conway<IsOrd extends boolean = boolean> {
-		birthday(): Ord0;
-	}
-}
+	value instanceof Conway ? conwayBirthday(value) : realBirthday(value);

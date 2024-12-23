@@ -164,7 +164,7 @@ export function* genMono1(reader: SignExpansionReader, plus = true) {
 		}
 
 		// minus
-		yield { sign: !plus, length: mono1(succ(nPlus)).ordinalMult(length) };
+		yield { sign: !plus, length: ordinalMult(mono1(succ(nPlus)), length) };
 		reader.consume(length);
 	}
 	return nPlus;

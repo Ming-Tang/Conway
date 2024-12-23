@@ -1,9 +1,13 @@
 import fc from "fast-check";
 import "./expect.test";
-import type { Ord } from "../conway";
+import type { Ord, Ord0 } from "../conway";
 import { one, zero } from "../op";
 import { isPositive, isZero, lt } from "../op";
-import { ordinalEnsure as ensure, ordinalMult } from "../op/ordinal";
+import {
+	ordinalEnsure as ensure,
+	ordinalAdd,
+	ordinalMult,
+} from "../op/ordinal";
 import { concat, cycleArray, empty, fromArray } from "../seq";
 import { type ExpansionEntryConstructor, SeqExpansion } from "../seq/expansion";
 import type { Seq } from "../seq/types";
@@ -163,8 +167,8 @@ describe("rep of multi arrays", () => {
 				expect(
 					ensure(
 						arrays.reduce(
-							(s, [{ length }, r]) => s.ordinalAdd(ordinalMult(length, r)),
-							zero,
+							(s, [{ length }, r]) => ordinalAdd(s, ordinalMult(length, r)),
+							0n as Ord0,
 						),
 					),
 				).conwayEq(seq.length);
@@ -180,7 +184,7 @@ describe("rep of multi arrays", () => {
 				({ arrays, seq }, i) => {
 					const reduced = arrays.reduce(
 						(s, [a, r]) =>
-							concat(s, cycleArray(a, ensure(a.length).ordinalMult(r))),
+							concat(s, cycleArray(a, ensure(ordinalMult(a.length, r)))),
 						empty as Seq<Value>,
 					);
 					return ensureSeqEquiv(reduced, seq, i);
@@ -310,7 +314,7 @@ describe("concat", () => {
 		fc.assert(
 			fc.property(arbSE3, arbSE3, (f, g) => {
 				expect(SeqExpansion.concat(f, g).length).conwayEq(
-					f.length.ordinalAdd(g.length),
+					ordinalAdd(f.length, g.length),
 				);
 			}),
 		);
