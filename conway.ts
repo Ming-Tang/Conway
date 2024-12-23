@@ -767,13 +767,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return this.#terms.length;
 	}
 
-	public getByIndex(index: number): Readonly<[Conway0, Real]> {
-		if (index < 0 || index > this.#terms.length) {
-			throw new RangeError("getByIndex: out of bounds");
-		}
-		return this.#terms[index];
-	}
-
 	public has(exp: Conway0): boolean {
 		return !!this.#terms.find(([e1]) => Conway.compare(exp, e1) === 0);
 	}
@@ -792,19 +785,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 	public filterTerms(f: (pow: Conway0, coeff: Real) => boolean): Conway {
 		return Conway.create(this.#terms.filter(([p, c]) => f(p, c)));
 	}
-
-	public sumTerms(
-		f: (pow: Conway0<IsOrd>, coeff: Real, index: number) => Conway0,
-	): Conway0 {
-		return this.#terms
-			.map(([p, c], i) => f(p, c, i))
-			.reduce(Conway.add, Conway.zero);
-	}
-
-	public multTerms(f: (pow: Conway0<IsOrd>, coeff: Real) => Conway0): Conway0 {
-		return this.#terms.map(([p, c]) => f(p, c)).reduce(Conway.mult, Conway.one);
-	}
-
 	// #endregion
 	// #region Conversion
 
