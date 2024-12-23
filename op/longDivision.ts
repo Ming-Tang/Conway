@@ -26,6 +26,22 @@ const longDivisionConway = (
 	return [q, sub(n, mult(q, d))];
 };
 
+/**
+ * Given two surreal numbers, perform long division on them and return
+ * the quotient and remainder.
+ *
+ * The elimination of the leading term cannot be guaranteed if perfect
+ * precision on real number division is demanded, in that case, the leading
+ * term can never become zero in any number of steps.
+ *
+ * @param n The numerator
+ * @param d The divisor
+ * @param divReal The callback to perform real long division. The default
+ * implementation will perform lossy division with zero remainder if one
+ * or both operands are numbers, guaranteeing the elimination of the
+ * leading term if lossy `number`s are passed.
+ * @returns = The tuple for the quotient and remainder.
+ */
 export const longDivision = (
 	n: Conway0,
 	d: Conway0,
@@ -39,6 +55,10 @@ export const longDivision = (
 	return [maybeUnwrap(q), maybeUnwrap(r)];
 };
 
+/**
+ * Performs long division repeatedly.
+ * @see `longDivision` for more details.
+ */
 export const longDivisionIters = (
 	n: Conway0,
 	d: Conway0,

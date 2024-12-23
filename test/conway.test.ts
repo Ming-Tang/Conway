@@ -723,7 +723,7 @@ describe("Conway", () => {
 		});
 	});
 
-	describe("divRem", () => {
+	describe("longDivision", () => {
 		describe("examples", () => {
 			let k = 0;
 			let a: Conway;
@@ -789,12 +789,14 @@ describe("Conway", () => {
 					return;
 				}
 
-				const [q] = a.divRemIters(b, k);
+				const [q] = longDivisionIters(a, b, k);
 				expect([...ensure(q)]).toEqual(
 					expected.map(([c, r]) => [expect.conwayEq(c), expect.conwayEq(r)]),
 				);
 			});
 		});
+
+		// TODO test leading term elimination
 
 		const arbDivisible = (arb: fc.Arbitrary<Conway>) =>
 			fc.tuple(arb, arb).filter(([a, b]) => {
@@ -812,7 +814,7 @@ describe("Conway", () => {
 		it("leading term removal for the remainder", () => {
 			fc.assert(
 				fc.property(arbDivisible(arbConway2(arbFiniteBigint)), ([a, b]) => {
-					const [_, r] = a.divRemIters(b, 1);
+					const [_, r] = longDivisionIters(a, b, 1);
 					const lp = a.leadingPower;
 					fc.pre(lp !== null);
 					fc.pre(r instanceof Conway);
@@ -827,8 +829,8 @@ describe("Conway", () => {
 				fc.property(arbDivisible(arbConway2(arbFiniteBigint)), ([a, b]) => {
 					const ab = a.mult(b);
 					const k = a.length + b.length;
-					const [q, r] = ab.divRemIters(b, k);
-					expect(r.isZero).toBe(true);
+					const [q, r] = longDivisionIters(ab, b, k);
+					expect(isZero(r)).toBe(true);
 					expect(eq(q, a)).toBe(true);
 				}),
 				{ numRuns: 100 },
@@ -845,8 +847,8 @@ describe("Conway", () => {
 						const k = a.length + b.length;
 						fc.pre(!p.isZero);
 						const sub = a.sub(b);
-						const [q, r] = p.divRemIters(sub, k);
-						expect(r.isZero).toBe(true);
+						const [q, r] = longDivisionIters(p, sub, k);
+						expect(isZero(r)).toBe(true);
 						expect(eq(q, a.add(b))).toBe(true);
 					},
 				),
@@ -861,7 +863,7 @@ describe("Conway", () => {
 					arbConway2(arbFiniteBigint).filter(leadingCoeff1),
 					fc.integer({ min: 1, max: 5 }),
 					(a, b, k) => {
-						const [q, r] = a.divRemIters(b, k);
+						const [q, r] = longDivisionIters(a, b, k);
 						const addBack = add(mult(q, b), r);
 						expect(eq(addBack, a)).toBe(true);
 					},
@@ -974,44 +976,6 @@ describe("Conway", () => {
 				arbConway3(arbFinite),
 				(x) => !(x.isPositiveInfinitesimal && x.isNegativeInfinitesimal),
 			);
-		});
-	});
-
-	describe("longDivision", () => {
-		it("zero remainder between two mono1", () => {
-			fc.assert(
-				fc.property(
-					arbConway3(arbDyadic()).map(mono1),
-					arbConway3(arbDyadic()).map(mono1),
-					(x, y) => {
-						expect(longDivision(x, y)[1]).conwayEq(0n);
-					},
-				),
-			);
-		});
-
-		// TODO fill in tests
-
-		it.skip("example (real remainder)", () => {
-			const n = create([
-				[1n, 1n],
-				[0n, 1n],
-			]);
-			const d = ensure(3n);
-			for (let i = 0; i < 10; i++) {
-				console.log(longDivisionIters(n, d, i));
-			}
-		});
-
-		it.skip("example (no real remainder)", () => {
-			const n = create([
-				[1n, 1.0],
-				[0n, 1.0],
-			]);
-			const d = ensure(3.0);
-			for (let i = 0; i < 10; i++) {
-				console.log(longDivisionIters(n, d, i));
-			}
 		});
 	});
 });

@@ -709,64 +709,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return Conway.create<never>(terms);
 	}
 
-	/**
-	 * Performs an iteration of long division that allows the leading term of this
-	 * number to be eliminated.
-	 * @param value The divisor
-	 * @returns The quotient and remainder as a tuple
-	 */
-	public divRem(value: Conway0): [Conway, Conway] {
-		if (Conway.isZero(value)) {
-			throw new RangeError("division by zero");
-		}
-
-		if (this.isZero) {
-			return [Conway.zero, Conway.zero];
-		}
-
-		if (!(value instanceof Conway)) {
-			return [
-				/* value === 1 || value === 1n ? this : */ this.mult(
-					1.0 / Number(value),
-				),
-				Conway.zero,
-			];
-		}
-
-		// (c0 w^e0 + ...) / (c1 w^e1 + ...)
-		// = (c0/c1) w^(e0-e1) + ...
-		const [e0, c0] = this.#terms[0];
-		const [e1, c1] = value.#terms[0];
-		const de = Conway.sub(e0, e1);
-		const cr =
-			/*typeof c0 === "bigint" && typeof c1 === "bigint" && (c1 === 1n || c1 === -1n || c0 % c1 === 0n)
-			? c0 / c1
-			:*/ Number(c0) / Number(c1);
-		const q = Conway.mono(cr, de);
-		const qv = value.mult(q);
-		return [q, this.sub(qv)];
-	}
-
-	/**
-	 * Performs an a fixed number of iterations of long division.
-	 * @param value The divisor
-	 * @param iters The number of iterations
-	 * @returns The quotient and remainder as a tuple
-	 */
-	public divRemIters(value: Conway0, iters: number): [Conway0, Conway] {
-		let q: Conway0 = Conway.zero;
-		let r: Conway = this;
-		for (let i = 0; i < iters; i++) {
-			if (r.isZero) {
-				break;
-			}
-			const [q1, r1] = r.divRem(value);
-			q = Conway.add(q, q1);
-			r = r1;
-		}
-		return [q, r];
-	}
-
 	// #endregion
 	// #region Arithmetic (static)
 
