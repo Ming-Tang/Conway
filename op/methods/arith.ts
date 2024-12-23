@@ -1,22 +1,22 @@
 import { Conway, type Conway0 } from "../../conway";
-import { add0, mult0, neg0, sub0 } from "../arith";
+import { addWrapped, multWrapped, negWrapped, subWrapped } from "../arith";
 
 Conway.prototype.neg = function (this: Conway) {
-	return neg0(this);
+	return negWrapped(this);
 };
 
 // @ts-expect-error Type specified in header
 Conway.prototype.add = function (this: Conway, other: B): Conway {
-	return add0(this, other);
+	return addWrapped(this, other);
 };
 
 Conway.prototype.sub = function (this: Conway, other: Conway0): Conway {
-	return sub0(this, other);
+	return subWrapped(this, other);
 };
 
 // @ts-expect-error Type specified in header
 Conway.prototype.mult = function (this: Conway, other: Conway0): Conway {
-	return mult0(this, other);
+	return multWrapped(this, other);
 };
 
 declare module "../../conway" {

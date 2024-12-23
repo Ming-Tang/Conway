@@ -1,11 +1,11 @@
 import { ensure } from "..";
 import { Conway, type Ord, type Ord0 } from "../../conway";
 import {
-	ordinalAdd0,
+	ordinalAddWrapped,
 	ordinalDivRem,
-	ordinalMult0,
-	ordinalPow0,
-	ordinalRightSub0,
+	ordinalMultWrapped,
+	ordinalPowWrapped,
+	ordinalRightSubWrapped,
 } from "../ordinal";
 
 Conway.prototype.ordinalDivRem = function (this: Ord, d: Ord0): [Ord, Ord] {
@@ -14,19 +14,19 @@ Conway.prototype.ordinalDivRem = function (this: Ord, d: Ord0): [Ord, Ord] {
 };
 
 Conway.prototype.ordinalPow = function (this: Ord, p: Ord0): Ord {
-	return ordinalPow0(this, p);
+	return ordinalPowWrapped(this, p);
 };
 
 Conway.prototype.ordinalRightSub = function (this: Ord, other: Ord0) {
-	return ordinalRightSub0(this, other);
+	return ordinalRightSubWrapped(this, other);
 };
 
 Conway.prototype.ordinalAdd = function (this: Ord, b: Ord0) {
-	return ordinalAdd0(this, b);
+	return ordinalAddWrapped(this, b);
 };
 
 Conway.prototype.ordinalMult = function (this: Ord, b: Ord0) {
-	return ordinalMult0(this, b);
+	return ordinalMultWrapped(this, b);
 };
 
 declare module "../../conway" {

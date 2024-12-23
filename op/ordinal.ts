@@ -14,7 +14,7 @@ import {
 	realSub,
 	realToBigint,
 } from "../real";
-import { add, add0, mult0, sub } from "./arith";
+import { add, addWrapped, multWrapped, sub } from "./arith";
 import { isOne, isZero } from "./comparison";
 
 export const { isOrdinal } = Conway;
@@ -54,18 +54,17 @@ export const ordinalEnsure = (v: Ord0): Ord => {
 	return ensure(v);
 };
 
-// TODO rename away 0 suffix
-export const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
+export const ordinalAddWrapped = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
-		return add0(ord, other as Ord0);
+		return addWrapped(ord, other as Ord0);
 	}
 
 	const cutoff = other.leadingPower;
 	if (cutoff === null) {
-		return add0(ord, other);
+		return addWrapped(ord, other);
 	}
 
-	return add0(
+	return addWrapped(
 		ord.filterTerms((p1) => compare(p1, cutoff) <= 0),
 		other,
 	) as Ord;
@@ -81,7 +80,7 @@ export const ordinalAdd = (left: Ord0, right: Ord0): Ord0 => {
 	}
 	const l1 = ensure(left);
 	const r1 = ensure(right);
-	return ordinalAdd0(l1, r1);
+	return ordinalAddWrapped(l1, r1);
 };
 
 const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord0 => {
@@ -106,9 +105,9 @@ const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord0 => {
 	return ordinalMultInfiniteFinite(inf, realToBigint(i));
 };
 
-export const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
+export const ordinalMultWrapped = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
-		return mult0(ord, other) as Ord;
+		return multWrapped(ord, other) as Ord;
 	}
 
 	if (ord.isZero || other.isZero) {
@@ -134,16 +133,16 @@ export const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
 	if (!ord.isAboveReals) {
 		const { infinitePart: inf2 } = other;
 		// i1 nonzero: i1 * (inf2 + i2) = inf2 + i1 * i2
-		return isZero(i1) ? zero : (add0(inf2, realMult(i1, i2)) as Ord);
+		return isZero(i1) ? zero : (addWrapped(inf2, realMult(i1, i2)) as Ord);
 	}
 	const p0 = ord.leadingPower ?? zero;
 	let tot = zero;
 	for (const [p, c] of other) {
 		if (isZero(p)) {
-			tot = ordinalAdd0(tot, ordinalMultInfiniteFinite(ord, c));
+			tot = ordinalAddWrapped(tot, ordinalMultInfiniteFinite(ord, c));
 			continue;
 		}
-		tot = ordinalAdd0(tot, mono(c, ordinalAdd(p0, p)));
+		tot = ordinalAddWrapped(tot, mono(c, ordinalAdd(p0, p)));
 	}
 	return tot;
 };
@@ -158,10 +157,10 @@ export const ordinalMult = (left: Ord0, right: Ord0): Ord0 => {
 	}
 	const l1 = ensure(left);
 	const r1 = ensure(right);
-	return ordinalMult0(l1, r1);
+	return ordinalMultWrapped(l1, r1);
 };
 
-export const ordinalRightSub0 = (ord: Ord, other: Ord0): Ord => {
+export const ordinalRightSubWrapped = (ord: Ord, other: Ord0): Ord => {
 	const c = Conway.compare(ord, other);
 	if (c < 0) {
 		throw new RangeError(`No solution: ${ord} > ${other.toString()}`);
@@ -211,7 +210,7 @@ export const ordinalRightSub = (left: Ord0, right: Ord0): Ord0 => {
 	}
 
 	const l1 = ensure(left);
-	return ordinalRightSub0(l1, right);
+	return ordinalRightSubWrapped(l1, right);
 };
 
 const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
@@ -232,25 +231,25 @@ const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 
 	// infinite^finite
 	if (other === 2n) {
-		return ordinalMult0(base, base);
+		return ordinalMultWrapped(base, base);
 	}
 
 	if (other === 3n) {
-		return ordinalMult0(ordinalMult0(base, base), base);
+		return ordinalMultWrapped(ordinalMultWrapped(base, base), base);
 	}
 
 	const m = ordinalPowFinite(base, other >> 2n);
-	const m2 = ordinalMult0(m, m);
-	const m4 = ordinalMult0(m2, m2);
+	const m2 = ordinalMultWrapped(m, m);
+	const m4 = ordinalMultWrapped(m2, m2);
 	let prod = m4;
 	const mod = other % 4n;
 	for (let i = 0n; i < mod; i += 1n) {
-		prod = ordinalMult0(prod, base);
+		prod = ordinalMultWrapped(prod, base);
 	}
 	return prod;
 };
 
-export const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
+export const ordinalPowWrapped = (base: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
 		return ordinalPowFinite(base, realToBigint(other));
 	}
@@ -286,13 +285,13 @@ export const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 					typeof thisFinite === "bigint" && typeof c === "bigint"
 						? thisFinite ** c
 						: Number(thisFinite) ** Number(c);
-				prod = ordinalMult0(prod, coeff1);
+				prod = ordinalMultWrapped(prod, coeff1);
 				continue;
 			}
 
 			if (isOne(p)) {
 				// finite^(w.c) = (finite^w)^c = w^c
-				prod = ordinalMult0(prod, mono1(c));
+				prod = ordinalMultWrapped(prod, mono1(c));
 				continue;
 			}
 
@@ -312,9 +311,9 @@ export const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 			const prv = ensure(p).realValue;
 			if (prv !== null) {
 				const exponent = ordinalMult(mono1(realSub(prv, realOne)), c);
-				prod = ordinalMult0(prod, mono1(exponent));
+				prod = ordinalMultWrapped(prod, mono1(exponent));
 			} else {
-				prod = ordinalMult0(prod, mono1(ordinalMult(mono1(p), c)));
+				prod = ordinalMultWrapped(prod, mono1(ordinalMult(mono1(p), c)));
 			}
 		}
 
@@ -325,14 +324,14 @@ export const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 	for (const [p, c] of other) {
 		if (isZero(p)) {
 			// x^finite
-			prod = ordinalMult0(prod, ordinalPowFinite(base, realToBigint(c)));
+			prod = ordinalMultWrapped(prod, ordinalPowFinite(base, realToBigint(c)));
 			continue;
 		}
 		// x^(w^p . c)
 		// = (w^leadPow)^(w^p . c)
 		// = w^(leadPow . (w^p . c))
 		const prodPow = mono(1n, ordinalMult(leadPow, mono(c, p)));
-		prod = ordinalMult0(prod, prodPow);
+		prod = ordinalMultWrapped(prod, prodPow);
 	}
 
 	return prod;
@@ -342,13 +341,13 @@ export const ordinalPow = (left: Ord0, right: Ord0): Ord0 => {
 	if (!(left instanceof Conway) && !(right instanceof Conway)) {
 		return realIntegerPow(left, right);
 	}
-	return ordinalPow0(ensure(left), right);
+	return ordinalPowWrapped(ensure(left), right);
 };
 
 const finiteOrdinalDiv = (value: Real, other: Real) =>
 	realIntegerDiv(value, other);
 
-const ordinalDivRem0 = (num: Ord, div: Ord0): [Ord, Ord] => {
+export const ordinalDivRemWrapped = (num: Ord, div: Ord0): [Ord, Ord] => {
 	if (isZero(div)) {
 		throw new RangeError("division by zero");
 	}
@@ -400,12 +399,12 @@ const ordinalDivRem0 = (num: Ord, div: Ord0): [Ord, Ord] => {
 
 		let dq = mono(cr, de);
 		const div1 = ensure(div);
-		let toSub = ordinalMult0(div1, dq);
+		let toSub = ordinalMultWrapped(div1, dq);
 		if (compare(remainder, toSub) > 0) {
 			if (realGt(cr, realOne)) {
 				const cr1 = realSub(cr, realOne);
 				const dq1 = mono(cr1, de);
-				const toSub1 = ordinalMult0(div1, dq1);
+				const toSub1 = ordinalMultWrapped(div1, dq1);
 				if (compare(remainder, toSub1) > 0) {
 					break;
 				}
@@ -415,8 +414,8 @@ const ordinalDivRem0 = (num: Ord, div: Ord0): [Ord, Ord] => {
 				break;
 			}
 		}
-		quotient = ordinalAdd0(quotient, dq);
-		remainder = ordinalRightSub0(ensure(toSub), remainder);
+		quotient = ordinalAddWrapped(quotient, dq);
+		remainder = ordinalRightSubWrapped(ensure(toSub), remainder);
 	}
 
 	return [quotient, remainder];
@@ -437,7 +436,7 @@ export const ordinalDivRem = (left: Ord0, right: Ord0): [Ord0, Ord0] => {
 		return [q, r];
 	}
 
-	return ordinalDivRem0(ensure(left), ensure(right));
+	return ordinalDivRemWrapped(ensure(left), ensure(right));
 };
 
 export const isLimit = (x: Ord0): x is Ord =>

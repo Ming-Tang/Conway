@@ -16,7 +16,7 @@ import {
 
 // TODO rename away 0 suffix
 
-export const neg0 = (x: Conway): Conway => {
+export const negWrapped = (x: Conway): Conway => {
 	return create(
 		x.terms.map(([e, c]) => [e, realNeg(c)]),
 		true,
@@ -24,10 +24,10 @@ export const neg0 = (x: Conway): Conway => {
 };
 
 export const neg = (value: Conway0): Conway0 => {
-	return value instanceof Conway ? neg0(value) : realNeg(value);
+	return value instanceof Conway ? negWrapped(value) : realNeg(value);
 };
 
-export const add0 = <
+export const addWrapped = <
 	IsOrd extends boolean = boolean,
 	B extends Conway0 = Conway0,
 >(
@@ -83,11 +83,11 @@ export const add = <A extends Conway0 = Conway0, B extends Conway0 = Conway0>(
 	}
 	const l1 = ensure(left);
 	const r1 = ensure(right);
-	return add0(l1, r1) as Conway<never>;
+	return addWrapped(l1, r1) as Conway<never>;
 };
 
-export const sub0 = (x: Conway, other: Conway0): Conway =>
-	add0(x, other instanceof Conway ? neg0(other) : realNeg(other));
+export const subWrapped = (x: Conway, other: Conway0): Conway =>
+	addWrapped(x, other instanceof Conway ? negWrapped(other) : realNeg(other));
 
 export const sub = (left: Conway0, right: Conway0): Conway0 => {
 	if (!(left instanceof Conway) && !(right instanceof Conway)) {
@@ -95,10 +95,10 @@ export const sub = (left: Conway0, right: Conway0): Conway0 => {
 	}
 	const l1 = ensure(left);
 	const r1 = ensure(right);
-	return sub0(l1, r1);
+	return subWrapped(l1, r1);
 };
 
-export const mult0 = <
+export const multWrapped = <
 	IsOrd extends boolean = boolean,
 	A extends Conway0 = Conway0,
 >(
@@ -150,7 +150,7 @@ export const mult = <A extends Conway0 = Conway0, B extends Conway0 = Conway0>(
 	}
 	const l1 = ensure(left);
 	const r1 = ensure(right);
-	return mult0(l1, r1) as Conway<never>;
+	return multWrapped(l1, r1) as Conway<never>;
 };
 
 const powBigint = (value: Conway, pow: bigint): Conway => {
@@ -161,14 +161,14 @@ const powBigint = (value: Conway, pow: bigint): Conway => {
 		return value;
 	}
 	if (pow === 2n) {
-		return mult0(value, value);
+		return multWrapped(value, value);
 	}
 	if (pow % 2n === 1n) {
 		const p = powBigint(value, (pow - 1n) >> 1n);
-		return mult0(mult0(value, p), p);
+		return multWrapped(multWrapped(value, p), p);
 	}
 	const p = powBigint(value, pow >> 1n);
-	return mult0(p, p);
+	return multWrapped(p, p);
 };
 
 const powNumberInt = (value: Conway, pow: number): Conway => {
@@ -179,14 +179,14 @@ const powNumberInt = (value: Conway, pow: number): Conway => {
 		return value;
 	}
 	if (pow === 2) {
-		return mult0(value, value);
+		return multWrapped(value, value);
 	}
 	if (pow % 2 === 1) {
 		const p = powNumberInt(value, (pow - 1) >> 1);
-		return mult0(mult0(value, p), p);
+		return multWrapped(multWrapped(value, p), p);
 	}
 	const p = powNumberInt(value, pow >> 1);
-	return mult0(p, p);
+	return multWrapped(p, p);
 };
 
 export const powInt = (value: Conway0, pow: number | bigint): Conway => {
