@@ -137,15 +137,15 @@ export const ordinalMult0 = (ord: Ord, other: Ord0): Ord => {
 		return isZero(i1) ? zero : (add0(inf2, realMult(i1, i2)) as Ord);
 	}
 	const p0 = ord.leadingPower ?? zero;
-	let tot = 0n as Ord0;
+	let tot = zero;
 	for (const [p, c] of other) {
 		if (isZero(p)) {
-			tot = ordinalAdd(tot, ordinalMultInfiniteFinite(ord, c));
+			tot = ordinalAdd0(tot, ordinalMultInfiniteFinite(ord, c));
 			continue;
 		}
-		tot = ordinalAdd(tot, mono(c, ordinalAdd(p0, p)));
+		tot = ordinalAdd0(tot, mono(c, ordinalAdd(p0, p)));
 	}
-	return ensure(tot);
+	return tot;
 };
 
 /**
@@ -214,7 +214,7 @@ export const ordinalRightSub = (left: Ord0, right: Ord0): Ord0 => {
 	return ordinalRightSub0(l1, right);
 };
 
-const ordinalPowFinite = (base: Ord, other: bigint): Ord0 => {
+const ordinalPowFinite = (base: Ord, other: bigint): Ord => {
 	if (other === 0n) {
 		return one;
 	}
@@ -232,25 +232,25 @@ const ordinalPowFinite = (base: Ord, other: bigint): Ord0 => {
 
 	// infinite^finite
 	if (other === 2n) {
-		return ordinalMult(base, base);
+		return ordinalMult0(base, base);
 	}
 
 	if (other === 3n) {
-		return ordinalMult(ordinalMult(base, base), base);
+		return ordinalMult0(ordinalMult0(base, base), base);
 	}
 
 	const m = ordinalPowFinite(base, other >> 2n);
-	const m2 = ordinalMult(m, m);
-	const m4 = ordinalMult(m2, m2);
+	const m2 = ordinalMult0(m, m);
+	const m4 = ordinalMult0(m2, m2);
 	let prod = m4;
 	const mod = other % 4n;
 	for (let i = 0n; i < mod; i += 1n) {
-		prod = ordinalMult(prod, base);
+		prod = ordinalMult0(prod, base);
 	}
 	return prod;
 };
 
-const ordinalPow0 = (base: Ord, other: Ord0): Ord0 => {
+export const ordinalPow0 = (base: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
 		return ordinalPowFinite(base, realToBigint(other));
 	}
@@ -277,7 +277,7 @@ const ordinalPow0 = (base: Ord, other: Ord0): Ord0 => {
 	}
 
 	const thisFinite = base.realValue;
-	let prod = 1n as Ord0;
+	let prod = one;
 	if (thisFinite !== null) {
 		for (const [p, c] of other) {
 			if (isZero(p)) {
@@ -286,13 +286,13 @@ const ordinalPow0 = (base: Ord, other: Ord0): Ord0 => {
 					typeof thisFinite === "bigint" && typeof c === "bigint"
 						? thisFinite ** c
 						: Number(thisFinite) ** Number(c);
-				prod = ordinalMult(prod, coeff1);
+				prod = ordinalMult0(prod, coeff1);
 				continue;
 			}
 
 			if (isOne(p)) {
 				// finite^(w.c) = (finite^w)^c = w^c
-				prod = ordinalMult(prod, mono1(c));
+				prod = ordinalMult0(prod, mono1(c));
 				continue;
 			}
 
@@ -312,27 +312,27 @@ const ordinalPow0 = (base: Ord, other: Ord0): Ord0 => {
 			const prv = ensure(p).realValue;
 			if (prv !== null) {
 				const exponent = ordinalMult(mono1(realSub(prv, realOne)), c);
-				prod = ordinalMult(prod, mono1(exponent));
+				prod = ordinalMult0(prod, mono1(exponent));
 			} else {
-				prod = ordinalMult(prod, mono1(ordinalMult(mono1(p), c)));
+				prod = ordinalMult0(prod, mono1(ordinalMult(mono1(p), c)));
 			}
 		}
 
-		return prod;
+		return ensure(prod);
 	}
 
 	const leadPow = ensure(base.leadingPower ?? zero);
 	for (const [p, c] of other) {
 		if (isZero(p)) {
 			// x^finite
-			prod = ordinalMult(prod, ordinalPowFinite(base, realToBigint(c)));
+			prod = ordinalMult0(prod, ordinalPowFinite(base, realToBigint(c)));
 			continue;
 		}
 		// x^(w^p . c)
 		// = (w^leadPow)^(w^p . c)
 		// = w^(leadPow . (w^p . c))
 		const prodPow = mono(1n, ordinalMult(leadPow, mono(c, p)));
-		prod = ordinalMult(prod, prodPow);
+		prod = ordinalMult0(prod, prodPow);
 	}
 
 	return prod;
