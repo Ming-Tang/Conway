@@ -31,6 +31,14 @@ export const {
 	real: fromReal,
 } = Conway;
 
+export {
+	neg,
+	add,
+	sub,
+	mult,
+	powInt,
+} from "./arith";
+
 export { realBirthday } from "../real";
 export { birthday } from "../signExpansion/birthday";
 
