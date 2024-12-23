@@ -1,6 +1,17 @@
 import fc from "fast-check";
 import "../op/methods/ord";
 import "../test/expect.test";
+import type { Ord } from "../conway";
+import { create, one, unit, zero } from "../op";
+import { eq, ge, isAboveReals, isPositive, isZero, lt, ne } from "../op";
+import {
+	ordinalEnsure as ensure,
+	isLimit,
+	ordinalMono1 as mono1,
+	ordinalAdd,
+	ordinalMult,
+	succ,
+} from "../op/ordinal";
 import {
 	type Seq,
 	concat,
@@ -14,18 +25,7 @@ import {
 	map,
 	prod,
 	repeatEach,
-} from ".";
-import type { Ord } from "../conway";
-import { create, one, unit, zero } from "../op";
-import { eq, ge, isAboveReals, isPositive, isZero, lt, ne } from "../op";
-import {
-	ordinalEnsure as ensure,
-	isLimit,
-	ordinalMono1 as mono1,
-	ordinalAdd,
-	ordinalMult,
-	succ,
-} from "../op/ordinal";
+} from "../seq";
 import { arbFiniteBigintOrd, arbOrd3 } from "../test/generators";
 
 fc.configureGlobal({ numRuns: 500 });
