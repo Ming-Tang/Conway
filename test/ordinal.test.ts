@@ -1,5 +1,6 @@
 import fc from "fast-check";
 import "./expect.test";
+import "../op/methods/arith";
 import { Conway, type Ord, type Ord0 } from "../conway";
 import {
 	ensure as conwayEnsure,

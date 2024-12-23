@@ -4,7 +4,7 @@ import type { Ord0 } from "../conway";
 import { Dyadic, dyadicMinus, dyadicPlus } from "../dyadic";
 import { create, ensure, mono, mono1, unit } from "../op";
 import { ge, gt, isAboveReals, isZero, le, lt, ne } from "../op";
-import { neg } from "../op/arith";
+import { add, neg } from "../op/arith";
 import { ordinalAdd, ordinalRightSub } from "../op/ordinal";
 import { type Real, realAdd, realNeg } from "../real";
 import { makeReader } from "../signExpansion/reader";
@@ -1382,7 +1382,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 			{ sign: false, length: mono1(mono1(1n)) },
 			{ sign: true, length: 1n as Ord0 },
 			{ sign: false, length: mono1(1n) },
-			{ sign: true, length: mono1(2n).add(mono1(1n)) },
+			{ sign: true, length: add(mono1(2n), mono1(1n)) },
 		];
 		const conway = conwayFromSignExpansion(makeReader(se));
 		const se1 = [...signExpansionFromConway(conway)];
@@ -1425,7 +1425,7 @@ describe("signExpansionFromConway/conwayFromSignExpansion", () => {
 		const se: Entry[] = [
 			{ sign: true, length: 1n },
 			{ sign: false, length: mono1(1n) },
-			{ sign: true, length: mono1(mono1(2n)).add(mono1(mono(6n, 1n))) },
+			{ sign: true, length: add(mono1(mono1(2n)), mono1(mono(6n, 1n))) },
 		];
 		const conway = conwayFromSignExpansion(makeReader(se));
 

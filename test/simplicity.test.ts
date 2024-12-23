@@ -130,7 +130,7 @@ describe("simplestBetween", () => {
 
 		it("{ 0 | w^-1 + w^-2 } = w^-1", () => {
 			// { [] | [+ -^w + -^w] } = [+ -^w]
-			expect(simplestBetween(0n, mono1(-1n).add(mono1(-2n)))).conwayEq(
+			expect(simplestBetween(0n, add(mono1(-1n), mono1(-2n)))).conwayEq(
 				mono1(-1n),
 			);
 		});
@@ -257,7 +257,7 @@ describe("isSimpler", () => {
 			fc.property(
 				arb,
 				arb,
-				(a, b) => isSimpler(a, b) === isSimpler(a.neg(), b.neg()),
+				(a, b) => isSimpler(a, b) === isSimpler(neg(a), neg(b)),
 			),
 		);
 	});

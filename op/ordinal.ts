@@ -14,7 +14,7 @@ import {
 	realSub,
 	realToBigint,
 } from "../real";
-import { add, sub } from "./arith";
+import { add, add0, mult0, sub } from "./arith";
 import { isOne, isZero } from "./comparison";
 
 export const { isOrdinal } = Conway;
@@ -54,17 +54,21 @@ export const ordinalEnsure = (v: Ord0): Ord => {
 	return ensure(v);
 };
 
+// TODO rename away 0 suffix
 const ordinalAdd0 = (ord: Ord, other: Ord0): Ord => {
 	if (!(other instanceof Conway)) {
-		return ord.add(other as Ord0);
+		return add0(ord, other as Ord0);
 	}
 
 	const cutoff = other.leadingPower;
 	if (cutoff === null) {
-		return ord.add(other);
+		return add0(ord, other);
 	}
 
-	return ord.filterTerms((p1) => compare(p1, cutoff) <= 0).add(other) as Ord;
+	return add0(
+		ord.filterTerms((p1) => compare(p1, cutoff) <= 0),
+		other,
+	) as Ord;
 };
 
 /**
@@ -104,7 +108,7 @@ const ordinalMultInfiniteFinite = (inf: Ord, i: Real): Ord0 => {
 
 const ordinalMult0 = (ord: Ord, other: Ord0): Ord0 => {
 	if (!(other instanceof Conway)) {
-		return ord.mult(other) as Ord;
+		return mult0(ord, other) as Ord;
 	}
 
 	if (ord.isZero || other.isZero) {
@@ -130,7 +134,7 @@ const ordinalMult0 = (ord: Ord, other: Ord0): Ord0 => {
 	if (!ord.isAboveReals) {
 		const { infinitePart: inf2 } = other;
 		// i1 nonzero: i1 * (inf2 + i2) = inf2 + i1 * i2
-		return isZero(i1) ? zero : (inf2.add(realMult(i1, i2)) as Ord);
+		return isZero(i1) ? zero : (add0(inf2, realMult(i1, i2)) as Ord);
 	}
 	const p0 = ord.leadingPower ?? zero;
 	let tot = 0n as Ord0;

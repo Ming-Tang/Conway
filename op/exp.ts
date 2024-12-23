@@ -26,19 +26,19 @@ const h = (x: Conway0): Conway0 => {
 /**
  * exp(w^x)
  */
-const expLow = (x: Conway0, terms = null as number | null) => {
+const expLow = (x: Conway0, terms = null as number | null): Conway0 => {
 	if (isZero(x)) {
-		return one;
+		return 1n;
 	}
 	if (terms === null) {
 		throw new RangeError("terms is null");
 	}
 
-	let sum: Conway = zero;
+	let sum: Conway0 = 0n;
 	let f = 1.0;
 	let xPow: Conway0 = one;
 	for (let i = 0; i < terms; i++) {
-		sum = sum.add(mult(xPow, 1.0 / f));
+		sum = add(sum, mult(xPow, 1.0 / f));
 		xPow = mult(xPow, x);
 		f *= i + 1;
 	}
@@ -56,11 +56,11 @@ export const log1pLow = (x: Conway0, terms = null as number | null) => {
 		throw new RangeError("terms is null");
 	}
 
-	let sum: Conway = zero;
+	let sum: Conway0 = 0n;
 	let f = 1.0;
 	let xPow = x;
 	for (let i = 1; i <= terms; i++) {
-		sum = sum.add(mult(xPow, f / i));
+		sum = add(sum, mult(xPow, f / i));
 		xPow = mult(xPow, x);
 		f *= -1.0;
 	}
@@ -123,7 +123,7 @@ export const exp = (x: Conway0, terms: number | null = null): Conway0 => {
 	);
 	const r = Math.exp(Number(xr));
 	const low = isZero(xm) ? one : expLow(xm, terms);
-	return ensure(inf).mult(r).mult(low);
+	return mult(mult(inf, r), low);
 };
 
 export const log = (x: Conway0, terms: number | null = null): Conway0 => {

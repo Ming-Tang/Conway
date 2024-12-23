@@ -1,8 +1,8 @@
 import fc from "fast-check";
-import type { Conway } from "../conway";
+import type { Conway, Conway0 } from "../conway";
 import { birthday, ensure, mono, mono1, zero } from "../op";
 import { eq, ge, gt } from "../op";
-import { add } from "../op/arith";
+import { add, neg } from "../op/arith";
 import { isOrdinal, ordinalAdd } from "../op/ordinal";
 import { arbConway3, arbFinite, arbFiniteBigint, arbOrd3 } from "./generators";
 
@@ -85,7 +85,7 @@ describe("birthday", () => {
 						fc.pre(b > a);
 						const pa = mono1(-a);
 						const pb = mono1(-b);
-						return eq(birthday(pb), birthday(pa.add(pb)));
+						return eq(birthday(pb), birthday(add(pa, pb)));
 					},
 				),
 				{ numRuns: 300 },
@@ -98,12 +98,12 @@ describe("birthday", () => {
 					fc.integer({ min: 1, max: 100 }),
 					fc.integer({ min: 1, max: 100 }),
 					(a, b) => {
-						const pa = mono1(mono1(a).neg());
+						const pa = mono1(neg(mono1(a)));
 						const db = mono1(-b);
-						const pb = mono1(mono1(a).neg().add(-b));
+						const pb = mono1(add(neg(mono1(a)), -b));
 						return eq(
 							ordinalAdd(birthday(pa), birthday(db)),
-							birthday(pa.add(pb)),
+							birthday(add(pa, pb)),
 						);
 					},
 				),
@@ -160,10 +160,10 @@ describe("birthday", () => {
 		it("birthday is increasing with respect to the number of terms", () => {
 			fc.assert(
 				fc.property(arbConway3(arbFiniteBigint), (x) => {
-					let partialSum: Conway = zero;
+					let partialSum: Conway0 = 0n;
 					const partialBirthdays = [];
 					for (const [p, c] of x) {
-						partialSum = partialSum.add(mono(c, p));
+						partialSum = add(partialSum, mono(c, p));
 						partialBirthdays.push(birthday(partialSum));
 					}
 

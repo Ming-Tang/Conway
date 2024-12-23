@@ -1,6 +1,7 @@
 import type { Ord } from "../conway";
 import { unit, zero } from "../op";
 import { ge, gt, isAboveReals, isOne, isZero } from "../op";
+import { add } from "../op/arith";
 import {
 	ordinalEnsure as ensure,
 	ordinalMono1 as mono1,
@@ -417,7 +418,7 @@ const indexByPowerPrefix = <T>(
 		}
 		const dLen: Ord = mono1(i);
 		concat.push([[seq.index(index)], dLen]);
-		index = index.add(dLen);
+		index = ensure(add(index, dLen));
 	}
 	return new SeqExpansion<T>(concat, mono1(seq.length));
 };
@@ -457,7 +458,7 @@ export class IndexByPower<T> implements Seq<T> {
 					length: dLen,
 				}),
 			);
-			index = index.add(dLen);
+			index = ensure(add(index, dLen));
 		}
 
 		return simplifyConcat({ concat, length: this.length });

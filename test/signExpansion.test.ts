@@ -1,15 +1,7 @@
+import "./expect.test";
 import fc from "fast-check";
 import type { Conway, Ord } from "../conway";
-import {
-	birthday,
-	create,
-	fromReal,
-	mono,
-	mono1,
-	one,
-	unit,
-	zero,
-} from "../op";
+import { birthday, fromReal, mono1, one, zero } from "../op";
 import { eq, isZero, lt } from "../op";
 import { neg } from "../op/arith";
 import type { Seq } from "../seq";

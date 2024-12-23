@@ -30,14 +30,14 @@ import {
 	lt,
 	ne,
 } from "../op";
+import "../op/methods/arith";
 import { add, mult, neg, sub } from "../op/arith";
-import { longDivision, longDivisionIters } from "../op/longDivision";
+import { longDivisionIters } from "../op/longDivision";
 import type { Real } from "../real";
 import {
 	arbConway1,
 	arbConway2,
 	arbConway3,
-	arbConway4,
 	arbConway5,
 	arbConwayReal,
 	arbDyadic,
@@ -123,6 +123,7 @@ describe("Conway", () => {
 		});
 
 		it("0 * w = 0", () => {
+			console.log(unit.mult(one));
 			expect(unit.mult(zero).eq(zero)).toBe(true);
 			expect(zero.mult(unit).eq(zero)).toBe(true);
 		});
