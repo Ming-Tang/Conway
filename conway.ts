@@ -787,34 +787,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 	}
 	// #endregion
 	// #region Conversion
-
-	// TODO fromRepr/fromJson factory methods
-
-	public toRepr(): [unknown, Real][] {
-		return this.#terms.map(([e, c]) => [
-			e instanceof Conway ? e.toRepr() : e,
-			c,
-		]);
-	}
-
-	public toJson(preserveBigint = false): {
-		t: { e: unknown; c: string | unknown }[];
-		oh: string;
-		eh: number;
-	} {
-		return {
-			oh: `${this.ordHash}`,
-			eh: this.eqHash,
-			t: this.#terms.map(([e, c]) => ({
-				e:
-					e instanceof Conway
-						? e.toJson(preserveBigint)
-						: realToJson(e, preserveBigint),
-				c: realToJson(c, preserveBigint),
-			})),
-		};
-	}
-
 	public toString(): string {
 		const variable = "w";
 		const parts: string[] = [];
@@ -853,13 +825,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 		}
 
 		return parts.length === 0 ? "0" : parts.join(" ");
-	}
-
-	public toLaTeX(): string {
-		return this.toString()
-			.replace(/\^(-?[0-9]+(?:\.[0-9]*)?)/g, "^{$1}")
-			.replace(/w\b/g, "\\omega")
-			.replace(/[\[\]]/g, (x) => (x === "[" ? "{" : "}"));
 	}
 
 	public [customInspectSymbol]() {

@@ -8,6 +8,7 @@ import {
 	ordinalMult,
 	ordinalRightSub,
 } from "../op/ordinal";
+import { toLaTeX } from "../op/repr";
 import { assertLength, isConstantArray } from "./helpers";
 import type { Seq } from "./types";
 
@@ -328,7 +329,7 @@ export const summarizeExpansionLaTeX = <T>(
 			parts.push(sub);
 		} else {
 			parts.push(
-				`${surround(summarizeExpansionLaTeX(seq, arrayToString))}^{${repeat.toLaTeX()}}`,
+				`${surround(summarizeExpansionLaTeX(seq, arrayToString))}^{${toLaTeX(repeat)}}`,
 			);
 		}
 	}
@@ -336,12 +337,12 @@ export const summarizeExpansionLaTeX = <T>(
 	const dLen = lt(f.length, totalLength)
 		? zero
 		: ordinalRightSub(totalLength, length);
-	const el = isZero(dLen) ? "" : ` \\ldots^{${ensure(dLen).toLaTeX()}}`;
+	const el = isZero(dLen) ? "" : ` \\ldots^{${toLaTeX(ensure(dLen))}}`;
 	if (parts.length === 1 && !el) {
 		return parts[0];
 	}
 	if (el) {
-		return `\\underbrace{${parts.join(" ")}${el}}_{${length.toLaTeX()}}`;
+		return `\\underbrace{${parts.join(" ")}${el}}_{${toLaTeX(length)}}`;
 	}
 	return `${parts.join(" ")}${el}`;
 };

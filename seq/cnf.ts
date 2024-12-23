@@ -6,6 +6,7 @@ import {
 	ordinalAdd,
 	ordinalRightSub,
 } from "../op/ordinal";
+import { toLaTeX } from "../op/repr";
 import type { Cnf, CnfConcat, Seq } from "./types";
 
 export const defaultCnf = <T>(f: Seq<T>, terms: number) => {
@@ -151,7 +152,7 @@ export const summarizeCnf = <T>(
 	throw new Error("summarizeCnf: invalid");
 };
 
-export const ordToLaTeX = (x: Conway) => x.toLaTeX();
+export const ordToLaTeX = (x: Conway) => toLaTeX(x);
 
 export const summarizeCnfLaTeX = <T>(
 	cnf: Cnf<T>,
