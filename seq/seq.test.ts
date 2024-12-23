@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import "../op/methods/ord";
 import "../test/expect.test";
 import {
 	type Seq,
@@ -285,7 +286,7 @@ describe("cycle", () => {
 					const f2 = concat(f, f);
 					fc.pre(f1.length.isPositive && f2.length.isPositive);
 					fc.pre(lt(i, f1.length));
-					const i1 = ensure(ordinalAdd(f.length, i));
+					const i1 = f.length.ordinalAdd(i);
 					fc.pre(lt(i1, f2.length));
 					return f1.index(i) === f2.index(i1);
 				},
@@ -304,9 +305,9 @@ describe("cycle", () => {
 					const g = cycle(f, n);
 					fc.pre(f.length.isPositive && g.length.isPositive);
 					fc.pre(lt(i, g.length));
-					const i1 = ordinalAdd(f.length, i);
+					const i1 = f.length.ordinalAdd(i);
 					fc.pre(lt(i1, g.length));
-					return g.index(i) === g.index(ensure(i1));
+					return g.index(i) === g.index(i1);
 				},
 			),
 		);
@@ -367,11 +368,11 @@ describe("prod", () => {
 		const s2 = identity(ensure(2n));
 		const sw = identity(unit);
 		it("|prod(sw, s2)| = w.2", () => {
-			expect(prod(sw, s2).length).conwayEq(ordinalMult(unit, 2n));
+			expect(prod(sw, s2).length).conwayEq(unit.ordinalMult(2n));
 		});
 
 		it("|prod(s2, sw)| = w", () => {
-			expect(prod(s2, sw).length).conwayEq(ordinalMult(ensure(2n), unit));
+			expect(prod(s2, sw).length).conwayEq(ensure(2n).ordinalMult(unit));
 		});
 
 		it("prod(sw, s2)[w.i + j] = (j, i)", () => {
