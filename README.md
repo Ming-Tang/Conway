@@ -14,7 +14,7 @@ in Conway normal form and transfinite sequences.
   - Converting from/to JavaScript `number`
 - Surreal numbers in Conway normal form
   - Equality and comparison
-  - To JSON, string and laTeX
+  - To JSON, string and LaTeX
   - Addition, subtraction, mulitplication
   - Long division (quotient and remainder)
   - Birthday
@@ -30,13 +30,6 @@ in Conway normal form and transfinite sequences.
   - Concatenate two sequences together
   - Cartesian product
 
-## Missing featurs
-
-- Limit sequences to represent infinite series or true real numbers
-- Correct implementation of exp/log
-- Creating surreal numbers in the forms of $\{ L | R \}$
-- $L(\cdot)$ and $R(\cdot)$ sequences based on sign expansions
-
 ## Types
 
 ### Dyadic rational number: `Dyadic`
@@ -44,7 +37,6 @@ in Conway normal form and transfinite sequences.
 Represents an arbitrary-precision
 [dyadic rational number](https://en.wikipedia.org/wiki/Dyadic_rational),
 which is a rational number with a `bigint` the numerator and a power of 2 (positive `bigint`) as the denominator.
-
 
 ### Surreal number: `Conway`
 
@@ -192,33 +184,35 @@ code in `bigint`.
 
 If `x.ordHash < y.ordHash`, then `lt(x, y)`.
 
-### Module export
-
-```typescript
-import { ... } from "conway/op";
-
-// sub(a: Conway0, b: Conway0): Conway0
-mult(sub(num1, num2))
-
-sub(3, 2) // => 1 : Real
-```
-
 ### Class method
 
-When a module containing the operation is imported, it can be used as a class
-method of `Conway` as well.
+Additional class methods of `Conway` can be added by importing the `op/methods/ord` module for ordinal operations and and `op/methods/arith` for arithmetic operations.
+These operations will always return wrapped `Conway` objects, unlike regular functions.
 
-The class methods can take unwrapped values as arguments, but they will never
-return unwrapped values.
+- `import "conway/op/methods/ord"`
+  - `x.ordinalDivRem(y)`
+  - `x.ordinalPow(y)`
+  - `x.ordinalRightSub(y)`
+  - `x.ordinalAdd(y)`
+  - `x.ordinalMult(y)`
+- `import "conway/op/methods/arith`
+  - `x.neg()`
+  - `x.add(y)`
+  - `x.sub(y)`
+  - `x.mult(y)`
+ 
+### Sign expansions
 
-```typescript
-// num1, num2 : Conway
-// num.sub : (b: Conway0): Conway
-num1.sub(num2)
+Sign expansions are represented as a finite list (array or iterable) of entries. Each entry `Entry` is a plus or minus repeated an ordinal number times.
 
-fromReal(3).sub(1) // => fromReal(2) : Conway
-fromReal(3).sub(fromReal(1)) // => fromReal(2) : Conway
 ```
+interface Entry {
+  sign: boolean; // true for +, false for -
+  length: Ord0;
+}
+```
+
+The `SignExpansionReader` interface is used to iterate through a sign expansion, and an instance can be created from the `makeReader` function.
 
 ## Creation
 
