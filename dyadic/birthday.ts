@@ -10,7 +10,7 @@ import {
 	zero,
 } from "./arith";
 import { type Dyadic, dyadicNew } from "./class";
-import { eq, ge, gt, lt, ne } from "./comp";
+import { eq, ge, gt, lt, ne } from "./comparison";
 
 export const toMixed = (p: Dyadic): [bigint, Dyadic] => {
 	if (p.isInteger) {

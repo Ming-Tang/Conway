@@ -13,7 +13,7 @@ export {
 	isNegOne as dyadicIsNegOne,
 	isPositive as dyadicIsPositive,
 	isNegative as dyadicIsNegative,
-} from "./comp";
+} from "./comparison";
 
 export {
 	birthday as dyadicBirthday,

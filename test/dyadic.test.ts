@@ -30,7 +30,7 @@ import {
 	toMixed,
 } from "../dyadic/birthday";
 import { Dyadic, dyadicNew } from "../dyadic/class";
-import { compare, eq, ge, gt, le, lt } from "../dyadic/comp";
+import { compare, eq, ge, gt, le, lt } from "../dyadic/comparison";
 import {
 	propCommAssoc,
 	propDist,
