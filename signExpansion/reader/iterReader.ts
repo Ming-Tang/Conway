@@ -3,48 +3,94 @@ import { eq, isZero, lt } from "../../op";
 import { ordinalAdd, ordinalRightSub } from "../../op/ordinal";
 import type { Entry, SignExpansionReader } from "./types";
 
-export function* groupBySign<O extends Ord0 = Ord0>(
-	iter: Iterable<Entry<O>>,
-): Generator<Entry<O>> {
-	if (Array.isArray(iter) && iter.length === 0) {
-		return;
+const isAlreadyGrouped = (array: Entry[]) => {
+	for (let i = 0; i < array.length; i++) {
+		const e = array[i];
+		if (isZero(e.length)) {
+			return false;
+		}
+		if (i > 0 && array[i].sign === array[i - 1].sign) {
+			return false;
+		}
 	}
 
-	let partialEntry: Entry<O> | null = null;
-	const it = iter[Symbol.iterator]();
-	while (true) {
-		const { value: entry, done } = it.next();
-		if (done) {
-			break;
-		}
+	return true;
+};
 
+const groupBySignArrayMemo = new WeakMap<Entry[], Readonly<Entry[]>>();
+export function groupBySignArray<O extends Ord0 = Ord0>(
+	array: Entry<O>[],
+): Readonly<Entry<O>[]> {
+	if (array.length === 0 || (array.length === 1 && !isZero(array[0].length))) {
+		return array;
+	}
+
+	if (groupBySignArrayMemo.has(array)) {
+		return groupBySignArrayMemo.get(array) as Readonly<Entry<never>[]>;
+	}
+
+	if (isAlreadyGrouped(array)) {
+		groupBySignArrayMemo.set(array, array);
+		return array;
+	}
+
+	const res: Entry<O>[] = [];
+	let pending: Entry<O> = { sign: false, length: 0n as O };
+	for (let i = 0; i < array.length; i++) {
+		const entry = array[i];
 		if (isZero(entry.length)) {
 			continue;
 		}
 
-		if (partialEntry === null) {
-			partialEntry = entry;
+		if (entry.sign === pending.sign) {
+			pending.length = ordinalAdd(pending.length, entry.length) as O;
 			continue;
 		}
 
-		const { sign: sign0, length: len0 } = partialEntry as Entry;
+		if (!isZero(pending.length)) {
+			res.push(pending);
+		}
+		pending = { ...entry };
+	}
+
+	if (!isZero(pending.length)) {
+		res.push(pending);
+	}
+
+	groupBySignArrayMemo.set(array, res);
+	return res;
+}
+
+function* groupBySignGen<O extends Ord0 = Ord0>(
+	iter: Iterable<Entry<O>>,
+): Generator<Entry<O>> {
+	let pending: Entry<O> = { sign: false, length: 0n as O };
+	for (const entry of iter) {
+		if (isZero(entry.length)) {
+			continue;
+		}
 
 		const { sign, length } = entry;
-		if (sign0 === sign) {
-			partialEntry = { sign: sign0, length: ordinalAdd(len0, length) as O };
+		if (pending.sign === sign) {
+			pending.length = ordinalAdd(pending.length, length) as O;
 			continue;
 		}
 
-		if (!isZero(partialEntry.length)) {
-			yield partialEntry;
+		if (!isZero(pending.length)) {
+			yield pending;
 		}
-		partialEntry = entry;
+		pending = { ...entry };
 	}
 
-	if (partialEntry && !isZero(partialEntry.length)) {
-		yield partialEntry;
+	if (pending && !isZero(pending.length)) {
+		yield pending;
 	}
 }
+
+export const groupBySign = <O extends Ord0 = Ord0>(
+	iter: Iterable<Entry<O>>,
+): Iterable<Entry<O>> =>
+	Array.isArray(iter) ? groupBySignArray(iter) : groupBySignGen(iter);
 
 export class IterReader<O extends Ord0 = Ord0, Return = void>
 	implements SignExpansionReader<O>
