@@ -516,12 +516,22 @@ describe("repeatEach", () => {
 		);
 	});
 
+	it("repeatEach(f, 1)[i] = f[i], where i < |f| and j is finite", () => {
+		fc.assert(
+			fc.property(arbSeq3, arbOrd3, (f, i) => {
+				fc.pre(lt(i, f.length));
+				const idx = ensure(i);
+				return repeatEach(f, one).index(idx) === f.index(i);
+			}),
+		);
+	});
+
 	it("repeatEach(f, w)[w i + j] = f[i], where i < |f| and j is finite", () => {
 		fc.assert(
 			fc.property(arbSeq3, arbOrd3, arbFiniteBigintOrd, (f, i, j) => {
 				fc.pre(lt(i, f.length));
 				const idx = ensure(ordinalAdd(ordinalMult(unit, i), j));
-				expect(repeatEach(f, unit).index(idx)).conwayEq(f.index(i));
+				return repeatEach(f, unit).index(idx) === f.index(i);
 			}),
 		);
 	});
@@ -537,23 +547,23 @@ describe("repeatEach", () => {
 					fc.pre(!isZero(f.length));
 					fc.pre(lt(i, f.length) && lt(j, n));
 					const idx = ensure(ordinalAdd(ordinalMult(n, i), j));
-					expect(repeatEach(f, n).index(idx)).conwayEq(f.index(i));
+					return repeatEach(f, n).index(idx) === f.index(i);
 				},
 			),
 		);
 	});
 
-	it("repeatEach(f, n)[n i + j] = f[i], where i < |f| and j < n and n > 0", () => {
+	it("repeatEach(f, n)[n i + j] = f[i], where i < |f| and j < n and n is a limit ordinal", () => {
 		fc.assert(
 			fc.property(
 				arbSeq3,
-				arbOrd3.filter(isPositive),
+				arbOrd3.filter(isLimit),
 				arbOrd3,
 				arbFiniteBigintOrd,
 				(f, n, i, j) => {
 					fc.pre(lt(i, f.length) && lt(j, n));
 					const idx = ensure(ordinalAdd(ordinalMult(n, i), j));
-					expect(repeatEach(f, n).index(idx)).conwayEq(f.index(i));
+					return repeatEach(f, n).index(idx) === f.index(i);
 				},
 			),
 		);
