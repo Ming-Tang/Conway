@@ -314,35 +314,30 @@ export const realToString = (value: Real) => {
 	return `${value}`;
 };
 
-const EQ_HASH_CACHE = new Map<Real, number>([]);
+const BASE = 7;
+const PRIME = 59;
+const MASK = (1 << 31) - 1;
+const MASK0 = (1n << 31n) - 1n;
+
 export const realEqHash = (value: Real): number => {
+	let h = BASE;
 	if (realIsZero(value)) {
-		return 0;
+		return h;
 	}
 
-	const found = EQ_HASH_CACHE.get(value);
-	if (typeof found === "number") {
-		return found;
+	if (typeof value === "bigint") {
+		return (h + Number(value & MASK0)) & MASK;
 	}
 
-	const s = realToString(value) as string;
-	const MASK = 0xffff_ffff;
-	const MULT = 31;
-	let h = 0;
-	for (let i = 0; i < s.length; i++) {
-		h = MULT * h + s.charCodeAt(i);
-		h = h & MASK;
+	if (typeof value === "number" && Number.isSafeInteger(value)) {
+		return (h + (value & MASK)) & MASK;
 	}
 
-	if (typeof value === "bigint" && value > -256n && value < 256n) {
-		EQ_HASH_CACHE.set(value, h);
-	} else if (
-		typeof value === "number" &&
-		Number.isInteger(value) &&
-		value > -256 &&
-		value < 256
-	) {
-		EQ_HASH_CACHE.set(value, h);
+	const d = realToDyadic(value);
+	h = (h + Number(d.numerator & MASK0)) & MASK;
+
+	if (d.power !== 0n) {
+		h = (((h * PRIME) & MASK) + Number(d.power & MASK0)) & MASK;
 	}
 	return h;
 };
