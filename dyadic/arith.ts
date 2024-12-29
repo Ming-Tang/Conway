@@ -70,6 +70,32 @@ export const mult = (p: Dyadic, q: Dyadic) => {
 
 export const dyadicPow2 = Dyadic.pow2;
 
+const log2Bigint = (q: bigint): bigint => {
+	let l = 1n;
+	if (q <= 1n) {
+		return 0n;
+	}
+	let n = q;
+	while (n > 2n) {
+		l++;
+		n >>= 1n;
+	}
+	return l;
+};
+
+export const dyadicLog2 = (p: Dyadic): bigint => {
+	if (!p.isPositive) {
+		throw new RangeError("dyadicLog2: must be positive");
+	}
+
+	const q = p.bigintQuotient;
+	if (q >= 1n) {
+		return log2Bigint(q);
+	}
+
+	return log2Bigint(p.numerator) - p.power;
+};
+
 const EPSILON = fromNumber(Number.EPSILON);
 
 /**

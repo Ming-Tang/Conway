@@ -18,6 +18,7 @@ import {
 	dyadicSign,
 	dyadicSub,
 } from "./dyadic";
+import { EQ_HASH_ZERO, eqHashBigint, eqHashInteger } from "./dyadic/hash";
 
 export type Real = number | bigint | Dyadic;
 
@@ -314,32 +315,21 @@ export const realToString = (value: Real) => {
 	return `${value}`;
 };
 
-const BASE = 7;
-const PRIME = 59;
-const MASK = (1 << 31) - 1;
-const MASK0 = (1n << 31n) - 1n;
-
 export const realEqHash = (value: Real): number => {
-	let h = BASE;
 	if (realIsZero(value)) {
-		return h;
+		return EQ_HASH_ZERO;
 	}
 
 	if (typeof value === "bigint") {
-		return (h + Number(value & MASK0)) & MASK;
+		return eqHashBigint(value);
 	}
 
 	if (typeof value === "number" && Number.isSafeInteger(value)) {
-		return (h + (value & MASK)) & MASK;
+		return eqHashInteger(value);
 	}
 
 	const d = realToDyadic(value);
-	h = (h + Number(d.numerator & MASK0)) & MASK;
-
-	if (d.power !== 0n) {
-		h = (((h * PRIME) & MASK) + Number(d.power & MASK0)) & MASK;
-	}
-	return h;
+	return d.eqHash;
 };
 
 export const hasRealType = (x: unknown): x is Real => {

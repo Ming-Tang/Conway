@@ -1,4 +1,5 @@
 import { makeInternable } from "../internable";
+import { dyadicEqHash } from "./hash";
 
 // Range of parameters to be interned
 const P_RANGE = 128n;
@@ -47,7 +48,10 @@ export class Dyadic {
 	/** The exponent of the denominator. Cannot be negative. */
 	public readonly power: bigint = 0n;
 
+	#eqHash: number | null;
+
 	private constructor(p: bigint, q = 0n) {
+		this.#eqHash = null;
 		if (q < 0n) {
 			this.numerator = p << -q;
 			this.power = 0n;
@@ -141,6 +145,16 @@ export class Dyadic {
 
 	public [customInspectSymbol]() {
 		return `Dyadic(${this.toString()})`;
+	}
+
+	public get eqHash(): number {
+		if (this.#eqHash !== null) {
+			return this.#eqHash;
+		}
+
+		const h = dyadicEqHash(this);
+		this.#eqHash = h;
+		return h;
 	}
 }
 

@@ -10,12 +10,9 @@ import {
 	realIsOne,
 	realIsPositive,
 	realIsZero,
-	realMult,
 	realNeg,
 	realOne,
-	realSub,
 	realToDyadic,
-	realToJson,
 	realZero,
 } from "./real";
 
@@ -615,12 +612,6 @@ export class Conway<IsOrd extends boolean = boolean> {
 		}
 		return realEqHash(value);
 	}
-
-	// #endregion
-	// #region Arithmetic
-
-	// #endregion
-	// #region Arithmetic (static)
 
 	// #endregion
 	// #region Collection

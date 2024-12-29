@@ -1,14 +1,24 @@
 import fc from "fast-check";
 import {
+	dyadicAdd,
 	dyadicEq,
 	dyadicFromBigint,
 	dyadicFromNumber,
+	dyadicHalf,
+	dyadicIsPositive,
+	dyadicLe,
+	dyadicLt,
 	dyadicMult,
+	dyadicNeg,
+	dyadicOne,
 	dyadicToMixed,
+	dyadicZero,
 } from "../dyadic";
 import {
 	abs,
 	add,
+	dyadicLog2,
+	dyadicPow2,
 	fromBigint,
 	half,
 	isSafeNumber,
@@ -29,8 +39,9 @@ import {
 	signExpansionFrac,
 	toMixed,
 } from "../dyadic/birthday";
-import { Dyadic, dyadicNew } from "../dyadic/class";
+import { dyadicNew } from "../dyadic/class";
 import { compare, eq, ge, gt, le, lt } from "../dyadic/comparison";
+import { ORD_HASH_EPSILON, dyadicOrdHash } from "../dyadic/ordHash";
 import {
 	propCommAssoc,
 	propDist,
@@ -637,6 +648,106 @@ describe("isSafeNumber", () => {
 				fc.pre(isSafeNumber(x));
 				return eq(x, dyadicFromNumber(x.quotient));
 			}),
+		);
+	});
+});
+
+describe("dyadicLog2", () => {
+	it("powers of 2", () => {
+		expect(dyadicLog2(dyadicOne.half(2n))).toBe(-2n);
+		expect(dyadicLog2(dyadicHalf)).toBe(-1n);
+		expect(dyadicLog2(dyadicOne)).toBe(0n);
+		expect(dyadicLog2(dyadicFromBigint(2n))).toBe(1n);
+		expect(dyadicLog2(dyadicFromBigint(4n))).toBe(2n);
+		expect(dyadicLog2(dyadicFromBigint(8n))).toBe(3n);
+	});
+
+	it("dyadicLog2(dyadicPow2(n)) = n", () => {
+		fc.assert(
+			fc.property(
+				fc.bigInt({ min: -(1n << 8n), max: 1n << 8n }),
+				(n) => dyadicLog2(dyadicPow2(n)) === n,
+			),
+		);
+	});
+
+	it("non-decreasing", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic.filter(dyadicIsPositive),
+				arbDyadic.filter(dyadicIsPositive),
+				(a, b) => {
+					fc.pre(dyadicLe(a, b));
+					return dyadicLog2(a) <= dyadicLog2(b);
+				},
+			),
+		);
+	});
+
+	it("dyadicLog2(x + x) >= dyadicLog2(x)", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic.filter(dyadicIsPositive),
+				(a) => dyadicLog2(dyadicAdd(a, a)) >= dyadicLog2(a),
+			),
+		);
+	});
+});
+
+describe("dyadicOrdHash", () => {
+	it("hash of zero is zero", () => {
+		expect(dyadicOrdHash(dyadicZero)).toBe(0n);
+	});
+
+	it("hash of half, 1 and 2 are different", () => {
+		expect(dyadicOrdHash(dyadicOne)).not.toBe(dyadicOrdHash(dyadicHalf));
+		expect(dyadicOrdHash(dyadicOne)).not.toBe(
+			dyadicOrdHash(dyadicFromBigint(2n)),
+		);
+	});
+
+	it("increasing", () => {
+		fc.assert(
+			fc.property(arbDyadic.filter(dyadicIsPositive), arbDyadic, (a, b) => {
+				fc.pre(dyadicLe(a, b));
+				return dyadicOrdHash(a) <= dyadicOrdHash(b);
+			}),
+		);
+	});
+
+	it("odd function", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic,
+				(a) => dyadicOrdHash(a) === -dyadicOrdHash(dyadicNeg(a)),
+			),
+		);
+	});
+
+	it("difference betwen ordHashes is at most 1 for a piecewise increasing sequence", () => {
+		const seq = (n: bigint) => (n <= 0n ? dyadicPow2(n) : dyadicFromBigint(1n));
+		fc.assert(
+			fc.property(
+				fc.bigInt({ min: -1024n, max: 1024n }),
+				(n) => dyadicOrdHash(seq(n + 1n)) - dyadicOrdHash(seq(n)) <= 1n,
+			),
+		);
+	});
+});
+
+describe("ORD_HASH_EPSILON", () => {
+	it("ordHash is 1", () => {
+		expect(dyadicOrdHash(ORD_HASH_EPSILON)).toBe(1n);
+	});
+
+	it("all positive dyadics below it have ordHash of 0", () => {
+		fc.assert(
+			fc.property(
+				arbDyadic.filter(
+					(x) => dyadicIsPositive(x) && dyadicLt(x, ORD_HASH_EPSILON),
+				),
+				(x) => dyadicOrdHash(x) === 0n,
+			),
 		);
 	});
 });
