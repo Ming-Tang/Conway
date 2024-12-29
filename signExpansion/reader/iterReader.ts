@@ -92,74 +92,47 @@ export const groupBySign = <O extends Ord0 = Ord0>(
 ): Iterable<Entry<O>> =>
 	Array.isArray(iter) ? groupBySignArray(iter) : groupBySignGen(iter);
 
-export class IterReader<O extends Ord0 = Ord0, Return = void>
+export class IterReader<O extends Ord0 = Ord0>
 	implements SignExpansionReader<O>
 {
-	#it: Iterator<Entry<O>>;
-	#done = false;
-	#entry: Entry<O> | null = null;
-	public returnValue: Return | undefined = undefined;
+	#gen: Generator<Entry<O>>;
+	#res: { done: true } | { done: false; value: Entry<O> };
 
 	constructor(iter: Iterable<Entry<O>>) {
-		this.#it = groupBySign(iter)[Symbol.iterator]();
+		this.#gen = groupBySignGen(iter)[Symbol.iterator]();
+		this.#res = this.#maintain();
 	}
 
 	get isDone() {
-		return this.#done;
+		return this.#res.done ?? false;
 	}
 
 	lookahead(): Readonly<Entry<O>> | null {
-		this.#ensure();
-		return !this.#done && this.#entry ? { ...this.#entry } : null;
+		if (this.#res.done) {
+			return null;
+		}
+		return { sign: this.#res.value.sign, length: this.#res.value.length };
 	}
 
-	consume(length: Ord0): void {
-		if (isZero(length)) {
-			return;
-		}
-
-		this.#ensure();
-
-		const entry = this.#entry;
-		if (!entry || this.#done) {
+	consume(length: O): void {
+		if (this.#res.done) {
 			throw new RangeError("cannot consume: reached the end");
 		}
 
-		const remain = entry.length;
-		if (eq(remain, length)) {
-			this.#entry = null;
+		const remain = this.#res.value.length;
+		if (eq(length, remain)) {
+			this.#res = this.#maintain();
 			return;
 		}
-
-		if (lt(remain, length)) {
+		if (gt(length, remain)) {
 			throw new RangeError("cannot consume: larger than lookahead");
 		}
-
-		const remain1 = ordinalRightSub(length, remain) as O;
-
-		this.#entry = {
-			sign: entry.sign,
-			length: remain1,
-		};
+		this.#res.value.length = ordinalRightSub(length, remain) as O;
 	}
 
-	#ensure() {
-		if (this.#done || this.#entry) {
-			return;
-		}
-
-		const { done, value: entry } = this.#it.next();
-		if (done) {
-			this.returnValue = entry;
-		}
-
-		if (done || isZero(entry.length)) {
-			this.#entry = null;
-			this.#done = true;
-			return;
-		}
-
-		this.#entry = entry;
+	#maintain(): { done: true } | { done: false; value: Entry<O> } {
+		const { done, value } = this.#gen.next();
+		return { done: done ?? false, value: { ...value } };
 	}
 }
 
@@ -195,23 +168,15 @@ export class ArrayReader<O extends Ord0 = Ord0>
 		}
 		if (eq(length, this.#remain)) {
 			this.#index++;
-			this.#maintain();
+			if (this.#index < this.#array.length) {
+				this.#remain = this.#array[this.#index].length;
+			}
 			return;
 		}
 		if (gt(length, this.#remain)) {
 			throw new RangeError("cannot consume: larger than lookahead");
 		}
 		this.#remain = ordinalRightSub(length, this.#remain) as O;
-		if (isZero(this.#remain)) {
-			this.#index++;
-			this.#maintain();
-		}
-	}
-
-	#maintain() {
-		if (this.#index < this.#array.length) {
-			this.#remain = this.#array[this.#index].length;
-		}
 	}
 }
 
