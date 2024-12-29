@@ -70,7 +70,7 @@ export const mult = (p: Dyadic, q: Dyadic) => {
 
 export const dyadicPow2 = Dyadic.pow2;
 
-const log2Bigint = (q: bigint): bigint => {
+export const log2Bigint = (q: bigint): bigint => {
 	let l = 1n;
 	if (q <= 1n) {
 		return 0n;

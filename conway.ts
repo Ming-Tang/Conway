@@ -1,5 +1,14 @@
-import { Dyadic, dyadicNeg } from "./dyadic";
-import { dyadicOrdHash } from "./dyadic/ordHash";
+import {
+	Dyadic,
+	dyadicFromBigint,
+	dyadicLt,
+	dyadicNeg,
+	dyadicOne,
+	dyadicZero,
+} from "./dyadic";
+import { dyadicPow2, log2Bigint } from "./dyadic/arith";
+import { dyadicNew } from "./dyadic/class";
+import { ORD_HASH_EPSILON, dyadicOrdHash, makeOrdHash } from "./dyadic/ordHash";
 import {
 	type Real,
 	realAdd,
@@ -470,11 +479,29 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return x;
 	};
 
+	static INF_SHIFT = 10n;
+	static MIN_INF = 1n << Conway.INF_SHIFT;
+	static LOW_SHIFT = 4n;
+	static LOW_LOW_SHIFT = 2n;
+	static MIN_LOW = 1n << Conway.LOW_LOW_SHIFT;
+	static MIN_REAL = 1n << Conway.LOW_SHIFT;
+	static LOW_BASE = dyadicOrdHash(dyadicFromBigint(4n)) << Conway.LOW_SHIFT;
+
 	/**
-	 * Get the ordering hash code, which is a number.
+	 * Gets the order-preserving hash code of this surreal number,
+	 * which is a `bigint`.
+	 * The `ordHash` is an odd function on the surreal number itself.
+	 *
+	 * Bit ranges allocated to the `ordHash` given a positive surreal:
+	 * 1. Leading exponent, non-zero if the entire surreal is infinite
+	 * 2. Real coefficient
+	 *    - `dyadicOrdHash` of the real part for finite surreals
+	 *    - Not used for infinites or pure infinitesimals
+	 * 3. Leading exponent, zeroed out if the surreal is non-infinitesimal.
+	 *    - Negative reals
+	 *    - Negative infinites
 	 */
 	public get ordHash(): bigint {
-		// return 0n;
 		if (typeof this.#ordHash === "bigint") {
 			return this.#ordHash;
 		}
@@ -485,24 +512,52 @@ export class Conway<IsOrd extends boolean = boolean> {
 		}
 
 		const [p0, c0] = this.#terms[0];
-		const isReal = Conway.isZero(p0);
-		const hashAC = Conway.ensure(p0).ordHash;
-		const D = 256n;
-		const hashACAdj = hashAC <= -D ? 1n : hashAC + D + 1n;
+
+		// Sign part
 		const isNeg = realIsNegative(c0);
 		const sign = isNeg ? -1n : 1n;
-		const d0 = !isReal
-			? Dyadic.ONE
-			: isNeg
-				? dyadicNeg(realToDyadic(c0))
-				: realToDyadic(c0);
-		const h =
-			sign *
-			((hashACAdj << Conway.ORD_HASH_MULTIPLIER_BITS) +
-				Conway.#ordHashClamp(
-					dyadicOrdHash(d0),
-					Conway.ORD_HASH_MAX_MULTIPLIER,
-				));
+
+		// Archimedean class part
+		const hashAC = Conway.ensure(p0).ordHash;
+
+		let h = 0n;
+		if (Conway.isZero(p0)) {
+			// real
+			const hr = isNeg
+				? -dyadicOrdHash(realToDyadic(c0))
+				: dyadicOrdHash(realToDyadic(c0));
+			h = hr << Conway.LOW_SHIFT;
+			if (h === 0n) {
+				h = 1n;
+			} else if (h >= Conway.MIN_INF) {
+				h = Conway.MIN_INF - 1n;
+			}
+		} else if (Conway.isNegative(p0)) {
+			// infinitesimal
+			if (Conway.isBelowNegativeReals(p0)) {
+				h = 8n - log2Bigint(-hashAC) / Conway.LOW_SHIFT;
+				if (h <= 1n) {
+					h = 1n;
+				} else if (h >= Conway.MIN_LOW) {
+					h = Conway.MIN_LOW - 1n;
+				}
+			} else {
+				h = ((hashAC + Conway.LOW_BASE) >> Conway.LOW_SHIFT) + Conway.MIN_LOW;
+				if (h <= Conway.MIN_LOW) {
+					h = Conway.MIN_LOW;
+				} else if (h >= Conway.MIN_REAL - 1n) {
+					h = Conway.MIN_REAL - 1n;
+				}
+			}
+		} else {
+			// infinite
+			if (hashAC < 0n) {
+				throw new RangeError(`invalid infinite: hashAC=${hashAC}, p0=${p0}`);
+			}
+			h = (hashAC + 1n) << Conway.INF_SHIFT;
+		}
+
+		h *= sign;
 		this.#ordHash = h;
 		return h;
 	}

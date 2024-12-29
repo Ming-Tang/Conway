@@ -1,9 +1,5 @@
 import fc from "fast-check";
-import {
-	dyadicFromBigint,
-	dyadicLe,
-	dyadicNeg,
-} from "../dyadic";
+import { dyadicFromBigint, dyadicLe, dyadicNeg } from "../dyadic";
 import { dyadicNew } from "../dyadic/class";
 import { dyadicOrdHash } from "../dyadic/ordHash";
 import { arbDyadic } from "./generators";

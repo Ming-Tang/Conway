@@ -13,6 +13,7 @@ import {
 	maybeUnwrap,
 	mono,
 	mono1,
+	negOne,
 	one,
 	fromReal as real,
 	unit,
@@ -31,6 +32,7 @@ import {
 	ne,
 } from "../op";
 import "../op/methods/arith";
+import { dyadicIsPositive } from "../dyadic";
 import { add, mult, neg, sub } from "../op/arith";
 import { longDivisionIters } from "../op/longDivision";
 import type { Real } from "../real";
@@ -588,9 +590,8 @@ describe("Conway", () => {
 			a = mono1(a);
 		}
 
-		// TODO proper rescaling for smaller infinitesimals
 		const powInts: Conway0[] = [];
-		for (let i = -1; i <= 8; i++) {
+		for (let i = -4; i <= 8; i++) {
 			powInts.push(mono1(i));
 		}
 
@@ -605,7 +606,7 @@ describe("Conway", () => {
 		}
 
 		const ensureDistinct = (xs: Conway0[]) => {
-			for (let i = 0; i < xs.length - 1 - 1; i++) {
+			for (let i = 0; i < xs.length - 1; i++) {
 				const a = ensure(xs[i]);
 				const b = ensure(xs[i + 1]);
 				expect(a.ordHash).not.toEqual(b.ordHash);
@@ -626,6 +627,24 @@ describe("Conway", () => {
 
 		it("fractions", () => {
 			ensureDistinct(fracs);
+		});
+
+		it("1, w, w^2, w^w", () => {
+			expect(one.ordHash).not.toBe(mono1(1n).ordHash);
+			expect(mono1(1n).ordHash).not.toBe(mono1(2n).ordHash);
+			expect(mono1(2n).ordHash).not.toBe(mono1(mono1(1n)).ordHash);
+		});
+
+		it("1 and w^-1", () => {
+			expect(one.ordHash).not.toBe(mono1(-1n).ordHash);
+		});
+
+		it("w^-1, w^-2, w^-w w^-(w^w)", () => {
+			const t2 = mono1(neg(mono1(1n)));
+			expect(mono1(-2n).ordHash).not.toBe(t2);
+			expect(mono1(-1n).ordHash).not.toBe(mono1(-2n).ordHash);
+			const t3 = mono1(neg(mono1(mono1(1n))));
+			expect(t3.ordHash).not.toBe(t2.ordHash);
 		});
 	});
 
@@ -721,6 +740,45 @@ describe("Conway", () => {
 					return hb <= ha === ensure(a).ordHash <= ensure(b).ordHash;
 				}),
 			);
+		});
+
+		describe("distinct guarantee", () => {
+			it("ordHash of non-zeros are non-zero", () => {
+				fc.assert(fc.property(arb, (x) => (x.ordHash !== 0n) === !isZero(x)));
+			});
+
+			it("mono1 of positives given different ordHash", () => {
+				fc.assert(
+					fc.property(
+						arb.filter(isPositive),
+						arb.filter(isPositive),
+						(a, b) => {
+							fc.pre(lt(a, b) && a.ordHash !== b.ordHash);
+							return mono1(a).ordHash < mono1(b).ordHash;
+						},
+					),
+				);
+			});
+
+			it("infinites above all reals", () => {
+				fc.assert(
+					fc.property(
+						arbDyadic(64),
+						arb.filter((x) => isPositive(x) && !isZero(x.infinitePart)),
+						(real, inf) => ensure(real).ordHash < inf.ordHash,
+					),
+				);
+			});
+
+			it("positive reals above all infinitesimals", () => {
+				fc.assert(
+					fc.property(
+						arbDyadic(64).filter(dyadicIsPositive),
+						arb.filter(isPositive).map((x) => x.infinitesimalPart),
+						(real, low) => ensure(real).ordHash > low.ordHash,
+					),
+				);
+			});
 		});
 	});
 
