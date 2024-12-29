@@ -1,5 +1,5 @@
 import type { Ord0 } from "../../conway";
-import { eq, isZero, lt } from "../../op";
+import { eq, gt, isZero, lt } from "../../op";
 import { ordinalAdd, ordinalRightSub } from "../../op/ordinal";
 import type { Entry, SignExpansionReader } from "./types";
 
@@ -132,7 +132,6 @@ export class IterReader<O extends Ord0 = Ord0, Return = void>
 		}
 
 		if (lt(remain, length)) {
-			console.error("cannot consume", { remain, length, sign: entry.sign });
 			throw new RangeError("cannot consume: larger than lookahead");
 		}
 
@@ -164,6 +163,58 @@ export class IterReader<O extends Ord0 = Ord0, Return = void>
 	}
 }
 
+export class ArrayReader<O extends Ord0 = Ord0>
+	implements SignExpansionReader<O>
+{
+	#array: Readonly<Entry<O>[]>;
+	#index: number;
+	#remain: O;
+	constructor(array: Entry<O>[]) {
+		this.#array = groupBySignArray(array);
+		this.#index = 0;
+		this.#remain = 0n as O;
+		if (this.#array.length > 0) {
+			this.#remain = this.#array[0].length;
+		}
+	}
+
+	get isDone() {
+		return this.#index >= this.#array.length;
+	}
+
+	lookahead(): Readonly<Entry<O>> | null {
+		if (this.#index >= this.#array.length) {
+			return null;
+		}
+		return { sign: this.#array[this.#index].sign, length: this.#remain };
+	}
+
+	consume(length: O): void {
+		if (this.#index >= this.#array.length) {
+			throw new RangeError("cannot consume: reached the end");
+		}
+		if (eq(length, this.#remain)) {
+			this.#index++;
+			this.#maintain();
+			return;
+		}
+		if (gt(length, this.#remain)) {
+			throw new RangeError("cannot consume: larger than lookahead");
+		}
+		this.#remain = ordinalRightSub(length, this.#remain) as O;
+		if (isZero(this.#remain)) {
+			this.#index++;
+			this.#maintain();
+		}
+	}
+
+	#maintain() {
+		if (this.#index < this.#array.length) {
+			this.#remain = this.#array[this.#index].length;
+		}
+	}
+}
+
 export function* iterSignExpansionReader<O extends Ord0 = Ord0>(
 	reader: SignExpansionReader<O>,
 ) {
@@ -179,4 +230,4 @@ export function* iterSignExpansionReader<O extends Ord0 = Ord0>(
 }
 
 export const makeReader = <O extends Ord0 = Ord0>(x: Iterable<Entry<O>>) =>
-	new IterReader(x);
+	Array.isArray(x) ? new ArrayReader(x) : new IterReader(x);
