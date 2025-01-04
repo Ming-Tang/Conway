@@ -1,6 +1,7 @@
 import fc from "fast-check";
 import {
 	dyadicAdd,
+	dyadicCompare,
 	dyadicEq,
 	dyadicFromBigint,
 	dyadicFromNumber,
@@ -11,6 +12,7 @@ import {
 	dyadicMult,
 	dyadicNeg,
 	dyadicOne,
+	dyadicSub,
 	dyadicToMixed,
 	dyadicZero,
 } from "../dyadic";
@@ -34,12 +36,13 @@ import {
 import {
 	birthday,
 	commonAncestor,
+	dyadicConstruct,
 	minus,
 	plus,
 	signExpansionFrac,
 	toMixed,
 } from "../dyadic/birthday";
-import { dyadicNew } from "../dyadic/class";
+import { type Dyadic, dyadicNew } from "../dyadic/class";
 import { compare, eq, ge, gt, le, lt } from "../dyadic/comparison";
 import { ORD_HASH_EPSILON, dyadicOrdHash } from "../dyadic/ordHash";
 import {
@@ -609,6 +612,112 @@ describe("commonAncestor", () => {
 				arbPair.filter(([a]) => a.isInteger && !a.isNegative),
 				([a, b]) => eq(a, commonAncestor(a, b)),
 			),
+		);
+	});
+});
+
+describe("dyadicConstruct", () => {
+	it("zero", () => {
+		expect(dyadicConstruct().isZero).toBe(true);
+	});
+
+	/**
+	 * Generates two lists of `Dyadic`s, `left`, `right`,
+	 * where everything in `left` are less than everything
+	 * in `right`.
+	 */
+	const arbCut = fc.array(arbDyadic).chain((arr) => {
+		if (arr.length === 0) {
+			return fc.constant({ left: [], right: [] });
+		}
+		const arr1 = [...arr];
+		arr1.sort(dyadicCompare);
+		const n = fc.integer({ min: 0, max: arr.length });
+		return n.map((i) => ({
+			left: arr1.slice(i),
+			right: arr1.slice(0, i),
+		}));
+	});
+
+	it("all arbCut follow the left < right property", () => {
+		fc.property(arbCut, ({ left, right }) =>
+			left.every((l) => right.every((r) => dyadicLt(l, r))),
+		);
+	});
+
+	it("negation symmetry", () => {
+		fc.property(arbCut, ({ left, right }) =>
+			dyadicEq(
+				dyadicNeg(dyadicConstruct(right.map(dyadicNeg), left.map(dyadicNeg))),
+				dyadicConstruct(left, right),
+			),
+		);
+	});
+
+	it("result is between left and right", () => {
+		fc.property(arbCut, ({ left, right }) => {
+			const x = dyadicConstruct(left, right);
+			return left.every((l) => lt(l, x)) && right.every((r) => lt(x, r));
+		});
+	});
+
+	it("definition of surreal addition", () => {
+		fc.property(
+			arbCut,
+			arbCut,
+			({ left: xl, right: xr }, { left: yl, right: yr }) => {
+				const x = dyadicConstruct(xl, xr);
+				const y = dyadicConstruct(yl, yr);
+				const add = dyadicAdd(x, y);
+				const addL = [
+					...xl.map((x1) => dyadicAdd(x1, y)),
+					...yl.map((y1) => dyadicAdd(x, y1)),
+				];
+				const addR = [
+					...xr.map((x1) => dyadicAdd(x1, y)),
+					...yr.map((y1) => dyadicAdd(x, y1)),
+				];
+				return dyadicEq(dyadicConstruct(addL, addR), add);
+			},
+		);
+	});
+
+	it("definition of surreal multiplication", () => {
+		const part = (
+			x: Dyadic,
+			xo: Dyadic[],
+			y: Dyadic,
+			yo: Dyadic[],
+		): Dyadic[] => {
+			// must range over 2 variables like this: { ... | xo1 <- xo, yo1 <- yo },
+			// not { ... + ... | xo1 <- xo, yo1 <- yo } - { ... | xo1 <- xo, yo1 <- yo }
+			//     = { sum - prod | sum <- ..., prod <- ... }
+			// or else the left < right invariant can fail
+			const res: Dyadic[] = [];
+			for (const xo1 of xo) {
+				for (const yo1 of yo) {
+					res.push(
+						dyadicSub(
+							dyadicAdd(dyadicMult(x, xo1), dyadicMult(y, yo1)),
+							dyadicMult(xo1, yo1),
+						),
+					);
+				}
+			}
+			return res;
+		};
+
+		fc.property(
+			arbCut,
+			arbCut,
+			({ left: xl, right: xr }, { left: yl, right: yr }) => {
+				const x = dyadicConstruct(xl, xr);
+				const y = dyadicConstruct(yl, yr);
+				const mult = dyadicMult(x, y);
+				const multL = [...part(x, xl, y, yl), ...part(x, xr, y, yr)];
+				const multR = [...part(x, xl, y, yr), ...part(x, xr, y, yl)];
+				return dyadicEq(dyadicConstruct(multL, multR), mult);
+			},
 		);
 	});
 });

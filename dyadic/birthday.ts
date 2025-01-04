@@ -9,7 +9,7 @@ import {
 	sub,
 	zero,
 } from "./arith";
-import { type Dyadic, dyadicNew } from "./class";
+import { Dyadic, dyadicNew } from "./class";
 import { eq, ge, gt, lt, ne } from "./comparison";
 
 export const toMixed = (p: Dyadic): [bigint, Dyadic] => {
@@ -162,7 +162,9 @@ export const commonAncestor = (a: Dyadic, b: Dyadic): Dyadic => {
 
 export const simplestBetween = (a: Dyadic, b: Dyadic): Dyadic => {
 	if (!lt(a, b)) {
-		throw new RangeError("dyadicSimplestBetween: (a < b) must be true");
+		throw new RangeError(
+			`dyadicSimplestBetween: (a < b) must be true: a=${a}, b=${b}`,
+		);
 	}
 	const c = commonAncestor(a, b);
 	if (lt(a, c) && lt(c, b)) {
@@ -190,4 +192,58 @@ export const simplestBetween = (a: Dyadic, b: Dyadic): Dyadic => {
 		pc = plus(pc);
 	}
 	return pc;
+};
+
+/**
+ * Returns the surreal `{ left | right }` given left and right ranges of dyadics.
+ *
+ * Precondition: Everything in `left` are less than everything in `right`
+ * @param left The left range, can be a dyadic, an iterable or `null` for empty range
+ * @param right The right range, can be a dyadic, an iterable or `null` for empty range
+ * @returns A `Dyadic` being `{ left | right }`
+ */
+export const dyadicConstruct = (
+	left?: Dyadic | Iterable<Dyadic> | null,
+	right?: Dyadic | Iterable<Dyadic> | null,
+): Dyadic => {
+	if (
+		(!left || (Array.isArray(left) && left.length === 0)) &&
+		(!right || (Array.isArray(right) && right.length === 0))
+	) {
+		return zero;
+	}
+
+	let leftMax: Dyadic | null = null;
+	let rightMin: Dyadic | null = null;
+	if (left instanceof Dyadic) {
+		leftMax = left;
+	} else if (left) {
+		for (const x of left) {
+			if (leftMax === null || gt(x, leftMax)) {
+				leftMax = x;
+			}
+		}
+	}
+
+	if (right instanceof Dyadic) {
+		rightMin = right;
+	} else if (right) {
+		for (const x of right) {
+			if (rightMin === null || lt(x, rightMin)) {
+				rightMin = x;
+			}
+		}
+	}
+
+	if (leftMax === null) {
+		if (rightMin === null) {
+			return zero;
+		}
+		return fromBigint(rightMin.bigintQuotient - 1n);
+	}
+
+	if (rightMin === null) {
+		return fromBigint(leftMax.bigintQuotient + 1n);
+	}
+	return simplestBetween(leftMax, rightMin);
 };
