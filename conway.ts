@@ -57,14 +57,22 @@ export type InferIsOrdNumber<T extends number | bigint> = T extends
 				? boolean
 				: true;
 
-export type InferIsOrd<T extends Conway0> = Ord0 extends T
+export type InferIsOrd<T> = Ord0 extends T
 	? true
 	: T extends number | bigint
 		? InferIsOrdNumber<T>
+		: T extends Conway<infer IsOrd extends boolean> ? IsOrd
 		: T extends { isOrdinal: true }
 			? true
 			: boolean;
 
+/**
+ * A pair of `[p, c]` where `p` is the exponent and `c` is
+ * the real coefficient. Keeps track if both `p` and `c`
+ * are ordinal number or not in the phantom field `{ __isOrd?: boolean }`.
+ * @see `create`
+ * @see `monoPair`
+ */
 export type MonoPair<IsOrd extends boolean = boolean> = [
 	Conway0<IsOrd>,
 	Real,
@@ -251,8 +259,8 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return Conway.create([[Conway.maybeUnwrap(power), realOne]], true) as never;
 	}
 
-	public static ensure<V extends Conway0>(value: V): V & Conway<boolean> {
-		return value instanceof Conway ? value : (Conway.real(value) as never);
+	public static ensure<V extends Conway0>(value: V): Conway<InferIsOrd<V>> {
+		return value instanceof Conway ? (value as never) : (Conway.real(value) as never);
 	}
 
 	public mono1(): Conway<IsOrd> {
