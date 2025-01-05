@@ -685,21 +685,21 @@ describe("dyadicConstruct", () => {
 	it("definition of surreal multiplication", () => {
 		const part = (
 			x: Dyadic,
-			xo: Dyadic[],
+			xos: Dyadic[],
 			y: Dyadic,
-			yo: Dyadic[],
+			yos: Dyadic[],
 		): Dyadic[] => {
 			// must range over 2 variables like this: { ... | xo1 <- xo, yo1 <- yo },
 			// not { ... + ... | xo1 <- xo, yo1 <- yo } - { ... | xo1 <- xo, yo1 <- yo }
 			//     = { sum - prod | sum <- ..., prod <- ... }
 			// or else the left < right invariant can fail
 			const res: Dyadic[] = [];
-			for (const xo1 of xo) {
-				for (const yo1 of yo) {
+			for (const xo of xos) {
+				for (const yo of yos) {
 					res.push(
 						dyadicSub(
-							dyadicAdd(dyadicMult(x, xo1), dyadicMult(y, yo1)),
-							dyadicMult(xo1, yo1),
+							dyadicAdd(dyadicMult(x, xo), dyadicMult(y, yo)),
+							dyadicMult(xo, yo),
 						),
 					);
 				}
