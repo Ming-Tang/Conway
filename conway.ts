@@ -65,8 +65,19 @@ export type InferIsOrd<T extends Conway0> = Ord0 extends T
 			? true
 			: boolean;
 
-export type CreateParams<T extends boolean = boolean> =
-	| [Conway0<T>, Real][]
+export type MonoPair<IsOrd extends boolean = boolean> = [
+	Conway0<IsOrd>,
+	Real,
+] & { __isOrd?: IsOrd | undefined };
+
+export type InferIsOrdMonoPair<T> = T extends {
+	__isOrd: infer IsOrd extends boolean;
+}
+	? IsOrd
+	: boolean;
+
+export type CreateParams<IsOrd extends boolean = boolean> =
+	| MonoPair<IsOrd>[]
 	| null
 	| undefined;
 
@@ -98,16 +109,14 @@ export class Conway<IsOrd extends boolean = boolean> {
 
 	readonly #isOrdinal: boolean;
 
-	readonly #terms: Readonly<[Conway0<IsOrd>, Real][]>;
+	readonly #terms: Readonly<MonoPair<IsOrd>[]>;
 
 	// #region Creation
 
 	private constructor(iter?: CreateParams<IsOrd>, _unchecked = false) {
 		let terms = Array.isArray(iter) ? [...iter] : iter ? [...iter] : [];
 		if (_unchecked) {
-			this.#terms = freeze(
-				terms.map((x) => freeze<[Conway0<IsOrd>, Real]>(x)),
-			) as Readonly<[Conway0<IsOrd>, Real][]>;
+			this.#terms = freeze(terms.map((x) => freeze<MonoPair<IsOrd>>(x)));
 			this.#isOrdinal = this.#terms.every(
 				([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
 			);
@@ -116,7 +125,9 @@ export class Conway<IsOrd extends boolean = boolean> {
 		Conway.sortTermsDescending(terms);
 
 		const newTerms = [] as typeof terms;
-		terms = terms.map(([p, c]) => [Conway.maybeUnwrap(p), c]);
+		terms = terms.map(
+			([p, c]) => [Conway.maybeUnwrap(p), c] as MonoPair<IsOrd>,
+		);
 		for (const [p, c] of terms) {
 			if (Conway.isZero(c)) {
 				continue;
@@ -132,14 +143,16 @@ export class Conway<IsOrd extends boolean = boolean> {
 		this.#terms = freeze(
 			newTerms
 				.filter(([_, c]) => !Conway.isZero(c))
-				.map((x) => freeze<[Conway0<IsOrd>, Real]>(x)),
-		) as Readonly<[Conway0<IsOrd>, Real][]>;
+				.map((x) => freeze<MonoPair<IsOrd>>(x)),
+		);
 		this.#isOrdinal = this.#terms.every(
 			([p, c]) => Conway.isOrdinal(p) && Conway.isOrdinal(c),
 		);
 	}
 
-	private static sortTermsDescending(terms: [Conway0, Real][]) {
+	private static sortTermsDescending<IsOrd extends boolean = boolean>(
+		terms: MonoPair<IsOrd>[],
+	) {
 		terms.sort(([e1, c1], [e2, c2]): number => {
 			const compExp = Conway.compare(e1, e2);
 			return compExp === 0 ? realCompare(c1, c2) : compExp;
@@ -206,7 +219,10 @@ export class Conway<IsOrd extends boolean = boolean> {
 	 * @returns A surreal number that constructs this real number.
 	 */
 	public static real(value: Real): Conway {
-		return Conway.create(realIsZero(value) ? [] : [[realZero, value]], true);
+		return Conway.create(
+			realIsZero(value) ? [] : [[realZero, value] as MonoPair],
+			true,
+		);
 	}
 
 	/**
@@ -222,6 +238,13 @@ export class Conway<IsOrd extends boolean = boolean> {
 			return Conway.zero;
 		}
 		return Conway.create([[Conway.maybeUnwrap(power), value]], true) as never;
+	}
+
+	public static monoPair<IsOrd extends boolean = boolean>([
+		p,
+		c,
+	]: MonoPair<IsOrd>) {
+		return Conway.mono(c, p) as Conway<IsOrd>;
 	}
 
 	public static mono1<P extends Conway0>(power: P): Conway<InferIsOrd<P>> {

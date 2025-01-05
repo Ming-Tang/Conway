@@ -26,6 +26,7 @@ export const {
 	unit,
 	mono,
 	mono1,
+	monoPair,
 	ensure,
 	maybeUnwrap,
 	real: fromReal,
