@@ -631,14 +631,14 @@ export class Conway<IsOrd extends boolean = boolean> {
 		return realIsNegative(value);
 	}
 
-	public static isAboveReals(value: Conway0): boolean {
+	public static isAboveReals(value: Conway0): value is Conway {
 		if (value instanceof Conway) {
 			return value.isAboveReals;
 		}
 		return false;
 	}
 
-	public static isBelowNegativeReals(value: Conway0): boolean {
+	public static isBelowNegativeReals(value: Conway0): value is Conway {
 		if (value instanceof Conway) {
 			return value.isBelowNegativeReals;
 		}
