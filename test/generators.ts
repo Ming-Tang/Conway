@@ -1,11 +1,12 @@
 import fc from "fast-check";
-import type { Conway, Ord } from "../conway";
+import type { Conway, Ord, Ord0 } from "../conway";
 import { Dyadic, dyadicWithSign, dyadicZero } from "../dyadic";
 import { create, fromReal } from "../op";
 import { isAboveReals } from "../op";
 import { ordinalEnsure } from "../op/ordinal";
 import { type Real, realToNumber } from "../real";
 import type { Seq } from "../seq";
+import { type Entry, groupBySign } from "../signExpansion/reader";
 import { signExpansionDyadic } from "../signExpansion/real";
 
 export const seqToArray = <T>(x: Seq<T>): T[] => {
@@ -14,7 +15,7 @@ export const seqToArray = <T>(x: Seq<T>): T[] => {
 		throw new RangeError(`toArray: must have finite length: ${n}`);
 	}
 
-	return Array(realToNumber(n.realPart))
+	return Array(realToNumber((n as Conway).realPart))
 		.fill(0)
 		.map((_, i) => x.index(ordinalEnsure(i)));
 };
@@ -144,3 +145,17 @@ export const arbOrd2 = arbConway2(arbFiniteBigintOrd).filter(
 export const arbOrd3 = arbConway3(arbFiniteBigintOrd).filter(
 	(x) => x.isOrdinal,
 ) as fc.Arbitrary<Ord>;
+
+export const arbEntry = (
+	arbLength = arbOrd3 as fc.Arbitrary<Ord0>,
+): fc.Arbitrary<Entry> =>
+	fc.record<Entry>({
+		sign: fc.boolean(),
+		length: arbLength,
+	});
+
+export const arbSigns = fc.array(arbEntry(), { minLength: 0 });
+
+export const arbGroupedSigns = fc
+	.array(arbEntry(), { minLength: 1 })
+	.map((x) => [...groupBySign(x)]);

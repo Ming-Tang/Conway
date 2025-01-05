@@ -40,20 +40,15 @@ import {
 import {
 	arbConway3,
 	arbDyadic,
+	arbEntry,
 	arbFiniteBigintOrd,
+	arbGroupedSigns,
 	arbOrd3,
+	arbSigns,
 } from "./generators";
 import { propTotalOrder } from "./propsTest.test";
 
 fc.configureGlobal({ numRuns: 100 });
-
-const arbEntry = (
-	arbLength = arbOrd3 as fc.Arbitrary<Ord0>,
-): fc.Arbitrary<Entry> =>
-	fc.record<Entry>({
-		sign: fc.boolean(),
-		length: arbLength,
-	});
 
 const flipSign = ({ sign, length }: Entry) => ({
 	sign: !sign,
@@ -155,12 +150,6 @@ describe("groupBySign", () => {
 		);
 	});
 });
-
-const arbSigns = fc.array(arbEntry(), { minLength: 0 });
-
-const arbGroupedSigns = fc
-	.array(arbEntry(), { minLength: 1 })
-	.map((x) => [...groupBySign(x)]);
 
 describe("IterReader", () => {
 	it("lookahead/consume example", () => {
