@@ -28,9 +28,6 @@ export function* reduceSignExpansion<O extends Ord0 = Ord0>(
 	const shared = commonPrefix(parent, child);
 	const reader = makeReader(shared);
 	const nPlus = countSigns(reader, true);
-	if (typeof reader.returnValue !== "undefined" && reader.returnValue !== 1) {
-		throw new RangeError("child < parent must be true");
-	}
 	yield { sign: true, length: nPlus } as Entry<O>;
 	return yield* iterSignExpansionReader(child);
 }
