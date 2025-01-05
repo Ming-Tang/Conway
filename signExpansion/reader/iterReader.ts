@@ -194,5 +194,7 @@ export function* iterSignExpansionReader<O extends Ord0 = Ord0>(
 	}
 }
 
-export const makeReader = <O extends Ord0 = Ord0>(x: Iterable<Entry<O>>) =>
-	Array.isArray(x) ? new ArrayReader(x) : new IterReader(x);
+export const makeReader = <O extends Ord0 = Ord0>(
+	x: Iterable<Entry<O>>,
+): SignExpansionReader<O> =>
+	Array.isArray(x) ? new ArrayReader<O>(x) : new IterReader<O>(x);
