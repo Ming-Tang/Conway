@@ -1,17 +1,130 @@
-import { create, ensure, mono, mono1, one, zero } from ".";
+import {
+	create,
+	ensure,
+	mono,
+	mono1,
+	one,
+	tryGetFiniteOrd,
+	unit,
+	zero,
+} from ".";
 import type { Conway, Conway0 } from "../conway";
-import { type Real, realMult } from "../real";
+import { dyadicPow2 } from "../dyadic/arith";
+import { type Real, realMult, realToBigint } from "../real";
+import { signExpansion } from "../signExpansion";
+import {
+	conwayFromSignExpansion,
+	iterSignExpansionReader,
+	makeReader,
+	signExpansionFromConway,
+} from "../signExpansion/reader";
 import { add, mult, sub } from "./arith";
 import { multTerms, sumTerms } from "./collection";
-import { eq, isZero } from "./comparison";
+import { eq, isNegative, isOne, isPositive, isZero } from "./comparison";
+import { isSucc, ordinalDivRem, pred } from "./ordinal";
+
+/**
+ * Gets the Archimedean class of a given non-zero surreal.
+ * Defined as the "ind" in the proof of [Gonshor] Theorem 10.10.
+ * @throws `RangeError` if `x` is zero.
+ * @returns `p` given `x ~ w^p`
+ */
+export const index = (x: Conway0): Conway0 => {
+	if (isZero(x)) {
+		throw new RangeError("index: cannot be zero");
+	}
+
+	const terms = ensure(x).terms;
+	return terms[0][0];
+};
 
 /**
  * `g : No[>0] -> No`
- * `g(x) = { index(x), g(L(x)) | h(R(x)) }`
+ * `g(x) = { index(x), g(L(x)) | h(g(x)) }`
  * `x ~ w^index(x)`
  */
-const g = (x: Conway0): Conway0 => {
-	return x;
+export const g = (x: Conway0): Conway0 => {
+	if (!isPositive(x)) {
+		throw new RangeError("g: cannot be negative");
+	}
+	const ind = index(x);
+	if (!isNegative(ind)) {
+		// Theorem 10.20 applies
+		return x;
+	}
+
+	const reader = makeReader(signExpansionFromConway(x));
+	const plus = reader.lookahead();
+	if (plus === null || plus.sign === false || !isOne(plus.length)) {
+		throw new Error("not possible: +");
+	}
+	reader.consume(1n);
+	const minuses = reader.lookahead();
+	if (minuses === null || minuses.sign === true || isZero(minuses.length)) {
+		throw new Error("not possible: -");
+	}
+	const nMinus = minuses.length;
+	reader.consume(nMinus);
+
+	const [b, n] = ordinalDivRem(nMinus, unit);
+	const nBigint = tryGetFiniteOrd(n) ?? 0n;
+
+	// Now the sign expansion has two forms:
+	// a. [+ -^(w b + n)] = w^-b * 2^-n
+	// b. [+ -^(w b + n) + S] where S is any sign expansion
+	// where b is a non-zero ordinal and n is a natural number
+	// Theorem 10.15 applies in (a)
+
+	const rest = reader.lookahead();
+	const base = sub(dyadicPow2(-nBigint), b);
+	if (rest === null) {
+		// Case (a) Theorem 10.15: g(x) = -b + 2^-n
+		return base;
+	}
+	// Case (b):
+	//  - If b is limit: (-b + 1) & S
+	//  - If b is successor: (-b + 1 + w^-1) & S
+	//
+	// Proof for case (b): Given ordinal b and natural number n
+	// Let x = plus(w^[-b] 2^-n) = w^[-b] {2^-n|} = [+ -^[w b + n] +]
+	// g(x) = { index(x), g(w^[-b] 2^-n) | g(R(w^[-b])) }
+	// g(x) = { -b, -b + 2^-n | -L(b) + 2^-k, positive real numbers }
+	// g(x) = { -b + 2^-n | -L(b) + 2^-k }
+	// If b is limit, L(b) is a limiting sequence:
+	//   g(x) = { -b + 2^-n | -L(b) }
+	//        = { [-^b + -^n] | [-^L(b)] }
+	//        = [-^b +] = -b + 1
+	// If b is successor, L(b) = b - 1:
+	//   g(x) = { -b + 2^-n | -b + 1 + 2^-k }
+	//        = { -b + 1 | -b + 1 + 2^-k }
+	//        = -b + 1 + w^-1
+	// For sign expansions [+ -^(wb + n) + S] = [x S] in general,
+	//   g([x S]) = g(x) & S.
+	// The evaluation of index([x S']) stays unchanged through each
+	// truncation of S, S'.
+
+	if (rest.sign === false) {
+		throw new Error("not possible: -");
+	}
+
+	reader.consume(1n);
+	if (isSucc(b)) {
+		return conwayFromSignExpansion(
+			makeReader([
+				{ sign: false, length: pred(b) },
+				{ sign: true, length: 1n },
+				{ sign: false, length: unit },
+				...iterSignExpansionReader(reader),
+			]),
+		);
+	}
+	return conwayFromSignExpansion(
+		makeReader([
+			{ sign: false, length: b },
+			{ sign: true, length: 1n },
+			...iterSignExpansionReader(reader),
+		]),
+	);
 };
 
 /**
@@ -20,7 +133,10 @@ const g = (x: Conway0): Conway0 => {
  * `h` is the inverse of `g`.
  */
 const h = (x: Conway0): Conway0 => {
-	return x;
+	if (isPositive(x) && !isNegative(index(x))) {
+		return x;
+	}
+	throw new Error("TODO implement this");
 };
 
 /**

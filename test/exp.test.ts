@@ -1,11 +1,20 @@
 import fc from "fast-check";
+import "./expect.test";
 import type { Conway0 } from "../conway";
-import { ensure, mono, one, unit, zero } from "../op";
+import { dyadicPow2 } from "../dyadic/arith";
+import { ensure, isNegative, mono, mono1, neg, one, unit, zero } from "../op";
 import { eq, isPositive, isZero } from "../op";
 import { add, mult, sub } from "../op/arith";
-import { exp, factorLeadLow, log, log1pLow } from "../op/exp";
+import { exp, factorLeadLow, g, index, log, log1pLow } from "../op/exp";
 import { realToDyadic } from "../real";
-import { arbConway2, arbFinite, arbFiniteBigint } from "./generators";
+import {
+	arbConway2,
+	arbConway3,
+	arbDyadic,
+	arbFinite,
+	arbFiniteBigint,
+	arbOrd3,
+} from "./generators";
 
 const close = (a: Conway0, b: Conway0) => {
 	expect(ensure(a)).toEqual(ensure(b));
@@ -163,5 +172,46 @@ describe("(w + 1)^w = e w^w - e w^(w-1)/2 + ...", () => {
 			expect(sub(unit, i)).conwayEq(p);
 			expect(realToDyadic(c).quotient).toBeCloseTo((s * Math.E) / (i + 1));
 		});
+	});
+});
+
+describe("g function", () => {
+	describe("constants", () => {
+		it("g(w^-1) = 0", () => {
+			expect(g(mono1(-1n))).conwayEq(0n);
+		});
+
+		it("g(w^-2) = -1", () => {
+			expect(g(mono1(-2n))).conwayEq(-1n);
+		});
+
+		it("g(2 w^-1) = w^-1", () => {
+			expect(g(mono(2n, -1n))).conwayEq(mono1(-1n));
+		});
+	});
+
+	it("x is not infinitesimal", () => {
+		fc.assert(
+			fc.property(
+				arbConway3(arbDyadic(8)).filter(
+					(x) => isPositive(x) && !isNegative(index(x)),
+				),
+				(x) => eq(g(x), x),
+			),
+		);
+	});
+
+	it("Theorem 10.15, n = 0", () => {
+		fc.assert(fc.property(arbOrd3, (b) => eq(g(mono1(neg(b))), sub(1n, b))));
+	});
+
+	it("Theorem 10.15", () => {
+		fc.assert(
+			fc.property(
+				arbOrd3,
+				fc.bigInt({ min: -20n, max: 0n }).map(dyadicPow2),
+				(b, m) => eq(g(mono(m, neg(b))), sub(m, b)),
+			),
+		);
 	});
 });

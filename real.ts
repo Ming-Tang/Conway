@@ -138,6 +138,9 @@ export const realLongDivisionIters = (
 ): [Real, Real] =>
 	dyadicLongDivisionIters(realToDyadic(left), realToDyadic(right), iters);
 
+/**
+ * @returns `0` for `left = right`, `1` for `left < right`, `-1` for `left > right`
+ */
 export const realCompare = (left: Real, right: Real): -1 | 0 | 1 => {
 	if (left === right) {
 		return 0;
